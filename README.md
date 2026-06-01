@@ -36,11 +36,23 @@ structuredData({ siteUrl: 'https://example.com' })
 |---|---|---|---|
 | `siteUrl` | `string` | No | Absolute base URL — falls back to Astro's `site` config |
 | `useGraph` | `boolean` | No | Wrap all schemas in a `@graph` array |
+| `generateMeta` | `boolean` | No | Generate standard HTML head meta tags (og:*, twitter:*, canonical) from schemas |
 | `defaultLocalBusiness` | `LocalBusiness` | No | Site-wide local business defaults merged into `LocalBusinessSchema` |
 | `defaultArticlePublisher` | `Organization` | No | Default publisher for `ArticleSchema` and `OrganizationSchema` |
 | `defaultBrand` | `Brand \| string` | No | Default brand for `ProductSchema` |
 | `defaultShippingDetails` | `OfferShippingDetails` | No | Default shipping details for `ProductSchema` |
 | `defaultReturnPolicy` | `MerchantReturnPolicy` | No | Default return policy for `ProductSchema` |
+
+## Automated SEO & Sitemap Integration
+
+When `generateMeta: true` is enabled, the integration automatically derives and renders corresponding `<meta>` and `<link>` elements inside the page `<head>` during render time:
+* **Canonical**: `<link rel="canonical" href="...">`
+* **OpenGraph**: `og:title`, `og:description`, `og:image`, `og:url`, `og:type` (relative images are automatically resolved to absolute URLs using your config's `siteUrl`)
+* **Twitter Cards**: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+
+### Sitemap Metadata Support
+You can also define sitemap crawl properties directly in your components (e.g. `changefreq="weekly" priority={0.8}`). 
+These properties are automatically encoded as data-attributes on the JSON-LD `<script>` tag. Post-build sitemap generators like `@casoon/astro-site-files` can read these tags directly from the HTML to dynamically build/patch the sitemap entries, meaning you don't need to duplicate sitemap logic in your configs. This feature is completely decoupled and will fall back gracefully to the sitemap defaults if `@casoon/astro-site-files` is not installed or configured.
 
 ## Components
 

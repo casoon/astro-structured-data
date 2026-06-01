@@ -1,112 +1,498 @@
 ---
+import { FAQSchema, WebSiteSchema } from 'astro-structured-data/components';
 import Layout from '../layouts/Layout.astro';
+
+const faqs = [
+  {
+    question: 'What is JSON-LD and why does my Astro site need it?',
+    answer:
+      'JSON-LD (JavaScript Object Notation for Linked Data) is the format recommended by Google for structured data. It tells search engines what your page means — article, product, FAQ, local business — enabling rich results like star ratings, FAQ dropdowns, and product cards in search. Without it, Google can only guess.',
+  },
+  {
+    question: 'How is this different from adding JSON-LD manually?',
+    answer:
+      'Manual JSON-LD is error-prone: wrong @type strings, missing required fields, incorrect date formats. @casoon/astro-structured-data uses schema-dts for full TypeScript coverage and Zod for config validation at build time. Mistakes become build errors, not silent SEO failures.',
+  },
+  {
+    question: 'What is @graph mode and when should I use it?',
+    answer:
+      'With useGraph: true, all schema components on a page register their data via Astro.locals. The SchemaGraph component at the end of your layout renders them as a single @graph block. This reduces redundant @context declarations and enables clean @id cross-references between entities — recommended for complex pages with multiple schema types.',
+  },
+  {
+    question: 'Does it work with Astro content collections?',
+    answer:
+      'Yes. The package exports Zod schemas (articleSchema, productSchema, etc.) that extend your frontmatter validation. Pass frontmatter fields directly as props to ArticleSchema or ProductSchema — no manual mapping needed.',
+  },
+  {
+    question: 'Which Astro versions are supported?',
+    answer: 'Astro 5.x and 6.x. The integration uses the astro:config:setup hook API and Vite virtual modules — both stable, long-term APIs.',
+  },
+  {
+    question: 'Is it free?',
+    answer:
+      'Yes. @casoon/astro-structured-data is MIT-licensed and fully open source. No API keys, no accounts, no usage limits.',
+  },
+];
+
+const schemas = [
+  { name: 'ArticleSchema', desc: 'BlogPosting or NewsArticle with author, publisher logo, image, dates.' },
+  { name: 'FAQSchema', desc: 'FAQPage with Question/Answer pairs — shown as rich results in Google.' },
+  { name: 'ProductSchema', desc: 'Product with price, currency, availability, brand and GTIN.' },
+  { name: 'BreadcrumbSchema', desc: 'BreadcrumbList from a simple items array.' },
+  { name: 'AutoBreadcrumbSchema', desc: 'Breadcrumbs auto-generated from the current URL path.' },
+  { name: 'LocalBusinessSchema', desc: 'LocalBusiness with address, hours, coordinates, contact.' },
+  { name: 'OrganizationSchema', desc: 'Organization with logo, social links and contact details.' },
+  { name: 'WebSiteSchema', desc: 'WebSite metadata + optional Sitelinks Searchbox.' },
+  { name: 'EventSchema', desc: 'Event with start/end date, location and ticket URL.' },
+  { name: 'ProfilePageSchema', desc: 'Person profile pages with social links and bio.' },
+  { name: 'JobPostingSchema', desc: 'Job listings with salary, location and application deadline.' },
+  { name: 'SoftwareAppSchema', desc: 'Software or app metadata with ratings and pricing.' },
+  { name: 'CollectionPageSchema', desc: 'Product category or archive pages.' },
+];
+
+const configCode = `import structuredData from '@casoon/astro-structured-data';
+
+export default defineConfig({
+  site: 'https://example.com',
+  integrations: [
+    structuredData({
+      defaultArticlePublisher: {
+        name: 'My Site',
+        logo: { url: 'https://example.com/logo.png' },
+      },
+    }),
+  ],
+});`;
+
+const componentCode = `---
+import { ArticleSchema, BreadcrumbSchema }
+  from '@casoon/astro-structured-data/components';
+---
+<ArticleSchema
+  title="My Article"
+  description="Short description"
+  datePublished="2025-01-01"
+  authorName="Jane Doe"
+  imageUrl="https://example.com/image.webp"
+/>
+<BreadcrumbSchema items={[
+  { name: 'Home', url: 'https://example.com' },
+  { name: 'Blog', url: 'https://example.com/blog/' },
+]} />`;
 ---
 
-<Layout 
-  title="LocalBusiness & Setup" 
-  description="Demo-Startseite für das Astro Structured Data Generator Plugin, das LocalBusiness-Daten automatisch über die Config einbindet."
+<Layout
+  title="@casoon/astro-structured-data – JSON-LD Schema Components for Astro"
+  description="Schema.org components for Astro: Article, FAQ, Product, Breadcrumb, LocalBusiness and more. Type-safe with schema-dts, integrated in two lines."
 >
-  <div class="grid">
-    <div>
-      <h1>Astro Structured Data Generator</h1>
-      <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 1.1rem;">
-        Willkommen in der interaktiven Sandbox für unser Astro v6 Structured Data Plugin. 
-        Dieses Plugin generiert vollautomatisch standardisierte und validierte JSON-LD Daten für Suchmaschinen.
-      </p>
+  <!-- WebSite schema for this page -->
+  <WebSiteSchema
+    name="@casoon/astro-structured-data"
+    url="https://astro-structured-data.casoon.dev/"
+  />
 
-      <div class="card">
-        <h2>1. Globales LocalBusiness & Setup</h2>
-        <p style="margin-bottom: 16px;">
-          In <code>astro.config.mjs</code> haben wir Standardwerte für das lokale Geschäft (<code>LocalBusiness</code>) definiert. 
-          Diese werden über die Komponente <code>&lt;LocalBusinessSchema /&gt;</code> in unserem Layout automatisch auf jeder Seite gerendert.
-        </p>
-        <div style="background-color: var(--bg-tertiary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
-          <span style="color: #6366f1;">// In astro.config.mjs</span><br/>
-          structuredData(&lbrace;<br/>
-          &nbsp;&nbsp;siteUrl: 'https://example.com',<br/>
-          &nbsp;&nbsp;defaultLocalBusiness: &lbrace;<br/>
-          &nbsp;&nbsp;&nbsp;&nbsp;name: 'Astro Demo Store',<br/>
-          &nbsp;&nbsp;&nbsp;&nbsp;address: &lbrace; ... &rbrace;,<br/>
-          &nbsp;&nbsp;&nbsp;&nbsp;telephone: '+49 30 1234567',<br/>
-          &nbsp;&nbsp;&rbrace;<br/>
-          &rbrace;)
+  <!-- FAQ schema — demonstrates the package while adding SEO value -->
+  <FAQSchema questions={faqs} />
+
+  <style>
+    /* ── Hero ─────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 80px 0 60px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      margin-bottom: 24px;
+      letter-spacing: 0.05em;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      color: #0f172a;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-outline {
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--text-primary); }
+
+    /* ── Install pill ─────────────────────────────── */
+    .install-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #34d399;
+    }
+    .install-label {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Sections ─────────────────────────────────── */
+    section { margin-bottom: 80px; }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin-bottom: 40px;
+      max-width: 620px;
+    }
+
+    /* ── Schema grid ──────────────────────────────── */
+    .schema-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .schema-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 18px;
+      transition: border-color 0.2s;
+    }
+    .schema-card:hover { border-color: rgba(56, 189, 248, 0.4); }
+    .schema-card-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .schema-card-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ── Features ─────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 22px;
+    }
+    .feature-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(129, 140, 248, 0.12);
+      color: #818cf8;
+      border: 1px solid rgba(129, 140, 248, 0.2);
+      margin-bottom: 12px;
+      letter-spacing: 0.04em;
+    }
+    .feature-card h3 { font-size: 1rem; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55; }
+
+    /* ── Code block ───────────────────────────────── */
+    .code-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 720px) { .code-cols { grid-template-columns: 1fr; } }
+    .code-block {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .code-filename {
+      padding: 10px 16px;
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(255,255,255,0.03);
+    }
+    .code-block pre {
+      padding: 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* ── FAQ ──────────────────────────────────────── */
+    .faq-list { display: flex; flex-direction: column; gap: 12px; }
+    .faq-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 22px;
+    }
+    .faq-item h3 { font-size: 1rem; margin-bottom: 10px; }
+    .faq-item p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ── Live demo ────────────────────────────────── */
+    .demo-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 720px) { .demo-cols { grid-template-columns: 1fr; } }
+  </style>
+
+  <!-- ── Hero ──────────────────────────────────────────────────── -->
+  <div class="hero">
+    <div class="hero-badge">MIT License · Astro 5 & 6 · TypeScript</div>
+    <h1>JSON-LD Structured Data<br />for <span>Astro</span></h1>
+    <p>
+      Schema.org components for Astro — Article, FAQ, Product, Breadcrumb,
+      LocalBusiness and more. Type-safe with schema-dts, integrated in two lines.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/casoon/astro-structured-data" target="_blank" rel="noopener noreferrer" class="btn-primary">
+        View on GitHub
+      </a>
+      <a href="https://www.npmjs.com/package/@casoon/astro-structured-data" target="_blank" rel="noopener noreferrer" class="btn-outline">
+        npm
+      </a>
+    </div>
+    <div class="install-pill">
+      <span class="install-label">npm</span>
+      npm install @casoon/astro-structured-data
+    </div>
+  </div>
+
+  <!-- ── Schema Components ─────────────────────────────────────── -->
+  <section>
+    <div class="section-label">Schema Types</div>
+    <h2 class="section-title">13 Schema Components, Zero Boilerplate</h2>
+    <p class="section-desc">
+      Every schema type is an Astro component with typed props. Publisher
+      defaults and brand data are defined once in <code style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: var(--accent);">astro.config.mjs</code>
+      and automatically used across all components.
+    </p>
+    <div class="schema-grid">
+      {schemas.map((s) => (
+        <div class="schema-card">
+          <div class="schema-card-name">{s.name}</div>
+          <div class="schema-card-desc">{s.desc}</div>
         </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ── Quick Start ────────────────────────────────────────────── -->
+  <section>
+    <div class="section-label">Quick Start</div>
+    <h2 class="section-title">Two Steps to Valid JSON-LD</h2>
+    <p class="section-desc">
+      Configure global defaults once, then drop components anywhere.
+      No manual JSON, no <code style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: var(--accent);">JSON.stringify</code>, no duplicated publisher data.
+    </p>
+    <div class="code-cols">
+      <div class="code-block">
+        <div class="code-filename">astro.config.mjs</div>
+        <pre>{configCode}</pre>
       </div>
-
-      <div class="card">
-        <h2>Astro Dev Toolbar</h2>
-        <p style="margin-bottom: 16px;">
-          Das Plugin registriert automatisch eine <strong>Dev Toolbar App</strong>. 
-          Wenn du die Website im Entwicklungsmodus (<code>npm run dev</code>) aufrufst, siehst du unten im Browser die Astro Toolbar. 
-          Klicke auf das Datenbank-Symbol <strong>"Structured Data"</strong>, um alle JSON-LD Skripte dieser Seite live zu validieren!
-        </p>
-        <div style="display: flex; gap: 10px; align-items: center; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); padding: 12px; border-radius: 8px; font-size: 0.9rem; color: var(--accent);">
-          <span>💡</span>
-          <span>Der Validator warnt dich auch vor fehlenden Feldern (z. B. wenn bei einem Artikel das Beitragsbild oder der Autor fehlt).</span>
-        </div>
+      <div class="code-block">
+        <div class="code-filename">src/pages/blog/[slug].astro</div>
+        <pre>{componentCode}</pre>
       </div>
     </div>
+  </section>
 
-    <div>
+  <!-- ── Features ──────────────────────────────────────────────── -->
+  <section>
+    <div class="section-label">Features</div>
+    <h2 class="section-title">More Than Just JSON.stringify</h2>
+    <p class="section-desc">
+      A build-time integration into the Astro pipeline — with validation, tooling,
+      and a graph mode for complex pages.
+    </p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-tag">TypeScript</div>
+        <h3>Type-safe with schema-dts</h3>
+        <p>All Schema.org types come from <code style="font-family: 'JetBrains Mono', monospace;">schema-dts</code>. TypeScript reports missing required fields or incorrectly typed values immediately.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-tag">Configuration</div>
+        <h3>Global Defaults</h3>
+        <p>Publisher, LocalBusiness and Brand defined once in <code style="font-family: 'JetBrains Mono', monospace;">astro.config.mjs</code>. All components use them as a fallback — no repetition.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-tag">Validation</div>
+        <h3>Zod at Build Time</h3>
+        <p>Integration options are validated with Zod when Astro starts. Invalid config produces a clear error before any HTML is generated.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-tag">Tooling</div>
+        <h3>Dev Toolbar Panel</h3>
+        <p>The Astro Dev Toolbar gets a "Structured Data" panel that shows all rendered JSON-LD on the current page — live, validatable, inspectable.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-tag">Advanced</div>
+        <h3>@graph Mode</h3>
+        <p>With <code style="font-family: 'JetBrains Mono', monospace;">useGraph: true</code>, all schemas merge into one <code style="font-family: 'JetBrains Mono', monospace;">@graph</code> block. Cleaner entity linking, less HTTP overhead.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-tag">Performance</div>
+        <h3>Zero Runtime Overhead</h3>
+        <p>JSON-LD is rendered statically at build time. No schema processing code reaches the browser — pure static output.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-tag">Content Collections</div>
+        <h3>Zod Schema Exports</h3>
+        <p>Import <code style="font-family: 'JetBrains Mono', monospace;">articleSchema</code> or <code style="font-family: 'JetBrains Mono', monospace;">productSchema</code> to extend your content collection frontmatter validation with structured data fields.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-tag">Open Source</div>
+        <h3>MIT License</h3>
+        <p>No API keys, no accounts, no usage limits. Works fully offline during builds. No dependency on external services.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ───────────────────────────────────────────────────── -->
+  <section>
+    <div class="section-label">FAQ</div>
+    <h2 class="section-title">Frequently Asked Questions</h2>
+    <p class="section-desc" style="margin-bottom: 28px;">
+      This FAQ is itself rendered with <code style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: var(--accent);">&lt;FAQSchema /&gt;</code> — eligible for Google rich results.
+    </p>
+    <div class="faq-list">
+      {faqs.map((faq) => (
+        <div class="faq-item">
+          <h3>{faq.question}</h3>
+          <p>{faq.answer}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ── Live Demo ─────────────────────────────────────────────── -->
+  <section>
+    <div class="section-label">Live Demo</div>
+    <h2 class="section-title">Schemas Generated on This Page</h2>
+    <p class="section-desc" style="margin-bottom: 28px;">
+      LocalBusiness and Breadcrumb are injected globally via the layout. Open the Astro Dev Toolbar → "Structured Data" to inspect all schemas live.
+    </p>
+    <div class="demo-cols">
       <div class="schema-inspector">
         <h3>
           <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
             <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
           </svg>
-          Generiertes JSON-LD (LocalBusiness)
+          LocalBusiness (from config)
         </h3>
-        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
-          Folgendes Skript-Tag wurde automatisch in den Header injiziert:
-        </p>
-        <pre id="json-preview">Lade Schema...</pre>
+        <pre id="json-preview">Loading schema…</pre>
       </div>
-      
-      <div class="schema-inspector" style="margin-top: 16px;">
+      <div class="schema-inspector">
         <h3>
           <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
           </svg>
-          Generiertes JSON-LD (Breadcrumbs)
+          BreadcrumbList (auto from URL)
         </h3>
-        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
-          Automatisch generiert aus URL-Struktur:
-        </p>
-        <pre id="breadcrumb-preview">Lade Schema...</pre>
+        <pre id="breadcrumb-preview">Loading schema…</pre>
       </div>
     </div>
-  </div>
+  </section>
 
   <script is:inline>
-    // Finde das LD+JSON Skript für das LocalBusiness und das Breadcrumb und zeige es an
     setTimeout(() => {
       const scripts = document.querySelectorAll('script[type="application/ld+json"]');
       let businessData = null;
       let breadcrumbData = null;
-
       scripts.forEach(script => {
         try {
-          const parsed = JSON.parse(script.innerHTML);
-          if (parsed['@type'] === 'LocalBusiness') {
-            businessData = parsed;
-          } else if (parsed['@type'] === 'BreadcrumbList') {
-            breadcrumbData = parsed;
-          }
+          const parsed = JSON.parse(script.textContent);
+          // @graph mode: search inside graph array
+          const nodes = parsed['@graph'] || [parsed];
+          nodes.forEach(node => {
+            if (node['@type'] === 'LocalBusiness') businessData = node;
+            if (node['@type'] === 'BreadcrumbList') breadcrumbData = node;
+          });
         } catch(e) {}
       });
-
-      const previewEl = document.getElementById('json-preview');
-      if (previewEl) {
-        previewEl.innerText = businessData 
-          ? JSON.stringify(businessData, null, 2)
-          : 'Kein LocalBusiness Schema gefunden';
-      }
-
-      const breadcrumbEl = document.getElementById('breadcrumb-preview');
-      if (breadcrumbEl) {
-        breadcrumbEl.innerText = breadcrumbData 
-          ? JSON.stringify(breadcrumbData, null, 2)
-          : 'Kein Breadcrumb Schema gefunden';
-      }
+      const p = document.getElementById('json-preview');
+      if (p) p.textContent = businessData ? JSON.stringify(businessData, null, 2) : 'No LocalBusiness schema found.';
+      const b = document.getElementById('breadcrumb-preview');
+      if (b) b.textContent = breadcrumbData ? JSON.stringify(breadcrumbData, null, 2) : 'No BreadcrumbList schema found.';
     }, 100);
   </script>
 </Layout>

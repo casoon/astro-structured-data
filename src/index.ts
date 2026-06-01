@@ -5,6 +5,7 @@ import { z } from 'zod';
 export interface StructuredDataOptions {
   siteUrl?: string;
   useGraph?: boolean;
+  generateMeta?: boolean;
   defaultLocalBusiness?: Omit<LocalBusiness, '@context' | '@type'>;
   defaultArticlePublisher?: Omit<Organization, '@context' | '@type'>;
   defaultBrand?: Omit<Brand, '@context' | '@type'> | string;
@@ -15,6 +16,7 @@ export interface StructuredDataOptions {
 const configSchema = z.object({
   siteUrl: z.string().url('siteUrl must be a valid absolute URL (e.g. https://example.com)').optional(),
   useGraph: z.boolean().optional(),
+  generateMeta: z.boolean().optional(),
   defaultLocalBusiness: z.any().optional(),
   defaultArticlePublisher: z.any().optional(),
   defaultBrand: z.union([z.string(), z.any()]).optional(),

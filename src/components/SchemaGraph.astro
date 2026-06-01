@@ -1,6 +1,9 @@
 ---
 // SchemaGraph.astro
 // Renders all registered schemas as a single @graph block to optimize SEO.
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { generateMetaTags } from '../utils/meta';
 
 const graph = Astro.locals.structuredDataGraph || [];
 const hasItems = graph.length > 0;
@@ -16,5 +19,45 @@ const jsonLd = JSON.stringify({
   '@context': 'https://schema.org',
   '@graph': cleanedGraph,
 });
+
+const config = getGlobalConfig();
+const generateMeta = config.generateMeta || false;
+
+// Determine primary item from the graph for meta tags generation
+const primaryTypes = ['Article', 'BlogPosting', 'NewsArticle', 'Product', 'LocalBusiness', 'FAQPage', 'WebSite', 'WebPage'];
+function findPrimaryItem(items: any[]) {
+  for (const type of primaryTypes) {
+    const item = items.find(it => it['@type'] === type);
+    if (item) return item;
+  }
+  return items[0];
+}
+
+const primaryItem = hasItems ? findPrimaryItem(graph) : null;
+
+const sitemapAttrs: Record<string, string> = {};
+if (primaryItem) {
+  if (primaryItem.changefreq) {
+    sitemapAttrs['data-sitemap-changefreq'] = primaryItem.changefreq;
+  }
+  if (primaryItem.priority !== undefined) {
+    sitemapAttrs['data-sitemap-priority'] = primaryItem.priority.toString();
+  }
+}
+
+const seo = primaryItem && generateMeta 
+  ? generateMetaTags(primaryItem, { siteUrl: config.siteUrl, canonicalUrl: Astro.url.href })
+  : null;
 ---
-{hasItems && <script type="application/ld+json" set:html={jsonLd} />}
+{hasItems && (
+  <>
+    {seo?.canonical && <link rel="canonical" href={seo.canonical} />}
+    {seo && Object.entries(seo.openGraph).map(([prop, val]) => (
+      <meta property={prop} content={val} />
+    ))}
+    {seo && Object.entries(seo.twitter).map(([name, val]) => (
+      <meta name={name} content={val} />
+    ))}
+    <script type="application/ld+json" {...(seo?.sitemapAttrs || sitemapAttrs)} set:html={jsonLd} />
+  </>
+)}

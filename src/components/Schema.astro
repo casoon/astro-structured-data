@@ -2,6 +2,7 @@
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { registerSchema } from '../utils/graph';
+import { generateMetaTags } from '../utils/meta';
 
 interface Props {
   item: Record<string, any>;
@@ -10,6 +11,7 @@ interface Props {
 const { item } = Astro.props;
 const config = getGlobalConfig();
 const useGraph = config.useGraph || false;
+const generateMeta = config.generateMeta || false;
 
 if (useGraph) {
   registerSchema(Astro.locals, item);
@@ -20,5 +22,29 @@ const jsonLd = JSON.stringify({
   '@context': 'https://schema.org',
   ...item,
 });
+
+const sitemapAttrs: Record<string, string> = {};
+if (item.changefreq) {
+  sitemapAttrs['data-sitemap-changefreq'] = item.changefreq;
+}
+if (item.priority !== undefined) {
+  sitemapAttrs['data-sitemap-priority'] = item.priority.toString();
+}
+
+const seo = !useGraph && generateMeta 
+  ? generateMetaTags(item, { siteUrl: config.siteUrl, canonicalUrl: Astro.url.href })
+  : null;
 ---
-{!useGraph && <script type="application/ld+json" set:html={jsonLd} />}
+{!useGraph && (
+  <>
+    {seo?.canonical && <link rel="canonical" href={seo.canonical} />}
+    {seo && Object.entries(seo.openGraph).map(([prop, val]) => (
+      <meta property={prop} content={val} />
+    ))}
+    {seo && Object.entries(seo.twitter).map(([name, val]) => (
+      <meta name={name} content={val} />
+    ))}
+    <script type="application/ld+json" {...(seo?.sitemapAttrs || sitemapAttrs)} set:html={jsonLd} />
+  </>
+)}
+
