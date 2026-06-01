@@ -2,6 +2,8 @@ export interface GeneratedMeta {
   canonical?: string;
   description?: string;
   robots?: string;
+  author?: string;
+  readingTime?: string;
   alternates?: Array<{ href: string; hreflang: string }>;
   openGraph: Record<string, string | string[]>;
   twitter: Record<string, string>;
@@ -96,6 +98,28 @@ export function generateMetaTags(
     canonical = item.mainEntityOfPage['@id'];
   } else if (item.url && typeof item.url === 'string') {
     canonical = item.url;
+  }
+
+  // Extract author
+  const author = getAuthorName(item.author);
+
+  // Extract reading time (non-standard)
+  let readingTime: string | undefined = undefined;
+  if (item.readingTime !== undefined) {
+    readingTime = item.readingTime.toString();
+  } else if (typeof item.timeRequired === 'string') {
+    const match = item.timeRequired.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
+    if (match) {
+      const hours = parseInt(match[1] || '0', 10);
+      const minutes = parseInt(match[2] || '0', 10);
+      const seconds = parseInt(match[3] || '0', 10);
+      const totalMinutes = hours * 60 + minutes + (seconds >= 30 ? 1 : 0);
+      if (totalMinutes > 0) {
+        readingTime = `${totalMinutes} min`;
+      }
+    } else {
+      readingTime = item.timeRequired;
+    }
   }
 
   // Resolve robots metadata
@@ -332,6 +356,8 @@ export function generateMetaTags(
     canonical,
     description,
     robots,
+    author,
+    readingTime,
     alternates: alternates.length > 0 ? alternates : undefined,
     openGraph,
     twitter,

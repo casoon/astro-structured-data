@@ -47,6 +47,8 @@ const seo = !useGraph && generateMeta
     {seo?.canonical && <link rel="canonical" href={seo.canonical} />}
     {seo?.description && <meta name="description" content={seo.description} />}
     {seo?.robots && <meta name="robots" content={seo.robots} />}
+    {seo?.author && <meta name="author" content={seo.author} />}
+    {seo?.readingTime && <meta name="reading-time" content={seo.readingTime} />}
     {seo?.alternates?.map(({ href, hreflang }) => (
       <link rel="alternate" hreflang={hreflang} href={href} />
     ))}

@@ -8,6 +8,10 @@ export default defineConfig({
     structuredData({
       siteUrl: 'https://example.com',
       useGraph: true,
+      generateMeta: true,
+      siteName: 'Astro Demo Store Website',
+      locale: 'de_DE',
+      twitterSite: '@astro_demo_store',
       defaultLocalBusiness: {
         name: 'Astro Demo Store',
         imageUrl: 'https://example.com/store.jpg',

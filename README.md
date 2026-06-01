@@ -19,7 +19,12 @@ import structuredData from '@casoon/astro-structured-data';
 export default defineConfig({
   site: 'https://example.com', // used automatically by the integration
   integrations: [
-    structuredData(),
+    structuredData({
+      generateMeta: true,
+      siteName: 'My Awesome Website',
+      locale: 'de_DE',
+      twitterSite: '@mywebsite',
+    }),
   ],
 });
 ```
@@ -27,7 +32,10 @@ export default defineConfig({
 If you don't set `site` in your Astro config, pass `siteUrl` explicitly:
 
 ```js
-structuredData({ siteUrl: 'https://example.com' })
+structuredData({ 
+  siteUrl: 'https://example.com',
+  generateMeta: true,
+})
 ```
 
 ## Configuration
@@ -53,6 +61,8 @@ When `generateMeta: true` is enabled, the integration automatically derives and 
 * **Canonical**: `<link rel="canonical" href="...">`
 * **Description**: `<meta name="description" content="...">`
 * **Robots**: `<meta name="robots" content="...">` (derived from `item.robots` or `item.noindex` / `item.nofollow`)
+* **Author**: `<meta name="author" content="...">` (derived from schema `item.author`)
+* **Reading Time**: `<meta name="reading-time" content="...">` (non-standard; derived from `item.readingTime` or parsed from ISO duration `item.timeRequired`)
 * **Alternates (hreflang)**: `<link rel="alternate" hreflang="..." href="...">` (extracted from `item.alternates` or schema translations)
 * **OpenGraph**: `og:title`, `og:description`, `og:image`, `og:image:width/height/type/alt`, `og:url`, `og:type`, `og:site_name`, `og:locale`, `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag` (relative images are automatically resolved to absolute URLs using your config's `siteUrl`)
 * **Twitter Cards**: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`
