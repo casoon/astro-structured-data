@@ -31,7 +31,26 @@ if (item.priority !== undefined) {
   sitemapAttrs['data-sitemap-priority'] = item.priority.toString();
 }
 
-const seo = !useGraph && generateMeta 
+// Only primary schema types generate meta tags; first one per page wins.
+const PRIMARY_META_TYPES = new Set([
+  'Article', 'BlogPosting', 'NewsArticle',
+  'WebPage', 'ItemPage', 'AboutPage', 'ContactPage', 'CollectionPage',
+  'Product', 'ProductGroup',
+  'LocalBusiness',
+  'Event',
+  'JobPosting',
+  'SoftwareApplication', 'WebApplication', 'MobileApplication',
+  'ProfilePage',
+  'FAQPage',
+  'WebSite',
+]);
+
+const canGenerateMeta = !useGraph && generateMeta && PRIMARY_META_TYPES.has(item['@type']);
+const alreadyGenerated = !!Astro.locals.__structuredDataMetaGenerated;
+if (canGenerateMeta && !alreadyGenerated) {
+  Astro.locals.__structuredDataMetaGenerated = true;
+}
+const seo = canGenerateMeta && !alreadyGenerated
   ? generateMetaTags(item, {
       siteUrl: config.siteUrl,
       canonicalUrl: Astro.url.href,
