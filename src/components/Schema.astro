@@ -32,14 +32,28 @@ if (item.priority !== undefined) {
 }
 
 const seo = !useGraph && generateMeta 
-  ? generateMetaTags(item, { siteUrl: config.siteUrl, canonicalUrl: Astro.url.href })
+  ? generateMetaTags(item, {
+      siteUrl: config.siteUrl,
+      canonicalUrl: Astro.url.href,
+      siteName: config.siteName,
+      locale: config.locale,
+      twitterSite: config.twitterSite,
+      twitterCreator: config.twitterCreator,
+    })
   : null;
 ---
 {!useGraph && (
   <>
     {seo?.canonical && <link rel="canonical" href={seo.canonical} />}
+    {seo?.description && <meta name="description" content={seo.description} />}
+    {seo?.robots && <meta name="robots" content={seo.robots} />}
+    {seo?.alternates?.map(({ href, hreflang }) => (
+      <link rel="alternate" hreflang={hreflang} href={href} />
+    ))}
     {seo && Object.entries(seo.openGraph).map(([prop, val]) => (
-      <meta property={prop} content={val} />
+      Array.isArray(val)
+        ? val.map((v) => <meta property={prop} content={v} />)
+        : <meta property={prop} content={val} />
     ))}
     {seo && Object.entries(seo.twitter).map(([name, val]) => (
       <meta name={name} content={val} />

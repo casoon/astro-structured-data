@@ -36,7 +36,11 @@ structuredData({ siteUrl: 'https://example.com' })
 |---|---|---|---|
 | `siteUrl` | `string` | No | Absolute base URL — falls back to Astro's `site` config |
 | `useGraph` | `boolean` | No | Wrap all schemas in a `@graph` array |
-| `generateMeta` | `boolean` | No | Generate standard HTML head meta tags (og:*, twitter:*, canonical) from schemas |
+| `generateMeta` | `boolean` | No | Generate standard HTML head meta tags (og:*, twitter:*, canonical, etc.) from schemas |
+| `siteName` | `string` | No | Global site name used for `og:site_name` |
+| `locale` | `string` | No | Global locale used for `og:locale` (e.g. `de_DE`) |
+| `twitterSite` | `string` | No | Twitter site handle used for `twitter:site` (e.g. `@my_site`) |
+| `twitterCreator` | `string` | No | Fallback Twitter creator handle used for `twitter:creator` (e.g. `@author`) |
 | `defaultLocalBusiness` | `LocalBusiness` | No | Site-wide local business defaults merged into `LocalBusinessSchema` |
 | `defaultArticlePublisher` | `Organization` | No | Default publisher for `ArticleSchema` and `OrganizationSchema` |
 | `defaultBrand` | `Brand \| string` | No | Default brand for `ProductSchema` |
@@ -47,8 +51,11 @@ structuredData({ siteUrl: 'https://example.com' })
 
 When `generateMeta: true` is enabled, the integration automatically derives and renders corresponding `<meta>` and `<link>` elements inside the page `<head>` during render time:
 * **Canonical**: `<link rel="canonical" href="...">`
-* **OpenGraph**: `og:title`, `og:description`, `og:image`, `og:url`, `og:type` (relative images are automatically resolved to absolute URLs using your config's `siteUrl`)
-* **Twitter Cards**: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+* **Description**: `<meta name="description" content="...">`
+* **Robots**: `<meta name="robots" content="...">` (derived from `item.robots` or `item.noindex` / `item.nofollow`)
+* **Alternates (hreflang)**: `<link rel="alternate" hreflang="..." href="...">` (extracted from `item.alternates` or schema translations)
+* **OpenGraph**: `og:title`, `og:description`, `og:image`, `og:image:width/height/type/alt`, `og:url`, `og:type`, `og:site_name`, `og:locale`, `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag` (relative images are automatically resolved to absolute URLs using your config's `siteUrl`)
+* **Twitter Cards**: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`
 
 ### Sitemap Metadata Support
 You can also define sitemap crawl properties directly in your components (e.g. `changefreq="weekly" priority={0.8}`). 

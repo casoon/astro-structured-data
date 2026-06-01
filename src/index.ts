@@ -6,6 +6,10 @@ export interface StructuredDataOptions {
   siteUrl?: string;
   useGraph?: boolean;
   generateMeta?: boolean;
+  siteName?: string;
+  locale?: string;
+  twitterSite?: string;
+  twitterCreator?: string;
   defaultLocalBusiness?: Omit<LocalBusiness, '@context' | '@type'>;
   defaultArticlePublisher?: Omit<Organization, '@context' | '@type'>;
   defaultBrand?: Omit<Brand, '@context' | '@type'> | string;
@@ -17,6 +21,10 @@ const configSchema = z.object({
   siteUrl: z.string().url('siteUrl must be a valid absolute URL (e.g. https://example.com)').optional(),
   useGraph: z.boolean().optional(),
   generateMeta: z.boolean().optional(),
+  siteName: z.string().optional(),
+  locale: z.string().optional(),
+  twitterSite: z.string().optional(),
+  twitterCreator: z.string().optional(),
   defaultLocalBusiness: z.any().optional(),
   defaultArticlePublisher: z.any().optional(),
   defaultBrand: z.union([z.string(), z.any()]).optional(),
