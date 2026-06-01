@@ -56,6 +56,8 @@ import { ArticleSchema, FAQSchema } from '@casoon/astro-structured-data/componen
 
 ### ArticleSchema
 
+Docs: [schema.org/Article](https://schema.org/Article) · [Google: Article](https://developers.google.com/search/docs/appearance/structured-data/article)
+
 ```astro
 <ArticleSchema
   title="My Article"
@@ -82,6 +84,8 @@ import { ArticleSchema, FAQSchema } from '@casoon/astro-structured-data/componen
 
 ### FAQSchema
 
+Docs: [schema.org/FAQPage](https://schema.org/FAQPage) · [Google: FAQ](https://developers.google.com/search/docs/appearance/structured-data/faqpage)
+
 ```astro
 <FAQSchema
   questions={[
@@ -98,6 +102,8 @@ import { ArticleSchema, FAQSchema } from '@casoon/astro-structured-data/componen
 ---
 
 ### ProductSchema
+
+Docs: [schema.org/Product](https://schema.org/Product) · [Google: Product](https://developers.google.com/search/docs/appearance/structured-data/product)
 
 ```astro
 <ProductSchema
@@ -136,6 +142,8 @@ import { ArticleSchema, FAQSchema } from '@casoon/astro-structured-data/componen
 
 ### LocalBusinessSchema
 
+Docs: [schema.org/LocalBusiness](https://schema.org/LocalBusiness) · [Google: Local Business](https://developers.google.com/search/docs/appearance/structured-data/local-business)
+
 ```astro
 <LocalBusinessSchema
   name="My Shop"
@@ -166,6 +174,8 @@ All props fall back to `defaultLocalBusiness` from the integration config.
 
 ### BreadcrumbSchema
 
+Docs: [schema.org/BreadcrumbList](https://schema.org/BreadcrumbList) · [Google: Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)
+
 ```astro
 <BreadcrumbSchema
   items={[
@@ -183,6 +193,8 @@ All props fall back to `defaultLocalBusiness` from the integration config.
 ---
 
 ### AutoBreadcrumbSchema
+
+Docs: [schema.org/BreadcrumbList](https://schema.org/BreadcrumbList) · [Google: Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)
 
 Generates breadcrumbs automatically from the current URL path. Segments are converted from kebab-case to title case by default.
 
@@ -204,6 +216,8 @@ Generates breadcrumbs automatically from the current URL path. Segments are conv
 ---
 
 ### EventSchema
+
+Docs: [schema.org/Event](https://schema.org/Event) · [Google: Event](https://developers.google.com/search/docs/appearance/structured-data/event)
 
 ```astro
 <EventSchema
@@ -240,6 +254,8 @@ Generates breadcrumbs automatically from the current URL path. Segments are conv
 
 ### OrganizationSchema
 
+Docs: [schema.org/Organization](https://schema.org/Organization) · [Google: Organization](https://developers.google.com/search/docs/appearance/structured-data/organization)
+
 ```astro
 <OrganizationSchema
   name="ACME Corp"
@@ -262,6 +278,8 @@ Generates breadcrumbs automatically from the current URL path. Segments are conv
 
 ### WebSiteSchema
 
+Docs: [schema.org/WebSite](https://schema.org/WebSite) · [Google: Sitelinks Searchbox](https://developers.google.com/search/docs/appearance/structured-data/sitelinks-searchbox)
+
 ```astro
 <WebSiteSchema name="My Site" />
 
@@ -278,6 +296,8 @@ Generates breadcrumbs automatically from the current URL path. Segments are conv
 ---
 
 ### ProfilePageSchema
+
+Docs: [schema.org/ProfilePage](https://schema.org/ProfilePage) · [Google: Profile Page](https://developers.google.com/search/docs/appearance/structured-data/profile-page)
 
 ```astro
 <ProfilePageSchema
@@ -299,6 +319,8 @@ Generates breadcrumbs automatically from the current URL path. Segments are conv
 ---
 
 ### CollectionPageSchema
+
+Docs: [schema.org/CollectionPage](https://schema.org/CollectionPage)
 
 For product listing / archive pages.
 
@@ -322,6 +344,8 @@ For product listing / archive pages.
 ---
 
 ### JobPostingSchema
+
+Docs: [schema.org/JobPosting](https://schema.org/JobPosting) · [Google: Job Posting](https://developers.google.com/search/docs/appearance/structured-data/job-posting)
 
 ```astro
 <JobPostingSchema
@@ -355,6 +379,8 @@ For product listing / archive pages.
 ---
 
 ### SoftwareAppSchema
+
+Docs: [schema.org/SoftwareApplication](https://schema.org/SoftwareApplication) · [Google: Software App](https://developers.google.com/search/docs/appearance/structured-data/software-app)
 
 ```astro
 <SoftwareAppSchema
