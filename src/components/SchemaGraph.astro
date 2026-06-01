@@ -1,0 +1,20 @@
+---
+// SchemaGraph.astro
+// Renders all registered schemas as a single @graph block to optimize SEO.
+
+const graph = Astro.locals.structuredDataGraph || [];
+const hasItems = graph.length > 0;
+
+// Remove the individual @context fields inside the graph items to keep it clean,
+// since the root object will have the global @context: 'https://schema.org'.
+const cleanedGraph = graph.map((item: any) => {
+  const { '@context': _, ...rest } = item;
+  return rest;
+});
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': cleanedGraph,
+});
+---
+{hasItems && <script type="application/ld+json" set:html={jsonLd} />}

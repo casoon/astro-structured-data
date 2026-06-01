@@ -1,0 +1,57 @@
+---
+import type { Article } from 'schema-dts';
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface Props {
+  title: string;
+  description: string;
+  datePublished: string;
+  dateModified?: string;
+  authorName: string | string[];
+  authorType?: 'Person' | 'Organization';
+  imageUrl: string | string[];
+  publisherName?: string;
+  publisherLogo?: string;
+}
+
+const {
+  title,
+  description,
+  datePublished,
+  dateModified,
+  authorName,
+  authorType = 'Person',
+  imageUrl,
+  publisherName,
+  publisherLogo,
+} = Astro.props;
+
+const globalConfig = getGlobalConfig();
+
+const articleSchema: Article = {
+  '@type': 'Article',
+  headline: title,
+  description: description,
+  datePublished: datePublished,
+  dateModified: dateModified || datePublished,
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': Astro.url.href,
+  },
+  image: Array.isArray(imageUrl) ? imageUrl : [imageUrl],
+  author: Array.isArray(authorName)
+    ? authorName.map(name => ({ '@type': authorType, name }))
+    : { '@type': authorType, name: authorName },
+  publisher: {
+    '@type': 'Organization',
+    name: publisherName || globalConfig.defaultArticlePublisher?.name || 'Publisher',
+    logo: {
+      '@type': 'ImageObject',
+      url: publisherLogo || globalConfig.defaultArticlePublisher?.logo?.url || '',
+    }
+  }
+};
+---
+<Schema item={articleSchema} />

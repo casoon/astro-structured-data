@@ -1,0 +1,147 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { FAQSchema } from 'astro-structured-data/components';
+
+const faqs = [
+  {
+    question: "Was ist der Astro Structured Data Generator?",
+    answer: "Es ist ein Astro v6 Plugin, das automatisch standardisierte JSON-LD strukturierte Daten für Suchmaschinen erzeugt. Dadurch wird die SEO deiner Website verbessert."
+  },
+  {
+    question: "Unterstützt das Plugin TypeScript?",
+    answer: "Ja, das Plugin ist vollständig in TypeScript geschrieben und nutzt intern schema-dts, um 100% typsichere Props und Autovervollständigung anzubieten."
+  },
+  {
+    question: "Wie funktioniert die Dev Toolbar App?",
+    answer: "Die Dev Toolbar App parst die aktuelle Seite live im Browser, extrahiert alle JSON-LD Daten und zeigt dir Warnungen oder Fehler an (z.B. fehlende Google-Pflichtfelder)."
+  }
+];
+---
+
+<Layout 
+  title="FAQ Schema" 
+  description="Häufig gestellte Fragen (FAQs) strukturiert und interaktiv als FAQPage Schema.org Typ."
+>
+  <!-- Injects the FAQ Page schema.org script tag -->
+  <FAQSchema questions={faqs} />
+
+  <div class="grid">
+    <div>
+      <span class="badge" style="margin-bottom: 12px;">FAQPage Schema</span>
+      <h1>Häufig gestellte Fragen (FAQs)</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        Klicke auf die Fragen, um die Antworten anzuzeigen. Suchmaschinen erfassen diese Daten über das injizierte JSON-LD und stellen sie als Rich Snippets dar.
+      </p>
+
+      <div class="accordion-container">
+        {faqs.map((faq, index) => (
+          <details class="accordion-item" open={index === 0}>
+            <summary class="accordion-header">
+              {faq.question}
+              <span class="icon">▼</span>
+            </summary>
+            <div class="accordion-content">
+              <p>{faq.answer}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Generiertes JSON-LD (FAQPage)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Wird zur Laufzeit im Markup ausgegeben:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .accordion-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .accordion-item {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .accordion-item[open] {
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.05);
+    }
+
+    .accordion-header {
+      padding: 18px 24px;
+      font-weight: 600;
+      font-size: 1.05rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      list-style: none;
+      user-select: none;
+    }
+
+    .accordion-header::-webkit-details-marker {
+      display: none;
+    }
+
+    .accordion-header .icon {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      transition: transform 0.2s;
+    }
+
+    .accordion-item[open] .accordion-header .icon {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .accordion-content {
+      padding: 0 24px 24px 24px;
+      color: var(--text-secondary);
+      border-top: 1px solid transparent;
+    }
+
+    .accordion-item[open] .accordion-content {
+      border-top-color: rgba(51, 65, 85, 0.5);
+    }
+  </style>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let faqData = null;
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          if (parsed['@type'] === 'FAQPage') {
+            faqData = parsed;
+          }
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = faqData 
+          ? JSON.stringify(faqData, null, 2)
+          : 'Kein FAQPage Schema gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>

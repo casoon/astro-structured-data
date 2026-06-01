@@ -1,0 +1,46 @@
+---
+import type { SoftwareApplication } from 'schema-dts';
+import Schema from './Schema.astro';
+
+interface Props {
+  name: string;
+  operatingSystem?: string; // e.g. "Windows, macOS, Linux" or "Web"
+  applicationCategory?: string; // e.g. "DeveloperApplication", "Game", "BusinessApplication"
+  price?: string | number;
+  priceCurrency?: string;
+  ratingValue?: number;
+  reviewCount?: number;
+}
+
+const {
+  name,
+  operatingSystem = 'Web',
+  applicationCategory = 'DeveloperApplication',
+  price,
+  priceCurrency,
+  ratingValue,
+  reviewCount,
+} = Astro.props;
+
+const appSchema: SoftwareApplication = {
+  '@type': 'SoftwareApplication',
+  name,
+  operatingSystem,
+  applicationCategory,
+  ...(price !== undefined && priceCurrency && {
+    offers: {
+      '@type': 'Offer',
+      price,
+      priceCurrency,
+    }
+  }),
+  ...(ratingValue && reviewCount && {
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue,
+      reviewCount,
+    }
+  })
+};
+---
+<Schema item={appSchema} />

@@ -1,0 +1,33 @@
+---
+import type { WebSite } from 'schema-dts';
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface Props {
+  name: string;
+  url?: string;
+  searchQueryInput?: string; // e.g. "q" or "query" to enable Sitelinks Searchbox
+}
+
+const { name, url, searchQueryInput } = Astro.props;
+const globalConfig = getGlobalConfig();
+const siteUrl = url || globalConfig.siteUrl || Astro.url.origin;
+
+const websiteSchema: WebSite = {
+  '@type': 'WebSite',
+  name,
+  url: siteUrl,
+  ...(searchQueryInput && {
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${siteUrl.replace(/\/$/, '')}/?${searchQueryInput}={search_term_string}`
+      },
+      'query-input': `required name=${searchQueryInput}`
+    } as any
+  })
+};
+---
+<Schema item={websiteSchema} />

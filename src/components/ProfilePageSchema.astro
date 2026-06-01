@@ -1,0 +1,33 @@
+---
+import type { ProfilePage } from 'schema-dts';
+import Schema from './Schema.astro';
+
+interface Props {
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  sameAs?: string[];
+  publishingPrinciples?: string;
+}
+
+const {
+  name,
+  description,
+  imageUrl,
+  sameAs,
+  publishingPrinciples,
+} = Astro.props;
+
+const profileSchema: ProfilePage = {
+  '@type': 'ProfilePage',
+  mainEntity: {
+    '@type': 'Person',
+    name,
+    ...(imageUrl && { image: imageUrl }),
+    ...(description && { description }),
+    ...(sameAs && { sameAs }),
+    ...(publishingPrinciples && { publishingPrinciples })
+  }
+};
+---
+<Schema item={profileSchema} />

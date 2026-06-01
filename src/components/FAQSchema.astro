@@ -1,0 +1,28 @@
+---
+import type { FAQPage } from 'schema-dts';
+import Schema from './Schema.astro';
+
+interface QuestionAnswer {
+  question: string;
+  answer: string;
+}
+
+interface Props {
+  questions: QuestionAnswer[];
+}
+
+const { questions } = Astro.props;
+
+const faqSchema: FAQPage = {
+  '@type': 'FAQPage',
+  mainEntity: questions.map(qa => ({
+    '@type': 'Question',
+    name: qa.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: qa.answer,
+    }
+  }))
+};
+---
+<Schema item={faqSchema} />

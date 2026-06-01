@@ -1,0 +1,185 @@
+---
+import type { Product, Offer, AggregateOffer, Review, Brand } from 'schema-dts';
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface ReviewItem {
+  authorName: string;
+  authorType?: 'Person' | 'Organization';
+  datePublished?: string;
+  reviewBody: string;
+  ratingValue: number;
+  bestRating?: number;
+}
+
+interface PriceRange {
+  lowPrice: string | number;
+  highPrice: string | number;
+  priceCurrency: string;
+  offerCount?: number;
+}
+
+interface Props {
+  name: string;
+  description: string;
+  imageUrl: string | string[];
+  
+  // Single Offer (Simple mode)
+  price?: string | number;
+  priceCurrency?: string;
+  availability?: 'InStock' | 'OutOfStock' | 'PreOrder' | 'OnlineOnly';
+  
+  // Advanced E-Commerce Offers
+  offers?: Omit<Offer, '@context'> | Omit<Offer, '@context'>[];
+  priceRange?: PriceRange;
+
+  // Identifiers & Brand
+  brand?: string | Omit<Brand, '@context'>;
+  sku?: string;
+  gtin?: string;
+  
+  // Ratings & Reviews
+  ratingValue?: number;
+  reviewCount?: number;
+  reviews?: ReviewItem[];
+
+  // Local Overrides for Shipping & Return Policy
+  shippingDetails?: Record<string, any>;
+  returnPolicy?: Record<string, any>;
+}
+
+const {
+  name,
+  description,
+  imageUrl,
+  price,
+  priceCurrency,
+  availability = 'InStock',
+  offers,
+  priceRange,
+  brand,
+  sku,
+  gtin,
+  ratingValue,
+  reviewCount,
+  reviews,
+  shippingDetails,
+  returnPolicy
+} = Astro.props;
+
+const globalConfig = getGlobalConfig();
+
+// 1. Resolve Shipping Details & Return Policy
+const finalShipping = shippingDetails || globalConfig.defaultShippingDetails;
+const finalReturn = returnPolicy || globalConfig.defaultReturnPolicy;
+
+const shippingObj = finalShipping ? {
+  shippingDetails: {
+    '@type': 'OfferShippingDetails',
+    ...finalShipping
+  }
+} : {};
+
+const returnObj = finalReturn ? {
+  hasMerchantReturnPolicy: {
+    '@type': 'MerchantReturnPolicy',
+    ...finalReturn
+  }
+} : {};
+
+// Helper to inject shipping/return info into an Offer
+const decorateOffer = (offer: any) => ({
+  '@type': 'Offer',
+  ...offer,
+  ...shippingObj,
+  ...returnObj
+});
+
+// 2. Resolve Offers Structure
+let parsedOffers: any = undefined;
+
+if (offers) {
+  if (Array.isArray(offers)) {
+    parsedOffers = offers.map(o => decorateOffer(o));
+  } else {
+    parsedOffers = decorateOffer(offers);
+  }
+} else if (priceRange) {
+  const aggregateOffer: AggregateOffer = {
+    '@type': 'AggregateOffer',
+    lowPrice: priceRange.lowPrice,
+    highPrice: priceRange.highPrice,
+    priceCurrency: priceRange.priceCurrency,
+    ...(priceRange.offerCount && { offerCount: priceRange.offerCount }),
+    url: Astro.url.href,
+    ...shippingObj,
+    ...returnObj
+  };
+  parsedOffers = aggregateOffer;
+} else if (price !== undefined && priceCurrency !== undefined) {
+  parsedOffers = decorateOffer({
+    price,
+    priceCurrency,
+    availability: `https://schema.org/${availability}`,
+    url: Astro.url.href,
+  });
+}
+
+// 3. Resolve Brand (with config default fallback)
+let resolvedBrand: any = undefined;
+const activeBrand = brand || globalConfig.defaultBrand;
+if (activeBrand) {
+  if (typeof activeBrand === 'string') {
+    resolvedBrand = {
+      '@type': 'Brand',
+      name: activeBrand
+    };
+  } else {
+    resolvedBrand = {
+      '@type': 'Brand',
+      ...activeBrand
+    };
+  }
+}
+
+// 4. Resolve Reviews
+let resolvedReviews: Review[] | undefined = undefined;
+if (reviews && reviews.length > 0) {
+  resolvedReviews = reviews.map(r => ({
+    '@type': 'Review',
+    author: {
+      '@type': r.authorType || 'Person',
+      name: r.authorName
+    },
+    ...(r.datePublished && { datePublished: r.datePublished }),
+    reviewBody: r.reviewBody,
+    reviewRating: {
+      '@type': 'Rating',
+      ratingValue: r.ratingValue,
+      bestRating: r.bestRating || 5
+    }
+  }));
+}
+
+// 5. Build Final Product Schema
+const productSchema: Product = {
+  '@type': 'Product',
+  name,
+  description,
+  image: Array.isArray(imageUrl) ? imageUrl : [imageUrl],
+  ...(parsedOffers && { offers: parsedOffers }),
+  ...(resolvedBrand && { brand: resolvedBrand }),
+  ...(sku && { sku }),
+  ...(gtin && { gtin }),
+  ...(ratingValue && reviewCount && {
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue,
+      reviewCount,
+    }
+  }),
+  ...(resolvedReviews && { review: resolvedReviews })
+};
+---
+<Schema item={productSchema} />

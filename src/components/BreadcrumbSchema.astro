@@ -1,0 +1,26 @@
+---
+import type { BreadcrumbList } from 'schema-dts';
+import Schema from './Schema.astro';
+
+interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+
+const breadcrumbSchema: BreadcrumbList = {
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: item.url,
+  })),
+};
+---
+<Schema item={breadcrumbSchema} />

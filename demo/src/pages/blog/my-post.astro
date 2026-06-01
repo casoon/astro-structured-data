@@ -1,0 +1,139 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ArticleSchema } from 'astro-structured-data/components';
+import { getEntry, render } from 'astro:content';
+
+const entry = await getEntry('blog', 'my-post');
+if (!entry) {
+  return Astro.redirect('/404');
+}
+
+const { Content } = await render(entry);
+const post = entry.data;
+---
+
+<Layout 
+  title={post.title} 
+  description={post.description}
+>
+  <!-- Injects the Article schema.org script tag. Merges default publisher configuration. -->
+  <ArticleSchema 
+    title={post.title}
+    description={post.description}
+    datePublished={post.datePublished}
+    dateModified={post.dateModified}
+    authorName={post.authorName}
+    authorType={post.authorType}
+    imageUrl={post.imageUrl}
+  />
+
+  <div class="grid">
+    <div>
+      <span class="badge" style="margin-bottom: 12px;">Article Schema & Content Collections</span>
+      
+      <article class="blog-post">
+        <h1>{post.title}</h1>
+        
+        <div class="post-meta">
+          <span>Veröffentlicht am: <strong>01. Juni 2026</strong></span>
+          <span>•</span>
+          <span>Autorin: <strong>{post.authorName}</strong></span>
+        </div>
+
+        <div class="post-image-placeholder">
+          <span>[ Blog Cover Image: astro-v6-cover.jpg ]</span>
+        </div>
+
+        <div class="post-body">
+          <Content />
+        </div>
+      </article>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Generiertes JSON-LD (Article)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Daten wurden automatisch aus der Markdown Content Collection geladen und per Zod validiert:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .blog-post {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 32px;
+    }
+
+    .post-meta {
+      display: flex;
+      gap: 12px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+
+    .post-image-placeholder {
+      background: linear-gradient(135deg, #1e1b4b, #311042);
+      border: 1px solid var(--border-color);
+      height: 250px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .post-body :global(p) {
+      margin-bottom: 16px;
+      color: #e2e8f0;
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .post-body :global(h3) {
+      margin-top: 24px;
+      color: var(--accent);
+    }
+  </style>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let graphData = null;
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          if (parsed['@graph']) {
+            // Find article inside graph
+            const article = parsed['@graph'].find(item => item['@type'] === 'Article');
+            if (article) {
+              graphData = article;
+            }
+          }
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = graphData 
+          ? JSON.stringify(graphData, null, 2)
+          : 'Kein Article Schema im @graph gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>

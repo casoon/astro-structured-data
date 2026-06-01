@@ -1,0 +1,58 @@
+---
+import type { Organization } from 'schema-dts';
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface Props {
+  name?: string;
+  url?: string;
+  logoUrl?: string;
+  sameAs?: string[];
+  telephone?: string;
+  email?: string;
+  address?: {
+    streetAddress: string;
+    addressLocality: string;
+    addressRegion?: string;
+    postalCode: string;
+    addressCountry: string;
+  };
+}
+
+const {
+  name,
+  url,
+  logoUrl,
+  sameAs,
+  telephone,
+  email,
+  address,
+} = Astro.props;
+
+const globalConfig = getGlobalConfig();
+
+const orgSchema: Organization = {
+  '@type': 'Organization',
+  name: name || globalConfig.defaultArticlePublisher?.name || 'Organization',
+  url: url || globalConfig.siteUrl || Astro.url.origin,
+  logo: {
+    '@type': 'ImageObject',
+    url: logoUrl || globalConfig.defaultArticlePublisher?.logo?.url || '',
+  },
+  ...(sameAs && { sameAs }),
+  ...(telephone && { telephone }),
+  ...(email && { email }),
+  ...(address && {
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: address.streetAddress,
+      addressLocality: address.addressLocality,
+      ...(address.addressRegion && { addressRegion: address.addressRegion }),
+      postalCode: address.postalCode,
+      addressCountry: address.addressCountry,
+    }
+  })
+};
+---
+<Schema item={orgSchema} />

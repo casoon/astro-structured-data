@@ -1,0 +1,112 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout 
+  title="LocalBusiness & Setup" 
+  description="Demo-Startseite für das Astro Structured Data Generator Plugin, das LocalBusiness-Daten automatisch über die Config einbindet."
+>
+  <div class="grid">
+    <div>
+      <h1>Astro Structured Data Generator</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 1.1rem;">
+        Willkommen in der interaktiven Sandbox für unser Astro v6 Structured Data Plugin. 
+        Dieses Plugin generiert vollautomatisch standardisierte und validierte JSON-LD Daten für Suchmaschinen.
+      </p>
+
+      <div class="card">
+        <h2>1. Globales LocalBusiness & Setup</h2>
+        <p style="margin-bottom: 16px;">
+          In <code>astro.config.mjs</code> haben wir Standardwerte für das lokale Geschäft (<code>LocalBusiness</code>) definiert. 
+          Diese werden über die Komponente <code>&lt;LocalBusinessSchema /&gt;</code> in unserem Layout automatisch auf jeder Seite gerendert.
+        </p>
+        <div style="background-color: var(--bg-tertiary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+          <span style="color: #6366f1;">// In astro.config.mjs</span><br/>
+          structuredData(&lbrace;<br/>
+          &nbsp;&nbsp;siteUrl: 'https://example.com',<br/>
+          &nbsp;&nbsp;defaultLocalBusiness: &lbrace;<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;name: 'Astro Demo Store',<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;address: &lbrace; ... &rbrace;,<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;telephone: '+49 30 1234567',<br/>
+          &nbsp;&nbsp;&rbrace;<br/>
+          &rbrace;)
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Astro Dev Toolbar</h2>
+        <p style="margin-bottom: 16px;">
+          Das Plugin registriert automatisch eine <strong>Dev Toolbar App</strong>. 
+          Wenn du die Website im Entwicklungsmodus (<code>npm run dev</code>) aufrufst, siehst du unten im Browser die Astro Toolbar. 
+          Klicke auf das Datenbank-Symbol <strong>"Structured Data"</strong>, um alle JSON-LD Skripte dieser Seite live zu validieren!
+        </p>
+        <div style="display: flex; gap: 10px; align-items: center; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); padding: 12px; border-radius: 8px; font-size: 0.9rem; color: var(--accent);">
+          <span>💡</span>
+          <span>Der Validator warnt dich auch vor fehlenden Feldern (z. B. wenn bei einem Artikel das Beitragsbild oder der Autor fehlt).</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Generiertes JSON-LD (LocalBusiness)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Folgendes Skript-Tag wurde automatisch in den Header injiziert:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+      
+      <div class="schema-inspector" style="margin-top: 16px;">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+          Generiertes JSON-LD (Breadcrumbs)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Automatisch generiert aus URL-Struktur:
+        </p>
+        <pre id="breadcrumb-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    // Finde das LD+JSON Skript für das LocalBusiness und das Breadcrumb und zeige es an
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let businessData = null;
+      let breadcrumbData = null;
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          if (parsed['@type'] === 'LocalBusiness') {
+            businessData = parsed;
+          } else if (parsed['@type'] === 'BreadcrumbList') {
+            breadcrumbData = parsed;
+          }
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = businessData 
+          ? JSON.stringify(businessData, null, 2)
+          : 'Kein LocalBusiness Schema gefunden';
+      }
+
+      const breadcrumbEl = document.getElementById('breadcrumb-preview');
+      if (breadcrumbEl) {
+        breadcrumbEl.innerText = breadcrumbData 
+          ? JSON.stringify(breadcrumbData, null, 2)
+          : 'Kein Breadcrumb Schema gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>

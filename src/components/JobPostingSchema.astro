@@ -1,0 +1,82 @@
+---
+import type { JobPosting } from 'schema-dts';
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface Props {
+  title: string;
+  description: string; // Google prefers HTML for description
+  datePosted: string;
+  validThrough?: string;
+  employmentType?: 'FULL_TIME' | 'PART_TIME' | 'CONTRACTOR' | 'TEMPORARY' | 'INTERN' | 'VOLUNTEER' | 'OTHER';
+  hiringOrganizationName?: string;
+  hiringOrganizationUrl?: string;
+  hiringOrganizationLogo?: string;
+  jobLocation: {
+    streetAddress: string;
+    addressLocality: string;
+    addressRegion?: string;
+    postalCode: string;
+    addressCountry: string;
+  };
+  baseSalary?: {
+    value: number | string;
+    currency: string;
+    unit?: 'HOUR' | 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
+  };
+}
+
+const {
+  title,
+  description,
+  datePosted,
+  validThrough,
+  employmentType = 'FULL_TIME',
+  hiringOrganizationName,
+  hiringOrganizationUrl,
+  hiringOrganizationLogo,
+  jobLocation,
+  baseSalary,
+} = Astro.props;
+
+const globalConfig = getGlobalConfig();
+
+const jobSchema: JobPosting = {
+  '@type': 'JobPosting',
+  title,
+  description,
+  datePosted,
+  ...(validThrough && { validThrough }),
+  employmentType,
+  hiringOrganization: {
+    '@type': 'Organization',
+    name: hiringOrganizationName || globalConfig.defaultArticlePublisher?.name || 'Employer',
+    url: hiringOrganizationUrl || globalConfig.siteUrl || Astro.url.origin,
+    logo: hiringOrganizationLogo || globalConfig.defaultArticlePublisher?.logo?.url || undefined,
+  },
+  jobLocation: {
+    '@type': 'Place',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: jobLocation.streetAddress,
+      addressLocality: jobLocation.addressLocality,
+      ...(jobLocation.addressRegion && { addressRegion: jobLocation.addressRegion }),
+      postalCode: jobLocation.postalCode,
+      addressCountry: jobLocation.addressCountry,
+    }
+  },
+  ...(baseSalary && {
+    baseSalary: {
+      '@type': 'MonetaryAmount',
+      currency: baseSalary.currency,
+      value: {
+        '@type': 'QuantitativeValue',
+        value: baseSalary.value,
+        unitText: baseSalary.unit || 'YEAR'
+      }
+    }
+  })
+};
+---
+<Schema item={jobSchema} />

@@ -1,0 +1,86 @@
+---
+import type { Event } from 'schema-dts';
+import Schema from './Schema.astro';
+
+interface Props {
+  name: string;
+  startDate: string;
+  endDate?: string;
+  description?: string;
+  imageUrl?: string | string[];
+  locationName: string;
+  locationAddress: {
+    streetAddress: string;
+    addressLocality: string;
+    addressRegion?: string;
+    postalCode: string;
+    addressCountry: string;
+  };
+  attendanceMode?: 'Offline' | 'Online' | 'Mixed';
+  status?: 'Scheduled' | 'Cancelled' | 'Postponed' | 'Rescheduled';
+  price?: number | string;
+  priceCurrency?: string;
+  availability?: 'InStock' | 'OutOfStock' | 'PreOrder' | 'OnlineOnly';
+}
+
+const {
+  name,
+  startDate,
+  endDate,
+  description,
+  imageUrl,
+  locationName,
+  locationAddress,
+  attendanceMode = 'Offline',
+  status = 'Scheduled',
+  price,
+  priceCurrency,
+  availability = 'InStock',
+} = Astro.props;
+
+const attendanceModeMap = {
+  Offline: 'https://schema.org/OfflineEventAttendanceMode',
+  Online: 'https://schema.org/OnlineEventAttendanceMode',
+  Mixed: 'https://schema.org/MixedEventAttendanceMode',
+};
+
+const statusMap = {
+  Scheduled: 'https://schema.org/EventScheduled',
+  Cancelled: 'https://schema.org/EventCancelled',
+  Postponed: 'https://schema.org/EventPostponed',
+  Rescheduled: 'https://schema.org/EventRescheduled',
+};
+
+const eventSchema: Event = {
+  '@type': 'Event',
+  name,
+  startDate,
+  ...(endDate && { endDate }),
+  ...(description && { description }),
+  ...(imageUrl && { image: Array.isArray(imageUrl) ? imageUrl : [imageUrl] }),
+  eventAttendanceMode: attendanceModeMap[attendanceMode] as any,
+  eventStatus: statusMap[status] as any,
+  location: {
+    '@type': 'Place',
+    name: locationName,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: locationAddress.streetAddress,
+      addressLocality: locationAddress.addressLocality,
+      ...(locationAddress.addressRegion && { addressRegion: locationAddress.addressRegion }),
+      postalCode: locationAddress.postalCode,
+      addressCountry: locationAddress.addressCountry,
+    }
+  },
+  ...(price && priceCurrency && {
+    offers: {
+      '@type': 'Offer',
+      price,
+      priceCurrency,
+      availability: `https://schema.org/${availability}`,
+      url: Astro.url.href,
+    }
+  })
+};
+---
+<Schema item={eventSchema} />

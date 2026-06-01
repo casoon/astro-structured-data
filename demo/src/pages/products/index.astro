@@ -1,0 +1,151 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { CollectionPageSchema } from 'astro-structured-data/components';
+
+const categoryName = "Gadgets & Entwickler-Zubehör";
+const categoryDesc = "Entdecke unsere Auswahl an hochperformanten Zubehörteilen und Gadgets, speziell optimiert für Astro-Entwickler.";
+
+const products = [
+  {
+    name: "Astro Super Gadget X1",
+    url: "https://example.com/products/super-gadget",
+    price: 49.99,
+    priceCurrency: "EUR",
+    imageUrl: "https://example.com/images/super-gadget-x1.jpg"
+  },
+  {
+    name: "Astro Mini-Controller Y2",
+    url: "https://example.com/products/mini-controller",
+    price: 29.99,
+    priceCurrency: "EUR",
+    imageUrl: "https://example.com/images/mini-controller-y2.jpg"
+  },
+  {
+    name: "Astro E-Book \"Astro 6 Best Practices\"",
+    url: "https://example.com/products/astro-ebook",
+    price: 9.99,
+    priceCurrency: "EUR",
+    imageUrl: "https://example.com/images/astro-ebook.jpg"
+  }
+];
+---
+
+<Layout 
+  title={categoryName} 
+  description={categoryDesc}
+>
+  <!-- Injects the CollectionPage schema.org script tag -->
+  <CollectionPageSchema 
+    name={categoryName}
+    description={categoryDesc}
+    products={products}
+  />
+
+  <div class="grid">
+    <div>
+      <span class="badge" style="margin-bottom: 12px;">CollectionPage Schema</span>
+      <h1>{categoryName}</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">{categoryDesc}</p>
+
+      <div class="products-grid">
+        {products.map(prod => (
+          <div class="product-card">
+            <div class="image-placeholder">[ {prod.name} Image ]</div>
+            <h3>{prod.name}</h3>
+            <div class="price">{prod.price.toLocaleString('de-DE', { style: 'currency', currency: prod.priceCurrency })}</div>
+            <a href="/products/super-gadget" class="btn" style="margin-top: 12px; font-size: 0.85rem; display: block;">Details ansehen</a>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Generiertes JSON-LD (CollectionPage)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Enthält eine ItemList aller Produkte dieser Kategorie für Suchmaschinen:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 640px) {
+      .products-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .product-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .product-card:hover {
+      border-color: var(--accent);
+    }
+
+    .image-placeholder {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      height: 140px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .product-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+
+    .product-card .price {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+  </style>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let collectionData = null;
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          if (parsed['@type'] === 'CollectionPage') {
+            collectionData = parsed;
+          }
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = collectionData 
+          ? JSON.stringify(collectionData, null, 2)
+          : 'Kein CollectionPage Schema gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>

@@ -1,0 +1,64 @@
+---
+import type { LocalBusiness } from 'schema-dts';
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface Props {
+  name?: string;
+  imageUrl?: string;
+  telephone?: string;
+  priceRange?: string;
+  address?: {
+    streetAddress: string;
+    addressLocality: string;
+    addressRegion?: string;
+    postalCode: string;
+    addressCountry: string;
+  };
+  geo?: {
+    latitude: number;
+    longitude: number;
+  };
+  openingHours?: string[];
+}
+
+const props = Astro.props;
+const globalConfig = getGlobalConfig();
+const defaults = globalConfig.defaultLocalBusiness || {};
+
+const name = props.name || defaults.name;
+const imageUrl = props.imageUrl || defaults.imageUrl;
+const telephone = props.telephone || defaults.telephone;
+const priceRange = props.priceRange || defaults.priceRange;
+const address = props.address || defaults.address;
+const geo = props.geo || defaults.geo;
+const openingHours = props.openingHours || defaults.openingHours;
+
+const localBusinessSchema: LocalBusiness = {
+  '@type': 'LocalBusiness',
+  ...(name && { name }),
+  ...(imageUrl && { image: imageUrl }),
+  ...(telephone && { telephone }),
+  ...(priceRange && { priceRange }),
+  ...(address && {
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: address.streetAddress,
+      addressLocality: address.addressLocality,
+      ...(address.addressRegion && { addressRegion: address.addressRegion }),
+      postalCode: address.postalCode,
+      addressCountry: address.addressCountry,
+    }
+  }),
+  ...(geo && {
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: geo.latitude,
+      longitude: geo.longitude,
+    }
+  }),
+  ...(openingHours && { openingHours }),
+};
+---
+{name && <Schema item={localBusinessSchema} />}

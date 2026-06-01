@@ -1,0 +1,57 @@
+---
+import type { CollectionPage } from 'schema-dts';
+import Schema from './Schema.astro';
+
+interface ProductListItem {
+  name: string;
+  url: string;
+  price?: number | string;
+  priceCurrency?: string;
+  imageUrl?: string;
+}
+
+interface Props {
+  name: string;
+  description: string;
+  products: ProductListItem[];
+}
+
+const { name, description, products } = Astro.props;
+
+const collectionSchema: CollectionPage = {
+  '@type': 'CollectionPage',
+  name,
+  description,
+  url: Astro.url.href,
+  mainEntity: {
+    '@type': 'ItemList',
+    numberOfItems: products.length,
+    itemListElement: products.map((prod, index) => {
+      const item: Record<string, any> = {
+        '@type': 'Product',
+        name: prod.name,
+        url: prod.url,
+      };
+
+      if (prod.imageUrl) {
+        item.image = prod.imageUrl;
+      }
+
+      if (prod.price !== undefined && prod.priceCurrency) {
+        item.offers = {
+          '@type': 'Offer',
+          price: prod.price,
+          priceCurrency: prod.priceCurrency,
+        };
+      }
+
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        item
+      };
+    })
+  }
+};
+---
+<Schema item={collectionSchema} />

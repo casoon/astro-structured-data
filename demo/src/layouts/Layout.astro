@@ -1,0 +1,306 @@
+---
+import { LocalBusinessSchema, AutoBreadcrumbSchema, SchemaGraph } from 'astro-structured-data/components';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width" />
+  <meta name="generator" content={Astro.generator} />
+  <title>{title} | Structured Data Demo</title>
+  <meta name="description" content={description} />
+  
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Inject Local Business Schema on all pages via config defaults -->
+  <LocalBusinessSchema />
+  
+  <!-- Auto-generate Breadcrumbs for search engines -->
+  <AutoBreadcrumbSchema homeLabel="Startseite" />
+
+  <style is:global>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #0b0f19;
+      --accent: #38bdf8;
+      --accent-rgb: 56, 189, 248;
+      --accent-hover: #0ea5e9;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --border-color: #334155;
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-secondary);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-color);
+    }
+
+    /* Core Layout */
+    .app-header {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo span {
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: var(--text-primary);
+      background-color: var(--bg-secondary);
+    }
+
+    .nav-link.active {
+      border-bottom: 2px solid var(--accent);
+      border-radius: 6px 6px 0 0;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .app-footer {
+      background-color: var(--bg-tertiary);
+      border-top: 1px solid var(--border-color);
+      padding: 24px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* Shared Page Layout Styles */
+    h1, h2, h3, h4 {
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .schema-inspector {
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .schema-inspector h3 {
+      color: var(--accent);
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .schema-inspector pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #34d399;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn {
+      background-color: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background-color 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background-color: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <nav class="nav-container">
+      <a href="/" class="logo">
+        <svg style="width: 28px; height: 28px; fill: none; stroke: url(#gradient); stroke-width: 2.5;" viewBox="0 0 24 24">
+          <defs>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8" />
+              <stop offset="100%" stop-color="#818cf8" />
+            </linearGradient>
+          </defs>
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+        <span>StructuredData</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="/" class={`nav-link ${currentPath === '/' ? 'active' : ''}`}>LocalBusiness</a></li>
+        <li><a href="/faq" class={`nav-link ${currentPath === '/faq' ? 'active' : ''}`}>FAQ</a></li>
+        <li><a href="/blog/my-post" class={`nav-link ${currentPath === '/blog/my-post' ? 'active' : ''}`}>Article</a></li>
+        <li><a href="/products" class={`nav-link ${currentPath === '/products' ? 'active' : ''}`}>Shop-Kategorie</a></li>
+        <li><a href="/products/super-gadget" class={`nav-link ${currentPath === '/products/super-gadget' ? 'active' : ''}`}>Produkt</a></li>
+        <li><a href="/about" class={`nav-link ${currentPath === '/about' ? 'active' : ''}`}>Über uns</a></li>
+        <li><a href="/events/meetup" class={`nav-link ${currentPath === '/events/meetup' ? 'active' : ''}`}>Event</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="app-footer">
+    <p>&copy; 2026 Astro Structured Data Integration. Built with ❤️ for Astro v6.</p>
+  </footer>
+
+  <!-- Render consolidated Schema @graph (loaded from page locals context) -->
+  <SchemaGraph />
+</body>
+</html>

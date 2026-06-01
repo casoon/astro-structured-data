@@ -1,0 +1,179 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { EventSchema } from 'astro-structured-data/components';
+
+const event = {
+  name: "Astro Developers Meetup Berlin v6",
+  startDate: "2026-06-15T18:30:00+02:00",
+  endDate: "2026-06-15T22:00:00+02:00",
+  description: "Das erste Berliner Astro Developer Meetup im Jahr 2026. Komm vorbei für spannende Talks über Astro v6 und Netzwerken bei Pizza und Getränken.",
+  imageUrl: "https://example.com/images/astro-meetup.jpg",
+  locationName: "TechSpace Berlin Kreuzberg",
+  locationAddress: {
+    streetAddress: "Lobeckstraße 36",
+    addressLocality: "Berlin",
+    postalCode: "10969",
+    addressCountry: "DE",
+  },
+  attendanceMode: "Offline" as const,
+  status: "Scheduled" as const,
+  price: 0,
+  priceCurrency: "EUR",
+};
+---
+
+<Layout 
+  title={event.name} 
+  description={event.description}
+>
+  <!-- Injects the Event schema.org script tag -->
+  <EventSchema 
+    name={event.name}
+    startDate={event.startDate}
+    endDate={event.endDate}
+    description={event.description}
+    imageUrl={event.imageUrl}
+    locationName={event.locationName}
+    locationAddress={event.locationAddress}
+    attendanceMode={event.attendanceMode}
+    status={event.status}
+    price={event.price}
+    priceCurrency={event.priceCurrency}
+  />
+
+  <div class="grid">
+    <div>
+      <span class="badge" style="margin-bottom: 12px;">Event Schema</span>
+      
+      <div class="event-card">
+        <h1>{event.name}</h1>
+        
+        <p class="description" style="font-size: 1.1rem; margin-bottom: 24px;">{event.description}</p>
+        
+        <div class="event-details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Datum & Uhrzeit</span>
+            <span class="detail-value">
+              Montag, 15. Juni 2026<br/>
+              18:30 - 22:00 Uhr
+            </span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Ort</span>
+            <span class="detail-value">
+              <strong>{event.locationName}</strong><br/>
+              {event.locationAddress.streetAddress}<br/>
+              {event.locationAddress.postalCode} {event.locationAddress.addressLocality}
+            </span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value status-scheduled">Planmäßig</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Preis</span>
+            <span class="detail-value price-free">Kostenlos (Registrierung erforderlich)</span>
+          </div>
+        </div>
+
+        <button class="btn" style="margin-top: 24px; padding: 12px 28px;">Jetzt Ticket sichern</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Generiertes JSON-LD (Event)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Enthält Veranstaltungsort, Start-/Enddatum, Status und Angebote:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .event-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 32px;
+    }
+
+    .event-details-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      padding: 24px 0;
+      margin-top: 24px;
+    }
+
+    @media (min-width: 640px) {
+      .event-details-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .detail-label {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .detail-value {
+      font-size: 1rem;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .status-scheduled {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .price-free {
+      color: var(--accent);
+      font-weight: 600;
+    }
+  </style>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let eventData = null;
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          if (parsed['@type'] === 'Event') {
+            eventData = parsed;
+          }
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = eventData 
+          ? JSON.stringify(eventData, null, 2)
+          : 'Kein Event Schema gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>

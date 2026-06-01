@@ -1,0 +1,108 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { OrganizationSchema, ProfilePageSchema } from 'astro-structured-data/components';
+
+const orgName = "Astro Labs Inc.";
+const creatorName = "Sarah Connor";
+---
+
+<Layout 
+  title="Über Uns & Team" 
+  description="Lerne das Team hinter Astro Labs kennen. Diese Seite demonstriert das Organization- und ProfilePage-Schema."
+>
+  <!-- Registers Organization and ProfilePage in the consolidated Graph -->
+  <OrganizationSchema 
+    name={orgName}
+    sameAs={[
+      "https://github.com/astro-labs",
+      "https://twitter.com/astrolabs"
+    ]}
+    telephone="+49 30 98765432"
+    email="contact@astrolabs.com"
+    address={{
+      streetAddress: "Mauerstraße 80",
+      addressLocality: "Berlin",
+      postalCode: "10117",
+      addressCountry: "DE"
+    }}
+  />
+
+  <ProfilePageSchema 
+    name={creatorName}
+    description="Sarah Connor ist leitende Softwarearchitektin bei Astro Labs und Expertin für Astro v6 Web-Entwicklung."
+    imageUrl="https://example.com/images/sarah.jpg"
+    sameAs={[
+      "https://linkedin.com/in/sarah-connor",
+      "https://github.com/sarahc"
+    ]}
+  />
+
+  <div class="grid">
+    <div>
+      <span class="badge" style="margin-bottom: 12px;">Organization & ProfilePage Schema</span>
+      <h1>Über Astro Labs</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        Wir sind ein technologieorientiertes Unternehmen mit Sitz in Berlin, das sich auf performante Frontend-Architekturen spezialisiert hat.
+      </p>
+
+      <div class="card">
+        <h2>Das Unternehmen</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 12px;">
+          Gegründet in Berlin, arbeiten wir täglich an der Zukunft des schnellen Webs. Das eingebaute <strong>OrganizationSchema</strong> hilft Google, die geschäftlichen Metadaten, sozialen Netzwerke und Adressdaten unseres Unternehmens zuzuordnen.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Unser Team-Lead</h2>
+        <div style="display: flex; gap: 16px; align-items: center; margin-top: 12px;">
+          <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #818cf8); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">SC</div>
+          <div>
+            <h3>{creatorName}</h3>
+            <p style="color: var(--text-secondary); font-size: 0.95rem;">Leitende Softwarearchitektin & Autorin</p>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); margin-top: 12px; font-size: 0.95rem;">
+          Das zugeordnete <strong>ProfilePageSchema</strong> zeichnet Sarahs Profilseite semantisch aus, wodurch Google sie als qualifizierte Autorin für unsere Fachartikel einstufen kann (wichtig für E-E-A-T).
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Registrierte @graph-Elemente
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Sowohl Organization als auch ProfilePage (Person) werden im zentralen @graph am Seitenende ausgegeben:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let graphData = null;
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          if (parsed['@graph']) {
+            graphData = parsed['@graph'];
+          }
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = graphData 
+          ? JSON.stringify(graphData, null, 2)
+          : 'Kein @graph Schema auf dieser Seite gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>

@@ -1,0 +1,50 @@
+---
+import type { BreadcrumbList } from 'schema-dts';
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface Props {
+  labels?: Record<string, string>; // Overrides for specific path segments
+  homeLabel?: string;
+}
+
+const { labels = {}, homeLabel = 'Home' } = Astro.props;
+
+const globalConfig = getGlobalConfig();
+const siteUrl = globalConfig.siteUrl || Astro.url.origin;
+
+const pathname = Astro.url.pathname;
+const segments = pathname.split('/').filter(Boolean);
+
+const breadcrumbItems = [
+  { name: homeLabel, url: siteUrl }
+];
+
+let currentPath = '';
+segments.forEach((segment) => {
+  currentPath += `/${segment}`;
+  const absoluteUrl = new URL(currentPath, siteUrl).toString();
+
+  let name = labels[segment] || segment;
+  if (!labels[segment]) {
+    // Format kebab-case/snake_case segment to readable title
+    name = segment
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  breadcrumbItems.push({ name, url: absoluteUrl });
+});
+
+const breadcrumbSchema: BreadcrumbList = {
+  '@type': 'BreadcrumbList',
+  itemListElement: breadcrumbItems.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: item.url,
+  }))
+};
+---
+<Schema item={breadcrumbSchema} />

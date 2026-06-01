@@ -1,0 +1,237 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ProductSchema } from 'astro-structured-data/components';
+
+const product = {
+  name: "Astro Super Gadget X1",
+  description: "Das ultimative Entwickler-Gadget zur Beschleunigung von Webprojekten. Ausgestattet mit künstlicher Intelligenz und Astro Integration.",
+  imageUrl: "https://example.com/images/super-gadget-x1.jpg",
+  priceRange: {
+    lowPrice: 49.99,
+    highPrice: 89.99,
+    priceCurrency: "EUR",
+    offerCount: 2,
+  },
+  brand: "Astro Labs",
+  sku: "ASTRO-SG-X1",
+  gtin: "1234567890123",
+  ratingValue: 4.5,
+  reviewCount: 2,
+  reviews: [
+    {
+      authorName: "John Doe",
+      datePublished: "2026-05-15",
+      reviewBody: "Unglaublich gutes Gadget. Hat meine Build-Zeiten halbiert!",
+      ratingValue: 5,
+    },
+    {
+      authorName: "Alice Smith",
+      datePublished: "2026-05-20",
+      reviewBody: "Gute Qualität, aber die Anleitung könnte detaillierter sein.",
+      ratingValue: 4,
+    }
+  ]
+};
+---
+
+<Layout 
+  title={product.name} 
+  description={product.description}
+>
+  <!-- Injects the Product schema.org script tag with AggregateOffer, Brand, Reviews and Global Shipping/Return policies -->
+  <ProductSchema 
+    name={product.name}
+    description={product.description}
+    imageUrl={product.imageUrl}
+    priceRange={product.priceRange}
+    brand={product.brand}
+    sku={product.sku}
+    gtin={product.gtin}
+    ratingValue={product.ratingValue}
+    reviewCount={product.reviewCount}
+    reviews={product.reviews}
+  />
+
+  <div class="grid">
+    <div>
+      <span class="badge" style="margin-bottom: 12px;">Product Schema (E-Commerce)</span>
+      
+      <div class="product-detail">
+        <div class="product-gallery">
+          <span>[ Astro Super Gadget X1 Image ]</span>
+        </div>
+
+        <div class="product-info">
+          <h1>{product.name}</h1>
+          <div class="brand">Marke: <strong>{product.brand}</strong></div>
+          
+          <div class="rating">
+            <span class="stars">★★★★☆</span>
+            <span style="color: var(--text-secondary); font-size: 0.9rem;">
+              {product.ratingValue} ({product.reviewCount} Kundenbewertungen)
+            </span>
+          </div>
+
+          <div class="price-box">
+            <span class="price">
+              {product.priceRange.lowPrice.toLocaleString('de-DE', { style: 'currency', currency: product.priceRange.priceCurrency })} - 
+              {product.priceRange.highPrice.toLocaleString('de-DE', { style: 'currency', currency: product.priceRange.priceCurrency })}
+            </span>
+            <span class="stock-badge">Auf Lager</span>
+          </div>
+
+          <p class="description" style="margin-bottom: 20px;">{product.description}</p>
+
+          <div style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; font-size: 0.9rem; color: var(--text-secondary);">
+            <div style="margin-bottom: 4px;">🚚 <strong>Standardversand:</strong> 4,95 € (Kostenlos ab 50 €)</div>
+            <div>🔄 <strong>Rückgabe:</strong> Kostenfreie Rückgabe per Post innerhalb von 30 Tagen.</div>
+          </div>
+
+          <button class="btn" style="width: 100%; margin-top: 16px;">Optionen auswählen</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 24px;">
+        <h2>Kundenbewertungen</h2>
+        <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+          {product.reviews.map(rev => (
+            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <strong>{rev.authorName}</strong>
+                <span style="color: #fbbf24;">{"★".repeat(rev.ratingValue)}{"☆".repeat(5 - rev.ratingValue)}</span>
+              </div>
+              <p style="color: var(--text-secondary); font-size: 0.95rem;">{rev.reviewBody}</p>
+              <small style="color: #64748b;">Veröffentlicht am {rev.datePublished}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Generiertes JSON-LD (Product)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Enthält nun AggregateOffer, Bewertungen, Marke sowie Versand- und Rückgaberichtlinien:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .product-detail {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    @media (min-width: 640px) {
+      .product-detail {
+        flex-direction: row;
+      }
+    }
+
+    .product-gallery {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      width: 100%;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    @media (min-width: 640px) {
+      .product-gallery {
+        width: 40%;
+        height: auto;
+        min-height: 250px;
+      }
+    }
+
+    .product-info {
+      flex: 1;
+    }
+
+    .brand {
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .rating {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .stars {
+      color: #fbbf24;
+      font-size: 1.1rem;
+    }
+
+    .price-box {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .price {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stock-badge {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .description {
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+  </style>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let productData = null;
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          if (parsed['@type'] === 'Product') {
+            productData = parsed;
+          }
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = productData 
+          ? JSON.stringify(productData, null, 2)
+          : 'Kein Product Schema gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>
