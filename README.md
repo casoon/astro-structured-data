@@ -105,9 +105,26 @@ Docs: [schema.org/Article](https://schema.org/Article) · [Google: Article](http
 | `dateModified` | `string \| Date` | No | Last modified date |
 | `authorName` | `string \| string[]` | Yes | Author name(s) |
 | `authorType` | `'Person' \| 'Organization'` | No | Default: `'Person'` |
-| `imageUrl` | `string \| string[]` | Yes | Article image URL(s) |
+| `authorUrl` | `string` | No | Author profile URL |
+| `authorId` | `string` | No | Author `@id` for linked data |
+| `imageUrl` | `string` | No | Article image URL |
+| `imageWidth` | `number` | No | Image width in pixels |
+| `imageHeight` | `number` | No | Image height in pixels |
+| `imageFormat` | `string` | No | Image MIME type, e.g. `'image/jpeg'` |
+| `imageCaption` | `string` | No | Image caption |
 | `publisherName` | `string` | No | Publisher name (falls back to `defaultArticlePublisher`) |
 | `publisherLogo` | `string` | No | Publisher logo URL (falls back to `defaultArticlePublisher`) |
+| `schemaType` | `'Article' \| 'BlogPosting' \| 'NewsArticle'` | No | Default: `'BlogPosting'` |
+| `inLanguage` | `string` | No | Content language, e.g. `'de'` |
+| `articleSection` | `string` | No | Section or category name |
+| `keywords` | `string \| string[]` | No | Keywords |
+| `wordCount` | `number` | No | Word count |
+| `readingTimeMinutes` | `number` | No | Reading time in minutes (encoded as `timeRequired`) |
+| `isAccessibleForFree` | `boolean` | No | Default: `true` |
+| `isPartOfHeadline` | `string` | No | Parent series headline (for `isPartOf`) |
+| `isPartOfUrl` | `string` | No | Parent series URL |
+| `seriesPosition` | `number` | No | Position within the series |
+| `hasPart` | `{ headline: string; url: string; position?: number }[]` | No | Child articles in a series |
 
 ---
 
@@ -321,6 +338,42 @@ Docs: [schema.org/WebSite](https://schema.org/WebSite) · [Google: Sitelinks Sea
 | `name` | `string` | Yes | Site name |
 | `url` | `string` | No | Site URL (falls back to `siteUrl`) |
 | `searchQueryInput` | `string` | No | URL query param name to enable Sitelinks Searchbox, e.g. `'q'` |
+
+---
+
+### WebPageSchema
+
+Docs: [schema.org/WebPage](https://schema.org/WebPage) · [Google: WebPage](https://developers.google.com/search/docs/appearance/structured-data/webpage)
+
+Generic page schema — use for landing pages, legal pages, or any page that doesn't fit a more specific type.
+
+```astro
+<WebPageSchema
+  title="About Us"
+  description="Learn more about our company."
+  inLanguage="en"
+  dateModified="2024-06-01"
+/>
+```
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `title` | `string` | Yes | Page title |
+| `description` | `string` | No | Page description |
+| `url` | `string` | No | Canonical URL (falls back to current page URL) |
+| `inLanguage` | `string` | No | Content language, e.g. `'de'` |
+| `datePublished` | `string` | No | Publication date |
+| `dateModified` | `string` | No | Last modified date |
+| `isAccessibleForFree` | `boolean` | No | Default: `true` |
+| `image` | `string` | No | Page image URL |
+| `imageWidth` | `number` | No | Image width in pixels |
+| `imageHeight` | `number` | No | Image height in pixels |
+| `imageFormat` | `string` | No | Image MIME type |
+| `imageCaption` | `string` | No | Image caption |
+| `author` | `{ name: string; url?: string; id?: string; type?: string }` | No | Page author |
+| `publisher` | `{ name: string; url?: string; logo?: string }` | No | Publisher (falls back to `defaultArticlePublisher`) |
+| `robots` | `string` | No | Robots directive, e.g. `'noindex'` |
+| `alternates` | `{ href: string; hreflang: string }[]` | No | Alternate language versions |
 
 ---
 

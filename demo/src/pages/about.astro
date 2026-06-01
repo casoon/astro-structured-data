@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { OrganizationSchema, ProfilePageSchema } from 'astro-structured-data/components';
+import { OrganizationSchema, ProfilePageSchema, WebPageSchema } from 'astro-structured-data/components';
 
 const orgName = "Astro Labs Inc.";
 const creatorName = "Sarah Connor";
@@ -10,6 +10,12 @@ const creatorName = "Sarah Connor";
   title="Über Uns & Team" 
   description="Lerne das Team hinter Astro Labs kennen. Diese Seite demonstriert das Organization- und ProfilePage-Schema."
 >
+  <WebPageSchema
+    title="Über Uns & Team"
+    description="Lerne das Team hinter Astro Labs kennen."
+    inLanguage="de"
+  />
+
   <!-- Registers Organization and ProfilePage in the consolidated Graph -->
   <OrganizationSchema 
     name={orgName}

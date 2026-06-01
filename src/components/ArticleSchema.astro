@@ -1,8 +1,13 @@
 ---
-import type { Article } from 'schema-dts';
 import Schema from './Schema.astro';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface SeriesPart {
+  headline: string;
+  url: string;
+  position?: number;
+}
 
 interface Props {
   title: string;
@@ -11,9 +16,26 @@ interface Props {
   dateModified?: string;
   authorName: string | string[];
   authorType?: 'Person' | 'Organization';
-  imageUrl: string | string[];
+  authorUrl?: string;
+  authorId?: string;
+  imageUrl?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageFormat?: string;
+  imageCaption?: string;
   publisherName?: string;
   publisherLogo?: string;
+  schemaType?: 'Article' | 'BlogPosting' | 'NewsArticle';
+  inLanguage?: string;
+  articleSection?: string;
+  keywords?: string | string[];
+  wordCount?: number;
+  readingTimeMinutes?: number;
+  isAccessibleForFree?: boolean;
+  isPartOfHeadline?: string;
+  isPartOfUrl?: string;
+  seriesPosition?: number;
+  hasPart?: SeriesPart[];
 }
 
 const {
@@ -23,35 +45,102 @@ const {
   dateModified,
   authorName,
   authorType = 'Person',
+  authorUrl,
+  authorId,
   imageUrl,
+  imageWidth,
+  imageHeight,
+  imageFormat,
+  imageCaption,
   publisherName,
   publisherLogo,
+  schemaType = 'BlogPosting',
+  inLanguage,
+  articleSection,
+  keywords,
+  wordCount,
+  readingTimeMinutes,
+  isAccessibleForFree = true,
+  isPartOfHeadline,
+  isPartOfUrl,
+  seriesPosition,
+  hasPart,
 } = Astro.props;
 
 const globalConfig = getGlobalConfig();
 
-const articleSchema: Article = {
-  '@type': 'Article',
+const buildAuthor = (name: string) => ({
+  '@type': authorType,
+  name,
+  ...(authorId ? { '@id': authorId } : {}),
+  ...(authorUrl ? { url: authorUrl } : {}),
+});
+
+const articleSchema: Record<string, any> = {
+  '@type': schemaType,
   headline: title,
-  description: description,
-  datePublished: datePublished,
+  description,
+  datePublished,
   dateModified: dateModified || datePublished,
   mainEntityOfPage: {
     '@type': 'WebPage',
     '@id': Astro.url.href,
   },
-  image: Array.isArray(imageUrl) ? imageUrl : [imageUrl],
   author: Array.isArray(authorName)
-    ? authorName.map(name => ({ '@type': authorType, name }))
-    : { '@type': authorType, name: authorName },
+    ? authorName.map(buildAuthor)
+    : buildAuthor(authorName as string),
   publisher: {
     '@type': 'Organization',
-    name: publisherName || globalConfig.defaultArticlePublisher?.name || 'Publisher',
-    logo: {
-      '@type': 'ImageObject',
-      url: publisherLogo || globalConfig.defaultArticlePublisher?.logo?.url || '',
-    }
-  }
+    name: publisherName || globalConfig.defaultArticlePublisher?.name || '',
+    ...(publisherLogo || globalConfig.defaultArticlePublisher?.logo?.url
+      ? {
+          logo: {
+            '@type': 'ImageObject',
+            url: publisherLogo || globalConfig.defaultArticlePublisher?.logo?.url,
+          },
+        }
+      : {}),
+  },
+  isAccessibleForFree,
 };
+
+if (imageUrl) {
+  articleSchema.image = {
+    '@type': 'ImageObject',
+    url: imageUrl,
+    ...(imageWidth ? { width: imageWidth } : {}),
+    ...(imageHeight ? { height: imageHeight } : {}),
+    ...(imageFormat ? { encodingFormat: imageFormat } : {}),
+    ...(imageCaption ? { caption: imageCaption } : {}),
+  };
+}
+
+if (inLanguage) articleSchema.inLanguage = inLanguage;
+if (articleSection) articleSchema.articleSection = articleSection;
+
+if (keywords) {
+  articleSchema.keywords = Array.isArray(keywords) ? keywords.join(', ') : keywords;
+}
+
+if (wordCount) articleSchema.wordCount = wordCount;
+if (readingTimeMinutes) articleSchema.timeRequired = `PT${readingTimeMinutes}M`;
+
+if (isPartOfHeadline && isPartOfUrl) {
+  articleSchema.isPartOf = {
+    '@type': schemaType,
+    headline: isPartOfHeadline,
+    url: isPartOfUrl,
+  };
+  if (seriesPosition !== undefined) articleSchema.position = seriesPosition;
+}
+
+if (hasPart && hasPart.length > 0) {
+  articleSchema.hasPart = hasPart.map((part) => ({
+    '@type': schemaType,
+    headline: part.headline,
+    url: part.url,
+    ...(part.position !== undefined ? { position: part.position } : {}),
+  }));
+}
 ---
 <Schema item={articleSchema} />

@@ -1,0 +1,99 @@
+---
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface Alternate {
+  href: string;
+  hreflang: string;
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  url?: string;
+  inLanguage?: string;
+  datePublished?: string;
+  dateModified?: string;
+  isAccessibleForFree?: boolean;
+  image?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageFormat?: string;
+  imageCaption?: string;
+  author?: { name: string; url?: string; id?: string; type?: string };
+  publisher?: { name: string; url?: string; logo?: string };
+  robots?: string;
+  alternates?: Alternate[];
+}
+
+const {
+  title,
+  description,
+  url,
+  inLanguage,
+  datePublished,
+  dateModified,
+  isAccessibleForFree = true,
+  image,
+  imageWidth,
+  imageHeight,
+  imageFormat,
+  imageCaption,
+  author,
+  publisher,
+  robots,
+  alternates,
+} = Astro.props;
+
+const globalConfig = getGlobalConfig();
+const pageUrl = url || Astro.url.href;
+
+const webpageSchema: Record<string, any> = {
+  '@type': 'WebPage',
+  name: title,
+  url: pageUrl,
+  isAccessibleForFree,
+};
+
+if (description) webpageSchema.description = description;
+if (inLanguage) webpageSchema.inLanguage = inLanguage;
+if (datePublished) webpageSchema.datePublished = datePublished;
+if (dateModified || datePublished) webpageSchema.dateModified = dateModified || datePublished;
+if (robots) webpageSchema.robots = robots;
+if (alternates?.length) webpageSchema.alternates = alternates;
+
+if (image) {
+  webpageSchema.image = {
+    '@type': 'ImageObject',
+    url: image,
+    ...(imageWidth ? { width: imageWidth } : {}),
+    ...(imageHeight ? { height: imageHeight } : {}),
+    ...(imageFormat ? { encodingFormat: imageFormat } : {}),
+    ...(imageCaption ? { caption: imageCaption } : {}),
+  };
+}
+
+if (author) {
+  webpageSchema.author = {
+    '@type': author.type || 'Person',
+    name: author.name,
+    ...(author.id ? { '@id': author.id } : {}),
+    ...(author.url ? { url: author.url } : {}),
+  };
+}
+
+const publisherName = publisher?.name || globalConfig.defaultArticlePublisher?.name;
+const publisherUrl = publisher?.url || globalConfig.siteUrl;
+const publisherLogo = publisher?.logo || globalConfig.defaultArticlePublisher?.logo?.url;
+
+if (publisherName) {
+  webpageSchema.publisher = {
+    '@type': 'Organization',
+    name: publisherName,
+    ...(publisherUrl ? { url: publisherUrl } : {}),
+    ...(publisherLogo ? { logo: { '@type': 'ImageObject', url: publisherLogo } } : {}),
+  };
+}
+---
+<Schema item={webpageSchema} />
