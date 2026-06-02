@@ -462,6 +462,203 @@ function renderGooglePreview(data: any): HTMLDivElement | null {
     snippet.className = 'asd-google-snippet';
     snippet.innerText = description;
     container.appendChild(snippet);
+  } else if (type === 'Recipe') {
+    let ratingValue = 0;
+    let reviewCount = 0;
+    if (data.aggregateRating) {
+      ratingValue = Number(data.aggregateRating.ratingValue) || 0;
+      reviewCount = Number(data.aggregateRating.reviewCount) || 0;
+    }
+
+    const metaRow = document.createElement('div');
+    metaRow.className = 'asd-google-product-meta';
+
+    if (ratingValue > 0) {
+      const fullStars = Math.floor(ratingValue);
+      const halfStar = ratingValue % 1 >= 0.5 ? '½' : '';
+      const starText = '★'.repeat(fullStars) + (halfStar ? '½' : '') + '☆'.repeat(5 - fullStars - (halfStar ? 1 : 0));
+      
+      const starsSpan = document.createElement('span');
+      starsSpan.className = 'asd-google-stars';
+      starsSpan.innerText = starText;
+      
+      const ratingText = document.createElement('span');
+      ratingText.innerText = ` ${ratingValue} (${reviewCount})`;
+      
+      metaRow.appendChild(starsSpan);
+      metaRow.appendChild(ratingText);
+      metaRow.appendChild(document.createTextNode(' · '));
+    }
+
+    const formatDuration = (dur: string) => {
+      if (!dur) return '';
+      const match = dur.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
+      if (match) {
+        const h = match[1] ? `${match[1]} hr ` : '';
+        const m = match[2] ? `${match[2]} min` : '';
+        return `${h}${m}`.trim();
+      }
+      return dur;
+    };
+
+    const prep = formatDuration(data.prepTime);
+    const cook = formatDuration(data.cookTime);
+    if (prep || cook) {
+      const timeSpan = document.createElement('span');
+      timeSpan.innerText = prep && cook ? `Prep: ${prep} · Cook: ${cook}` : (prep ? `Prep: ${prep}` : `Cook: ${cook}`);
+      metaRow.appendChild(timeSpan);
+      metaRow.appendChild(document.createTextNode(' · '));
+    }
+
+    if (data.nutrition?.calories) {
+      const calSpan = document.createElement('span');
+      calSpan.innerText = `${data.nutrition.calories.replace(' calories', '')} cal`;
+      metaRow.appendChild(calSpan);
+    }
+
+    container.appendChild(metaRow);
+
+    if (imageUrl) {
+      const img = document.createElement('img');
+      img.className = 'asd-google-thumbnail';
+      img.src = imageUrl;
+      container.appendChild(img);
+    }
+
+    const snippet = document.createElement('p');
+    snippet.className = 'asd-google-snippet';
+    snippet.innerText = description;
+    container.appendChild(snippet);
+
+    if (Array.isArray(data.recipeIngredient)) {
+      const ingrTitle = document.createElement('div');
+      ingrTitle.style.fontWeight = 'bold';
+      ingrTitle.style.fontSize = '12px';
+      ingrTitle.style.color = '#5f6368';
+      ingrTitle.style.marginTop = '8px';
+      ingrTitle.innerText = `Ingredients (${data.recipeIngredient.length}):`;
+      container.appendChild(ingrTitle);
+
+      const ingrSnippet = document.createElement('div');
+      ingrSnippet.style.fontSize = '12px';
+      ingrSnippet.style.color = '#70757a';
+      ingrSnippet.innerText = data.recipeIngredient.slice(0, 4).join(', ') + (data.recipeIngredient.length > 4 ? '...' : '');
+      container.appendChild(ingrSnippet);
+    }
+  } else if (type === 'VideoObject') {
+    container.innerHTML = '';
+    
+    const titleLabel = document.createElement('div');
+    titleLabel.style.fontWeight = 'bold';
+    titleLabel.style.marginBottom = '6px';
+    titleLabel.style.fontSize = '12px';
+    titleLabel.style.color = '#5f6368';
+    titleLabel.innerText = 'GOOGLE VIDEO PREVIEW';
+    container.appendChild(titleLabel);
+
+    const videoCard = document.createElement('div');
+    videoCard.style.display = 'flex';
+    videoCard.style.gap = '12px';
+    videoCard.style.border = '1px solid #dadce0';
+    videoCard.style.borderRadius = '8px';
+    videoCard.style.padding = '10px';
+    videoCard.style.background = '#f8f9fa';
+    videoCard.style.fontFamily = 'Arial, sans-serif';
+
+    const thumbWrapper = document.createElement('div');
+    thumbWrapper.style.position = 'relative';
+    thumbWrapper.style.width = '120px';
+    thumbWrapper.style.height = '68px';
+    thumbWrapper.style.background = '#000';
+    thumbWrapper.style.borderRadius = '6px';
+    thumbWrapper.style.overflow = 'hidden';
+    thumbWrapper.style.flexShrink = '0';
+
+    const thumbImg = document.createElement('img');
+    thumbImg.src = imageUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="%23ccc"/></svg>';
+    thumbImg.style.width = '100%';
+    thumbImg.style.height = '100%';
+    thumbImg.style.objectFit = 'cover';
+    thumbImg.style.opacity = '0.85';
+    thumbWrapper.appendChild(thumbImg);
+
+    const playIcon = document.createElement('div');
+    playIcon.style.position = 'absolute';
+    playIcon.style.top = '50%';
+    playIcon.style.left = '50%';
+    playIcon.style.transform = 'translate(-50%, -50%)';
+    playIcon.style.width = '28px';
+    playIcon.style.height = '28px';
+    playIcon.style.background = 'rgba(0, 0, 0, 0.7)';
+    playIcon.style.borderRadius = '50%';
+    playIcon.style.display = 'flex';
+    playIcon.style.alignItems = 'center';
+    playIcon.style.justifyContent = 'center';
+    playIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="white" style="width:14px; height:14px; margin-left:2px;"><path d="M8 5v14l11-7z"/></svg>`;
+    thumbWrapper.appendChild(playIcon);
+
+    if (data.duration) {
+      const durBadge = document.createElement('span');
+      durBadge.style.position = 'absolute';
+      durBadge.style.bottom = '4px';
+      durBadge.style.right = '4px';
+      durBadge.style.background = 'rgba(0, 0, 0, 0.8)';
+      durBadge.style.color = '#fff';
+      durBadge.style.padding = '1px 4px';
+      durBadge.style.borderRadius = '3px';
+      durBadge.style.fontSize = '10px';
+      durBadge.style.fontWeight = 'bold';
+
+      const match = data.duration.match(/PT(?:(\d+)M)?(?:(\d+)S)?/i);
+      const mins = match?.[1] || '0';
+      const secs = match?.[2] || '00';
+      durBadge.innerText = `${mins}:${secs.padStart(2, '0')}`;
+      thumbWrapper.appendChild(durBadge);
+    }
+    videoCard.appendChild(thumbWrapper);
+
+    const info = document.createElement('div');
+    info.style.display = 'flex';
+    info.style.flexDirection = 'column';
+    info.style.fontSize = '13px';
+
+    const vTitle = document.createElement('div');
+    vTitle.style.fontWeight = 'bold';
+    vTitle.style.color = '#1a0dab';
+    vTitle.style.fontSize = '14px';
+    vTitle.style.lineHeight = '1.3';
+    vTitle.innerText = headline;
+    info.appendChild(vTitle);
+
+    let metaText = '';
+    if (data.uploadDate) {
+      try {
+        const d = new Date(data.uploadDate);
+        metaText = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      } catch {
+        metaText = data.uploadDate;
+      }
+    }
+    if (data.interactionStatistic?.userInteractionCount) {
+      metaText += ` · ${data.interactionStatistic.userInteractionCount} views`;
+    }
+
+    const vMeta = document.createElement('div');
+    vMeta.style.color = '#70757a';
+    vMeta.style.marginTop = '4px';
+    vMeta.innerText = metaText;
+    info.appendChild(vMeta);
+
+    const vDesc = document.createElement('div');
+    vDesc.style.color = '#4d5156';
+    vDesc.style.marginTop = '4px';
+    vDesc.style.fontSize = '12px';
+    vDesc.style.lineHeight = '1.4';
+    vDesc.innerText = description.length > 80 ? description.substring(0, 80) + '...' : description;
+    info.appendChild(vDesc);
+
+    videoCard.appendChild(info);
+    container.appendChild(videoCard);
   } else {
     const snippet = document.createElement('p');
     snippet.className = 'asd-google-snippet';
@@ -1035,6 +1232,20 @@ export default defineToolbarApp({
           if (!data.name) warnings.push("Missing software 'name'");
           if (!data.operatingSystem) warnings.push("Missing software 'operatingSystem'");
           if (!data.applicationCategory) warnings.push("Missing software 'applicationCategory'");
+        } else if (schemaType === 'Recipe') {
+          if (!data.name) warnings.push("Missing recipe 'name'");
+          if (!data.description) warnings.push("Missing recipe 'description'");
+          if (!data.recipeIngredient || !Array.isArray(data.recipeIngredient) || data.recipeIngredient.length === 0) {
+            warnings.push("Recipe must have at least one ingredient under 'recipeIngredient'");
+          }
+          if (!data.recipeInstructions) {
+            warnings.push("Recipe must have 'recipeInstructions'");
+          }
+        } else if (schemaType === 'VideoObject') {
+          if (!data.name) warnings.push("Missing video 'name'");
+          if (!data.description) warnings.push("Missing video 'description'");
+          if (!data.thumbnailUrl && !data.thumbnail) warnings.push("Missing video 'thumbnailUrl'");
+          if (!data.uploadDate) warnings.push("Missing video 'uploadDate'");
         }
 
         const statusIndicator = document.createElement('div');

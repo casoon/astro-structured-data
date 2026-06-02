@@ -24,7 +24,7 @@ const config = getGlobalConfig();
 const generateMeta = config.generateMeta || false;
 
 // Determine primary item from the graph for meta tags generation
-const primaryTypes = ['Article', 'BlogPosting', 'NewsArticle', 'Product', 'LocalBusiness', 'FAQPage', 'WebSite', 'WebPage'];
+const primaryTypes = ['Article', 'BlogPosting', 'NewsArticle', 'Product', 'LocalBusiness', 'FAQPage', 'WebSite', 'WebPage', 'Recipe', 'VideoObject'];
 function findPrimaryItem(items: any[]) {
   for (const type of primaryTypes) {
     const item = items.find(it => it['@type'] === type);

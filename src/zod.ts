@@ -265,6 +265,50 @@ export const autoBreadcrumbZodSchema = z.object({
   })).optional(),
 });
 
+// 15. Recipe Schema Zod definition
+export const recipeZodSchema = z.object({
+  name: z.string().min(1, 'Recipe name cannot be empty'),
+  description: z.string().min(1, 'Recipe description cannot be empty'),
+  imageUrl: z.union([z.string(), z.array(z.string())]),
+  authorName: z.union([z.string(), z.array(z.string())]),
+  authorType: z.enum(['Person', 'Organization']).optional(),
+  prepTime: z.string().optional().describe('recommended'),
+  cookTime: z.string().optional().describe('recommended'),
+  totalTime: z.string().optional(),
+  recipeYield: z.union([z.string(), z.number()]).optional().describe('recommended'),
+  recipeCategory: z.string().optional().describe('recommended'),
+  recipeCuisine: z.string().optional().describe('recommended'),
+  calories: z.union([z.number(), z.string()]).optional().describe('recommended'),
+  ingredients: z.array(z.string()).min(1, 'At least one ingredient is required').describe('recommended'),
+  instructions: z.union([
+    z.array(z.string()).min(1, 'At least one instruction is required'),
+    z.array(
+      z.object({
+        text: z.string().min(1, 'Instruction text cannot be empty'),
+        name: z.string().optional(),
+        imageUrl: z.string().optional(),
+        url: z.string().optional(),
+      })
+    ).min(1, 'At least one instruction is required')
+  ]).describe('recommended'),
+  ratingValue: z.number().min(0).max(5).optional().describe('recommended'),
+  reviewCount: z.number().int().nonnegative().optional(),
+  datePublished: dateOrStringSchema.optional(),
+});
+
+// 16. Video Schema Zod definition
+export const videoZodSchema = z.object({
+  name: z.string().min(1, 'Video name cannot be empty'),
+  description: z.string().min(1, 'Video description cannot be empty'),
+  thumbnailUrl: z.union([z.string(), z.array(z.string())]),
+  uploadDate: dateOrStringSchema,
+  duration: z.string().optional().describe('recommended'),
+  contentUrl: z.string().optional().describe('recommended'),
+  embedUrl: z.string().optional().describe('recommended'),
+  interactionCount: z.union([z.number(), z.string()]).optional().describe('recommended'),
+  expires: dateOrStringSchema.optional(),
+});
+
 // validateRecommended utility
 export interface RecommendedWarning {
   field: string;
@@ -289,6 +333,8 @@ const schemaMap = {
   SoftwareApplication: softwareAppZodSchema,
   CollectionPage: collectionPageZodSchema,
   BreadcrumbList: breadcrumbZodSchema,
+  Recipe: recipeZodSchema,
+  VideoObject: videoZodSchema,
 } as const;
 
 export type SchemaType = keyof typeof schemaMap;

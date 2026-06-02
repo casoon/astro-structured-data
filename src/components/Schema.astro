@@ -43,6 +43,8 @@ const PRIMARY_META_TYPES = new Set([
   'ProfilePage',
   'FAQPage',
   'WebSite',
+  'Recipe',
+  'VideoObject',
 ]);
 
 const canGenerateMeta = !useGraph && generateMeta && PRIMARY_META_TYPES.has(item['@type']);

@@ -49,6 +49,8 @@ const RECOMMENDED_FIELDS: Record<string, string[]> = {
   WebPage: ['description', 'image', 'author', 'datePublished', 'dateModified'],
   JobPosting: ['validThrough', 'employmentType', 'baseSalary'],
   SoftwareApplication: ['operatingSystem', 'applicationCategory', 'offers', 'aggregateRating'],
+  Recipe: ['prepTime', 'cookTime', 'recipeYield', 'recipeCategory', 'recipeCuisine', 'nutrition', 'recipeIngredient', 'recipeInstructions', 'aggregateRating'],
+  VideoObject: ['duration', 'contentUrl', 'embedUrl', 'interactionStatistic'],
 };
 
 const JSONLD_RE = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;

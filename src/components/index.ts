@@ -14,3 +14,5 @@ export { default as WebPageSchema } from './WebPageSchema.astro';
 export { default as ProfilePageSchema } from './ProfilePageSchema.astro';
 export { default as JobPostingSchema } from './JobPostingSchema.astro';
 export { default as SoftwareAppSchema } from './SoftwareAppSchema.astro';
+export { default as RecipeSchema } from './RecipeSchema.astro';
+export { default as VideoSchema } from './VideoSchema.astro';

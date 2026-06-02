@@ -175,7 +175,7 @@ export function generateMetaTags(
   }
 
   // Resolve image metadata
-  const imgObj = getImageObject(item.image);
+  const imgObj = getImageObject(item.image || item.thumbnailUrl);
   let absImage = imgObj?.url;
   if (absImage && !absImage.startsWith('http') && context.siteUrl) {
     const base = context.siteUrl.replace(/\/$/, '');
@@ -309,6 +309,33 @@ export function generateMetaTags(
     }
     if (twitterCreator) {
       twitter['twitter:creator'] = twitterCreator;
+    }
+  } else if (type === 'VideoObject') {
+    openGraph['og:type'] = 'video.other';
+    const videoUrl = item.contentUrl || item.embedUrl;
+    if (videoUrl) {
+      let absVideo = videoUrl;
+      if (absVideo && !absVideo.startsWith('http') && context.siteUrl) {
+        const base = context.siteUrl.replace(/\/$/, '');
+        const path = absVideo.startsWith('/') ? absVideo : `/${absVideo}`;
+        absVideo = `${base}${path}`;
+      }
+      openGraph['og:video'] = absVideo;
+      if (item.embedUrl) {
+        openGraph['og:video:secure_url'] = absVideo;
+      }
+    }
+    if (item.duration) {
+      const match = item.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
+      if (match) {
+        const hours = parseInt(match[1] || '0', 10);
+        const minutes = parseInt(match[2] || '0', 10);
+        const seconds = parseInt(match[3] || '0', 10);
+        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+        if (totalSeconds > 0) {
+          openGraph['video:duration'] = totalSeconds.toString();
+        }
+      }
     }
   } else {
     openGraph['og:type'] = 'website';

@@ -1,0 +1,58 @@
+---
+import Schema from './Schema.astro';
+
+interface Props {
+  name: string;
+  description: string;
+  thumbnailUrl: string | string[];
+  uploadDate: string | Date;
+  duration?: string;
+  contentUrl?: string;
+  embedUrl?: string;
+  interactionCount?: number | string;
+  expires?: string | Date;
+}
+
+const {
+  name,
+  description,
+  thumbnailUrl,
+  uploadDate,
+  duration,
+  contentUrl,
+  embedUrl,
+  interactionCount,
+  expires,
+} = Astro.props;
+
+const formattedUploadDate = typeof uploadDate === 'string'
+  ? uploadDate
+  : uploadDate.toISOString();
+
+const videoSchema: Record<string, any> = {
+  '@type': 'VideoObject',
+  name,
+  description,
+  thumbnailUrl: Array.isArray(thumbnailUrl) ? thumbnailUrl : [thumbnailUrl],
+  uploadDate: formattedUploadDate,
+};
+
+if (duration) videoSchema.duration = duration;
+if (contentUrl) videoSchema.contentUrl = contentUrl;
+if (embedUrl) videoSchema.embedUrl = embedUrl;
+
+if (interactionCount !== undefined) {
+  videoSchema.interactionStatistic = {
+    '@type': 'InteractionCounter',
+    interactionType: { '@type': 'WatchAction' },
+    userInteractionCount: Number(interactionCount),
+  };
+}
+
+if (expires) {
+  videoSchema.expires = typeof expires === 'string'
+    ? expires
+    : expires.toISOString();
+}
+---
+<Schema item={videoSchema} />

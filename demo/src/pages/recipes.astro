@@ -1,0 +1,148 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { RecipeSchema, WebPageSchema } from 'astro-structured-data/components';
+
+const recipe = {
+  name: 'Klassische Chocolate Chip Cookies',
+  description: 'Knusprig am Rand, zäh und weich im Kern. Das beste Rezept für originale amerikanische Chocolate Chip Cookies.',
+  imageUrl: 'https://example.com/images/chocolate-chip-cookies.jpg',
+  authorName: 'Bäcker Bob',
+  prepTime: 'PT15M',
+  cookTime: 'PT10M',
+  totalTime: 'PT25M',
+  recipeYield: '12 cookies',
+  recipeCategory: 'Dessert',
+  recipeCuisine: 'American',
+  calories: 220,
+  ingredients: [
+    '200g Butter (weich)',
+    '150g brauner Zucker',
+    '100g weißer Zucker',
+    '2 Eier',
+    '1 TL Vanilleextrakt',
+    '300g Weizenmehl',
+    '1 TL Natron',
+    '1/2 TL Salz',
+    '200g Schokotröpfchen (zartbitter)'
+  ],
+  instructions: [
+    { text: 'Den Ofen auf 190°C (Ober-/Unterhitze) vorheizen und Backbleche mit Backpapier auslegen.', name: 'Ofen vorheizen' },
+    { text: 'Butter mit braunem und weißem Zucker cremig rühren. Eier und Vanilleextrakt einzeln unterrühren.', name: 'Teigbasis mischen' },
+    { text: 'Mehl, Natron und Salz in einer separaten Schüssel mischen. Dann unter die feuchten Zutaten rühren. Zuletzt die Schokotröpfchen unterheben.', name: 'Trockene Zutaten & Schokolade' },
+    { text: 'Mit einem Eisportionierer Kugeln formen und mit Abstand auf das Blech setzen.', name: 'Portionieren' },
+    { text: 'Für 9-11 Minuten backen, bis die Ränder leicht gebräunt sind. Auf dem Blech abkühlen lassen.', name: 'Backen & Abkühlen' }
+  ]
+};
+---
+
+<Layout 
+  title="Chocolate Chip Cookies Rezept" 
+  description="Knusprige amerikanische Kekse selbst backen. Diese Seite demonstriert das RecipeSchema."
+>
+  <WebPageSchema
+    title="Klassische Chocolate Chip Cookies"
+    description="Das beste Rezept für originale amerikanische Chocolate Chip Cookies."
+    inLanguage="de"
+  />
+
+  <RecipeSchema
+    name={recipe.name}
+    description={recipe.description}
+    imageUrl={recipe.imageUrl}
+    authorName={recipe.authorName}
+    prepTime={recipe.prepTime}
+    cookTime={recipe.cookTime}
+    totalTime={recipe.totalTime}
+    recipeYield={recipe.recipeYield}
+    recipeCategory={recipe.recipeCategory}
+    recipeCuisine={recipe.recipeCuisine}
+    calories={recipe.calories}
+    ingredients={recipe.ingredients}
+    instructions={recipe.instructions}
+    ratingValue={4.9}
+    reviewCount={45}
+    datePublished="2026-06-02"
+  />
+
+  <div class="grid">
+    <div>
+      <span class="badge" style="margin-bottom: 12px;">Recipe Schema</span>
+      <h1>{recipe.name}</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        {recipe.description}
+      </p>
+
+      <div class="card" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; margin-bottom: 20px; background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2);">
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Vorbereitung</span>
+          <div style="font-weight: bold; color: var(--accent); font-size: 1.2rem;">15 Min.</div>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Backzeit</span>
+          <div style="font-weight: bold; color: var(--accent); font-size: 1.2rem;">10 Min.</div>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Kalorien</span>
+          <div style="font-weight: bold; color: var(--accent); font-size: 1.2rem;">220 kcal</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Zutaten</h2>
+        <ul style="margin-top: 10px; margin-left: 20px; color: var(--text-secondary); line-height: 1.7;">
+          {recipe.ingredients.map(ing => <li>{ing}</li>)}
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Zubereitung</h2>
+        <ol style="margin-top: 10px; margin-left: 20px; color: var(--text-secondary); line-height: 1.7; display: flex; flex-direction: column; gap: 12px;">
+          {recipe.instructions.map((step, idx) => (
+            <li>
+              <strong>{step.name}:</strong> {step.text}
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Registrierte @graph-Elemente
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Das RecipeSchema wird vollständig als JSON-LD @graph-Element registriert und ausgegeben:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let recipeData = null;
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          const nodes = parsed['@graph'] || [parsed];
+          nodes.forEach(node => {
+            if (node['@type'] === 'Recipe') recipeData = node;
+          });
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = recipeData 
+          ? JSON.stringify(recipeData, null, 2)
+          : 'Kein Recipe Schema auf dieser Seite gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>

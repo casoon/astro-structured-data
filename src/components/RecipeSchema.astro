@@ -1,0 +1,115 @@
+---
+import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+
+interface InstructionStep {
+  text: string;
+  name?: string;
+  imageUrl?: string;
+  url?: string;
+}
+
+interface Props {
+  name: string;
+  description: string;
+  imageUrl: string | string[];
+  authorName: string | string[];
+  authorType?: 'Person' | 'Organization';
+  prepTime?: string;
+  cookTime?: string;
+  totalTime?: string;
+  recipeYield?: string | number;
+  recipeCategory?: string;
+  recipeCuisine?: string;
+  calories?: number | string;
+  ingredients: string[];
+  instructions: string[] | InstructionStep[];
+  ratingValue?: number;
+  reviewCount?: number;
+  datePublished?: string | Date;
+}
+
+const {
+  name,
+  description,
+  imageUrl,
+  authorName,
+  authorType = 'Person',
+  prepTime,
+  cookTime,
+  totalTime,
+  recipeYield,
+  recipeCategory,
+  recipeCuisine,
+  calories,
+  ingredients,
+  instructions,
+  ratingValue,
+  reviewCount,
+  datePublished,
+} = Astro.props;
+
+const globalConfig = getGlobalConfig();
+
+const buildAuthor = (aName: string) => ({
+  '@type': authorType,
+  name: aName,
+});
+
+const formattedInstructions = instructions.map((step) => {
+  if (typeof step === 'string') {
+    return {
+      '@type': 'HowToStep',
+      text: step,
+    };
+  }
+  return {
+    '@type': 'HowToStep',
+    text: step.text,
+    ...(step.name ? { name: step.name } : {}),
+    ...(step.imageUrl ? { image: step.imageUrl } : {}),
+    ...(step.url ? { url: step.url } : {}),
+  };
+});
+
+const recipeSchema: Record<string, any> = {
+  '@type': 'Recipe',
+  name,
+  description,
+  image: Array.isArray(imageUrl) ? imageUrl : [imageUrl],
+  author: Array.isArray(authorName)
+    ? authorName.map(buildAuthor)
+    : buildAuthor(authorName),
+  recipeIngredient: ingredients,
+  recipeInstructions: formattedInstructions,
+};
+
+if (prepTime) recipeSchema.prepTime = prepTime;
+if (cookTime) recipeSchema.cookTime = cookTime;
+if (totalTime) recipeSchema.totalTime = totalTime;
+if (recipeYield) recipeSchema.recipeYield = recipeYield.toString();
+if (recipeCategory) recipeSchema.recipeCategory = recipeCategory;
+if (recipeCuisine) recipeSchema.recipeCuisine = recipeCuisine;
+if (datePublished) {
+  recipeSchema.datePublished = typeof datePublished === 'string'
+    ? datePublished
+    : datePublished.toISOString();
+}
+
+if (calories !== undefined) {
+  recipeSchema.nutrition = {
+    '@type': 'NutritionInformation',
+    calories: calories.toString().includes('calories') ? calories.toString() : `${calories} calories`,
+  };
+}
+
+if (ratingValue !== undefined) {
+  recipeSchema.aggregateRating = {
+    '@type': 'AggregateRating',
+    ratingValue: ratingValue.toString(),
+    reviewCount: (reviewCount ?? 1).toString(),
+  };
+}
+---
+<Schema item={recipeSchema} />
