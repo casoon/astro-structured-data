@@ -7,34 +7,67 @@ import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 interface Props {
   labels?: Record<string, string>; // Overrides for specific path segments
   homeLabel?: string;
+  ignoreSegments?: string[];
+  prependBreadcrumbs?: Array<{ name: string; url: string }>;
+  appendBreadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-const { labels = {}, homeLabel = 'Home' } = Astro.props;
+const {
+  labels = {},
+  homeLabel = 'Home',
+  ignoreSegments = [],
+  prependBreadcrumbs = [],
+  appendBreadcrumbs = [],
+} = Astro.props;
 
 const globalConfig = getGlobalConfig();
 const siteUrl = globalConfig.siteUrl || Astro.url.origin;
 
+const resolveUrl = (urlStr: string) => {
+  if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
+    return urlStr;
+  }
+  return new URL(urlStr, siteUrl).toString();
+};
+
+const breadcrumbItems: Array<{ name: string; url: string }> = [];
+
+// 1. Add home/root breadcrumb
+if (homeLabel) {
+  breadcrumbItems.push({ name: homeLabel, url: resolveUrl('/') });
+}
+
+// 2. Add prepended breadcrumbs
+prependBreadcrumbs.forEach((item) => {
+  breadcrumbItems.push({ name: item.name, url: resolveUrl(item.url) });
+});
+
+// 3. Add auto-generated breadcrumbs (filtering ignored segments)
 const pathname = Astro.url.pathname;
 const segments = pathname.split('/').filter(Boolean);
-
-const breadcrumbItems = [
-  { name: homeLabel, url: siteUrl }
-];
+const ignoreSet = new Set(ignoreSegments.map((s) => s.toLowerCase()));
 
 let currentPath = '';
 segments.forEach((segment) => {
   currentPath += `/${segment}`;
-  const absoluteUrl = new URL(currentPath, siteUrl).toString();
+  if (ignoreSet.has(segment.toLowerCase())) {
+    return;
+  }
 
   let name = labels[segment] || segment;
   if (!labels[segment]) {
     // Format kebab-case/snake_case segment to readable title
     name = segment
       .replace(/[-_]+/g, ' ')
-      .replace(/\b\w/g, char => char.toUpperCase());
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
-  breadcrumbItems.push({ name, url: absoluteUrl });
+  breadcrumbItems.push({ name, url: resolveUrl(currentPath) });
+});
+
+// 4. Add appended breadcrumbs
+appendBreadcrumbs.forEach((item) => {
+  breadcrumbItems.push({ name: item.name, url: resolveUrl(item.url) });
 });
 
 const breadcrumbSchema: BreadcrumbList = {
@@ -44,7 +77,7 @@ const breadcrumbSchema: BreadcrumbList = {
     position: index + 1,
     name: item.name,
     item: item.url,
-  }))
+  })),
 };
 ---
 <Schema item={breadcrumbSchema} />

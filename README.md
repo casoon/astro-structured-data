@@ -40,20 +40,41 @@ structuredData({
 
 ## Configuration
 
-| Option | Type | Required | Description |
+| Option | Type | Default | Description |
 |---|---|---|---|
-| `siteUrl` | `string` | No | Absolute base URL — falls back to Astro's `site` config |
-| `useGraph` | `boolean` | No | Wrap all schemas in a `@graph` array |
-| `generateMeta` | `boolean` | No | Generate standard HTML head meta tags (og:*, twitter:*, canonical, etc.) from schemas |
-| `siteName` | `string` | No | Global site name used for `og:site_name` |
-| `locale` | `string` | No | Global locale used for `og:locale` (e.g. `de_DE`) |
-| `twitterSite` | `string` | No | Twitter site handle used for `twitter:site` (e.g. `@my_site`) |
-| `twitterCreator` | `string` | No | Fallback Twitter creator handle used for `twitter:creator` (e.g. `@author`) |
-| `defaultLocalBusiness` | `LocalBusiness` | No | Site-wide local business defaults merged into `LocalBusinessSchema` |
-| `defaultArticlePublisher` | `Organization` | No | Default publisher for `ArticleSchema` and `OrganizationSchema` |
-| `defaultBrand` | `Brand \| string` | No | Default brand for `ProductSchema` |
-| `defaultShippingDetails` | `OfferShippingDetails` | No | Default shipping details for `ProductSchema` |
-| `defaultReturnPolicy` | `MerchantReturnPolicy` | No | Default return policy for `ProductSchema` |
+| `siteUrl` | `string` | — | Absolute base URL — falls back to Astro's `site` config |
+| `useGraph` | `boolean` | `false` | Wrap all schemas in a `@graph` array |
+| `generateMeta` | `boolean` | `false` | Generate standard HTML head meta tags (og:*, twitter:*, canonical, etc.) from schemas |
+| `siteName` | `string` | — | Global site name used for `og:site_name` |
+| `locale` | `string` | — | Global locale used for `og:locale` (e.g. `de_DE`) |
+| `twitterSite` | `string` | — | Twitter site handle used for `twitter:site` (e.g. `@my_site`) |
+| `twitterCreator` | `string` | — | Fallback Twitter creator handle used for `twitter:creator` (e.g. `@author`) |
+| `warnOnMissingRecommended` | `boolean` | `true` | Log warnings during build when recommended schema.org fields are absent |
+| `defaultLocalBusiness` | `LocalBusiness` | — | Site-wide local business defaults merged into `LocalBusinessSchema` |
+| `defaultArticlePublisher` | `Organization` | — | Default publisher for `ArticleSchema` and `OrganizationSchema` |
+| `defaultBrand` | `Brand \| string` | — | Default brand for `ProductSchema` |
+| `defaultShippingDetails` | `OfferShippingDetails` | — | Default shipping details for `ProductSchema` |
+| `defaultReturnPolicy` | `MerchantReturnPolicy` | — | Default return policy for `ProductSchema` |
+
+## Dev Toolbar
+
+The integration registers an Astro Dev Toolbar panel (visible only in `astro dev`) that shows every `<script type="application/ld+json">` block found on the current page.
+
+For each schema it shows:
+
+- **Rich Result Preview** — a Google-style mockup rendered directly in the toolbar:
+  - *Article / BlogPosting / NewsArticle* — thumbnail, author, date snippet
+  - *FAQPage* — interactive accordion (click to expand answers)
+  - *Product* — star rating, price, in-stock badge
+  - *BreadcrumbList* — breadcrumb trail in Google style
+  - *Event* — calendar date box, location, time
+  - *JobPosting* — job card with location, employment type, salary badges
+  - *LocalBusiness* — phone, address, opening hours
+  - *SoftwareApplication* — star rating, OS, category
+- **Validation warnings** — required and recommended field checks per type
+- **📋 Copy JSON-LD** — copies the full JSON-LD to the clipboard
+- **🔍 Test on Schema.org** — opens `validator.schema.org` in a new tab
+- **Show JSON-LD Raw** — toggle the raw JSON for inspection
 
 ## Automated SEO & Sitemap Integration
 
@@ -258,6 +279,9 @@ Generates breadcrumbs automatically from the current URL path. Segments are conv
 |---|---|---|---|
 | `homeLabel` | `string` | No | Label for the root segment. Default: `'Home'` |
 | `labels` | `Record<string, string>` | No | Override labels for specific URL path segments |
+| `ignoreSegments` | `string[]` | No | URL segments to skip — useful for language prefixes like `['de', 'en']` |
+| `prependBreadcrumbs` | `{ name: string; url: string }[]` | No | Breadcrumbs inserted after Home, before auto-generated segments |
+| `appendBreadcrumbs` | `{ name: string; url: string }[]` | No | Breadcrumbs appended after all auto-generated segments |
 
 ---
 
@@ -505,7 +529,7 @@ No props. Reads from `Astro.locals.structuredDataGraph` populated by the other c
 
 ## Zod schemas
 
-Reusable Zod schemas for all types — useful in Content Collections or form validation:
+All components ship with a matching Zod schema, exported from `@casoon/astro-structured-data/zod`. Use them in Content Collections, form validation, or any runtime validation.
 
 ```ts
 import {
@@ -514,7 +538,89 @@ import {
   productZodSchema,
   localBusinessZodSchema,
   eventZodSchema,
+  organizationZodSchema,
+  webPageZodSchema,
+  webSiteZodSchema,
+  profilePageZodSchema,
+  jobPostingZodSchema,
+  softwareAppZodSchema,
+  collectionPageZodSchema,
+  breadcrumbZodSchema,
+  autoBreadcrumbZodSchema,
 } from '@casoon/astro-structured-data/zod';
+```
+
+### validateRecommended
+
+Check any schema object for missing recommended fields (matching what the build warning reports):
+
+```ts
+import { validateRecommended } from '@casoon/astro-structured-data/zod';
+import type { SchemaType, RecommendedWarning } from '@casoon/astro-structured-data/zod';
+
+const warnings: RecommendedWarning[] = validateRecommended('Organization', {
+  name: 'ACME Corp',
+  url: 'https://acme.com',
+});
+// → [{ field: 'sameAs', message: 'Organization should include "sameAs" ...' }, ...]
+```
+
+The `type` argument uses schema.org `@type` names: `'Article'`, `'BlogPosting'`, `'NewsArticle'`, `'FAQPage'`, `'Product'`, `'LocalBusiness'`, `'Event'`, `'Organization'`, `'WebPage'`, `'WebSite'`, `'ProfilePage'`, `'JobPosting'`, `'SoftwareApplication'`, `'CollectionPage'`, `'BreadcrumbList'`.
+
+Fields marked as recommended are a subset of optional props that Google's Rich Results guidelines list as strongly beneficial — omitting them won't break validation but may reduce search result richness.
+
+## Utilities
+
+```ts
+import { calculateReadingTime } from '@casoon/astro-structured-data/utils';
+```
+
+### calculateReadingTime
+
+Calculates word count and reading time from a plain-text or HTML string. Useful for populating `wordCount` and `readingTimeMinutes` on `ArticleSchema` from MDX content.
+
+```ts
+const { wordCount, readingTimeMinutes, timeRequired } = calculateReadingTime(content);
+// timeRequired is ISO 8601 duration, e.g. 'PT4M'
+```
+
+```astro
+---
+import { calculateReadingTime } from '@casoon/astro-structured-data/utils';
+import { ArticleSchema } from '@casoon/astro-structured-data/components';
+import { getEntry } from 'astro:content';
+
+const post = await getEntry('blog', Astro.params.slug);
+const { wordCount, readingTimeMinutes } = calculateReadingTime(post.body);
+---
+<ArticleSchema
+  title={post.data.title}
+  datePublished={post.data.date}
+  authorName={post.data.author}
+  wordCount={wordCount}
+  readingTimeMinutes={readingTimeMinutes}
+/>
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | `string` | — | Plain text or HTML string |
+| `wordsPerMinute` | `number` | `200` | Reading speed used for the calculation |
+
+Returns `{ wordCount: number; readingTimeMinutes: number; timeRequired: string }`.
+
+### Build-time warnings
+
+When `warnOnMissingRecommended: true` (the default), the same recommended-field logic runs automatically after every build. The integration scans all output HTML for `<script type="application/ld+json">` blocks and logs one warning per missing field per type:
+
+```
+[structured-data] Organization is missing recommended field "sameAs" — add it for richer search results.
+```
+
+To disable:
+
+```js
+structuredData({ warnOnMissingRecommended: false })
 ```
 
 ## License

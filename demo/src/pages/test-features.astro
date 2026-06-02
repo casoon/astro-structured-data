@@ -1,0 +1,141 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { ArticleSchema, AutoBreadcrumbSchema } from 'astro-structured-data/components';
+import { calculateReadingTime } from 'astro-structured-data/utils';
+
+// Some sample markdown content
+const sampleArticleBody = `
+# Die Zukunft des Web-Developments mit Astro
+
+Astro hat sich zu einem der innovativsten Frameworks für inhaltsorientierte Websites entwickelt. Mit der Einführung von Server-Island-Architekturen, schnellen Builds und einem fantastischen Entwickler-Erlebnis bietet es die perfekte Basis für moderne SEO-optimierte Websites.
+
+Strukturierte Daten sind ein kritischer Teil der SEO-Optimierung. Suchmaschinen wie Google nutzen JSON-LD, um Rich Snippets anzuzeigen, wie zum Beispiel Rezensionen, FAQ-Bereiche oder detaillierte Artikel-Metadaten. Mit dieser neuen Integration wird die Erstellung dieser Schemata zu einem Kinderspiel, da sie vollautomatisch geschieht und jetzt sogar mit fortgeschrittenen Features wie Visualisierung, Lesezeit-Berechnung und erweiterten Breadcrumb-Optionen ausgestattet ist.
+
+Durch die Verwendung der \`calculateReadingTime\`-Hilfsfunktion lässt sich die Lesezeit für Beiträge vollkommen automatisch ermitteln. Man übergibt einfach den Roh-Inhalt der MDX- oder Markdown-Dateien und erhält das korrekte ISO-8601-Format für Google-Suchergebnisse (wie zum Beispiel \`PT2M\`).
+
+Zusätzlich können mehrsprachige Routing-Szenarien oder benutzerdefinierte Breadcrumbs jetzt mithilfe der neuen \`ignoreSegments\`, \`prependBreadcrumbs\` und \`appendBreadcrumbs\` Props des AutoBreadcrumbSchema-Moduls konfiguriert werden. Das spart Zeit und verhindert Fehler im SEO-Setup.
+`;
+
+const readingInfo = calculateReadingTime(sampleArticleBody);
+---
+
+<Layout 
+  title="Neue Features Demo" 
+  description="Demo der neuen Features: Mehrsprachiges AutoBreadcrumb und automatische Lesezeit-Validierung."
+>
+  <!-- AutoBreadcrumbSchema mit den neuen Props testen -->
+  <AutoBreadcrumbSchema 
+    homeLabel="Demo Home" 
+    ignoreSegments={['test-features']}
+    prependBreadcrumbs={[{ name: 'Root Override', url: '/' }]}
+    appendBreadcrumbs={[{ name: 'Features Success', url: '/test-features/success' }]}
+  />
+
+  <!-- ArticleSchema mit automatischer Lesezeit testen -->
+  <ArticleSchema 
+    title="Die Zukunft des Web-Developments mit Astro"
+    description="Ein detaillierter Überblick über moderne SEO-Techniken, strukturierte Daten und die Verwendung von Astro."
+    datePublished="2026-06-02"
+    authorName="Dev Team"
+    imageUrl="https://example.com/astro-development.jpg"
+    wordCount={readingInfo.wordCount}
+    readingTimeMinutes={readingInfo.readingTimeMinutes}
+  />
+
+  <div class="grid">
+    <div>
+      <span class="badge" style="margin-bottom: 12px;">Neue Features Showcase</span>
+      <h1>Feature-Demonstration</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        Diese Seite demonstriert das neue <strong>AutoBreadcrumb-Verhalten</strong> und die <strong>Lesezeit-Berechnungs-Utility</strong>.
+      </p>
+
+      <div class="card">
+        <h3>1. Lesezeit-Berechnung (Utility)</h3>
+        <p style="margin-bottom: 12px;">
+          Der folgende Artikel-Rohinhalt wurde automatisch analysiert:
+        </p>
+        <div style="background-color: var(--bg-tertiary); padding: 12px; border-radius: 6px; font-size: 0.9rem; margin-bottom: 16px; border: 1px solid var(--border-color); max-height: 150px; overflow-y: auto;">
+          <pre style="white-space: pre-wrap; font-family: inherit; color: var(--text-secondary);">{sampleArticleBody}</pre>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: rgba(56, 189, 248, 0.05); padding: 12px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.2);">
+          <div>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Wortanzahl</span>
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">{readingInfo.wordCount} Wörter</div>
+          </div>
+          <div>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Lesezeit (Minuten)</span>
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">{readingInfo.readingTimeMinutes} Min. ({readingInfo.timeRequired})</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>2. Erweitertes AutoBreadcrumb</h3>
+        <p style="margin-bottom: 12px;">
+          Wir haben für diese Seite folgendes konfiguriert:
+        </p>
+        <ul style="margin-left: 20px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+          <li><code>ignoreSegments={JSON.stringify(['test-features'])}</code> (filtert das aktuelle Pfadsegment heraus)</li>
+          <li><code>prependBreadcrumbs</code> fügt "Root Override" am Anfang hinzu</li>
+          <li><code>appendBreadcrumbs</code> fügt "Features Success" am Ende hinzu</li>
+        </ul>
+        <p>
+          Suchmaschinen sehen jetzt eine saubere, angepasste BreadcrumbList-Struktur im JSON-LD Header.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>3. Google Search Preview in der Dev Toolbar 🛠️</h3>
+        <p style="color: var(--text-secondary); line-height: 1.6;">
+          Öffne die <strong>Astro Dev Toolbar</strong> (unten auf dem Bildschirm), aktiviere das <strong>Structured Data</strong> Tool und überzeuge dich selbst! Du siehst dort ab jetzt:
+        </p>
+        <ul style="margin-left: 20px; color: var(--text-secondary); margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <li>✨ Eine vollkommen realistische Google Search / Rich Snippet Vorschau für deinen Artikel, dein Produkt oder deine FAQs.</li>
+          <li>📋 Einen Klick-Workflow, um das fertige JSON-LD direkt zu kopieren (<strong>Copy JSON-LD</strong>).</li>
+          <li>🔍 Einen Direktlink zum Online-Schema.org-Validator.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <div class="schema-inspector">
+        <h3>
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          </svg>
+          Generiertes JSON-LD (@graph)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Hier siehst du die erzeugten Strukturen live:
+        </p>
+        <pre id="json-preview">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      let combinedData = [];
+
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.innerHTML);
+          if (parsed['@graph']) {
+            combinedData = combinedData.concat(parsed['@graph']);
+          } else {
+            combinedData.push(parsed);
+          }
+        } catch(e) {}
+      });
+
+      const previewEl = document.getElementById('json-preview');
+      if (previewEl) {
+        previewEl.innerText = combinedData.length > 0
+          ? JSON.stringify(combinedData, null, 2)
+          : 'Kein Schema gefunden';
+      }
+    }, 100);
+  </script>
+</Layout>
