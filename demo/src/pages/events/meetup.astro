@@ -19,6 +19,8 @@ const event = {
   status: "Scheduled" as const,
   price: 0,
   priceCurrency: "EUR",
+  url: "https://astro-structured-data.casoon.dev/events/meetup",
+  organizer: { name: "casoon GmbH", url: "https://casoon.de" },
 };
 ---
 
@@ -27,18 +29,20 @@ const event = {
   description={event.description}
 >
   <!-- Injects the Event schema.org script tag -->
-  <EventSchema 
+  <EventSchema
     name={event.name}
     startDate={event.startDate}
     endDate={event.endDate}
     description={event.description}
     imageUrl={event.imageUrl}
+    url={event.url}
     locationName={event.locationName}
     locationAddress={event.locationAddress}
     attendanceMode={event.attendanceMode}
     status={event.status}
     price={event.price}
     priceCurrency={event.priceCurrency}
+    organizer={event.organizer}
   />
 
   <div class="grid">

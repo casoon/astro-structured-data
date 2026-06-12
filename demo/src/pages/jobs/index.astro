@@ -1,0 +1,147 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { JobPostingSchema } from 'astro-structured-data/components';
+
+const officeJob = {
+  title: 'Senior Frontend Developer (m/w/d)',
+  description: '<p>Wir suchen einen erfahrenen Frontend-Entwickler für unser Berliner Team. Du arbeitest an modernen Astro- und React-Projekten und gestaltest die digitale Zukunft unserer Kunden.</p><ul><li>Mindestens 4 Jahre Erfahrung mit TypeScript</li><li>Kenntnisse in Astro, React oder Vue</li><li>Erfahrung mit SEO und Core Web Vitals</li></ul>',
+  datePosted: '2026-06-01',
+  validThrough: '2026-08-31',
+  employmentType: 'FULL_TIME' as const,
+  jobLocation: {
+    streetAddress: 'Alexanderplatz 1',
+    addressLocality: 'Berlin',
+    postalCode: '10178',
+    addressCountry: 'DE',
+  },
+  baseSalary: { value: 85000, currency: 'EUR', unit: 'YEAR' as const },
+  identifier: { name: 'casoon', value: 'JR-2026-001' },
+  directApply: true,
+};
+
+const remoteJob = {
+  title: 'TypeScript Engineer – Remote (m/w/d)',
+  description: '<p>Fully remote position, open to applicants based in Germany or Austria. Work on open-source tooling and developer infrastructure. 100% async-friendly team.</p><ul><li>3+ years TypeScript / Node.js</li><li>Open-source contributions a plus</li></ul>',
+  datePosted: '2026-06-10',
+  validThrough: '2026-09-30',
+  employmentType: 'FULL_TIME' as const,
+  jobLocationType: 'TELECOMMUTE' as const,
+  applicantLocationRequirements: ['DE', 'AT'],
+  baseSalary: { value: 90000, currency: 'EUR', unit: 'YEAR' as const },
+  identifier: { name: 'casoon', value: 'JR-2026-002' },
+  directApply: true,
+};
+---
+
+<Layout
+  title="Jobs bei casoon"
+  description="Offene Stellen bei casoon – Frontend, TypeScript, remote und vor Ort in Berlin."
+>
+  <JobPostingSchema
+    title={officeJob.title}
+    description={officeJob.description}
+    datePosted={officeJob.datePosted}
+    validThrough={officeJob.validThrough}
+    employmentType={officeJob.employmentType}
+    jobLocation={officeJob.jobLocation}
+    baseSalary={officeJob.baseSalary}
+    identifier={officeJob.identifier}
+    directApply={officeJob.directApply}
+  />
+
+  <JobPostingSchema
+    title={remoteJob.title}
+    description={remoteJob.description}
+    datePosted={remoteJob.datePosted}
+    validThrough={remoteJob.validThrough}
+    employmentType={remoteJob.employmentType}
+    jobLocationType={remoteJob.jobLocationType}
+    applicantLocationRequirements={remoteJob.applicantLocationRequirements}
+    baseSalary={remoteJob.baseSalary}
+    identifier={remoteJob.identifier}
+    directApply={remoteJob.directApply}
+  />
+
+  <span class="badge" style="margin-bottom: 12px;">JobPosting Schema</span>
+  <h1 style="margin-bottom: 8px;">Offene Stellen</h1>
+  <p style="color: var(--text-secondary); margin-bottom: 40px;">
+    Zwei Stellenanzeigen — eine mit Büro-Standort, eine vollständig remote. Beide mit
+    <code style="font-family: 'JetBrains Mono', monospace; color: var(--accent);">identifier</code> und
+    <code style="font-family: 'JetBrains Mono', monospace; color: var(--accent);">directApply</code>.
+  </p>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+      <!-- Office Job -->
+      <div class="card">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+          <span class="badge">FULL_TIME</span>
+          <span class="badge" style="background: rgba(16,185,129,0.1); color: #10b981; border-color: rgba(16,185,129,0.2);">Berlin</span>
+          <span class="badge" style="background: rgba(129,140,248,0.1); color: #818cf8; border-color: rgba(129,140,248,0.2);">Direkt bewerben</span>
+        </div>
+        <h2 style="margin-bottom: 8px;">{officeJob.title}</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
+          {officeJob.jobLocation.streetAddress}, {officeJob.jobLocation.postalCode} {officeJob.jobLocation.addressLocality}
+        </p>
+        <div style="color: var(--text-secondary); font-size: 0.9rem; display: flex; gap: 24px; flex-wrap: wrap; border-top: 1px solid var(--border-color); padding-top: 16px;">
+          <span><strong style="color: var(--text-primary);">Gehalt:</strong> 85.000 € / Jahr</span>
+          <span><strong style="color: var(--text-primary);">Bewerbungsfrist:</strong> 31. Aug 2026</span>
+          <span><strong style="color: var(--text-primary);">Job-ID:</strong> JR-2026-001</span>
+        </div>
+        <button class="btn" style="margin-top: 20px;">Jetzt bewerben</button>
+      </div>
+
+      <!-- Remote Job -->
+      <div class="card">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+          <span class="badge">FULL_TIME</span>
+          <span class="badge" style="background: rgba(56,189,248,0.1); color: #38bdf8; border-color: rgba(56,189,248,0.2);">🌍 Remote</span>
+          <span class="badge" style="background: rgba(129,140,248,0.1); color: #818cf8; border-color: rgba(129,140,248,0.2);">Direkt bewerben</span>
+        </div>
+        <h2 style="margin-bottom: 8px;">{remoteJob.title}</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
+          Vollständig remote · DE / AT
+        </p>
+        <div style="color: var(--text-secondary); font-size: 0.9rem; display: flex; gap: 24px; flex-wrap: wrap; border-top: 1px solid var(--border-color); padding-top: 16px;">
+          <span><strong style="color: var(--text-primary);">Gehalt:</strong> 90.000 € / Jahr</span>
+          <span><strong style="color: var(--text-primary);">Bewerbungsfrist:</strong> 30. Sep 2026</span>
+          <span><strong style="color: var(--text-primary);">Job-ID:</strong> JR-2026-002</span>
+        </div>
+        <button class="btn" style="margin-top: 20px;">Jetzt bewerben</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="schema-inspector">
+        <h3>JSON-LD: Büro-Job</h3>
+        <pre id="json-office">Lade Schema...</pre>
+      </div>
+      <div class="schema-inspector">
+        <h3>JSON-LD: Remote-Job</h3>
+        <pre id="json-remote">Lade Schema...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    setTimeout(() => {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      const jobs = [];
+      scripts.forEach(script => {
+        try {
+          const parsed = JSON.parse(script.textContent);
+          const nodes = parsed['@graph'] || [parsed];
+          nodes.forEach(node => {
+            if (node['@type'] === 'JobPosting') jobs.push(node);
+          });
+        } catch(e) {}
+      });
+
+      const officeEl = document.getElementById('json-office');
+      if (officeEl) officeEl.textContent = jobs[0] ? JSON.stringify(jobs[0], null, 2) : 'Kein Schema gefunden';
+      const remoteEl = document.getElementById('json-remote');
+      if (remoteEl) remoteEl.textContent = jobs[1] ? JSON.stringify(jobs[1], null, 2) : 'Kein Schema gefunden';
+    }, 100);
+  </script>
+</Layout>

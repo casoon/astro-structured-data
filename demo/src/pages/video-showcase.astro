@@ -10,7 +10,8 @@ const video = {
   duration: 'PT8M45S',
   contentUrl: 'https://example.com/videos/astro-v6.mp4',
   embedUrl: 'https://example.com/embed/astro-v6',
-  interactionCount: 15420
+  interactionCount: 15420,
+  publisher: { name: 'casoon GmbH', logoUrl: 'https://casoon.de/logo.png' },
 };
 ---
 
@@ -33,6 +34,7 @@ const video = {
     contentUrl={video.contentUrl}
     embedUrl={video.embedUrl}
     interactionCount={video.interactionCount}
+    publisher={video.publisher}
   />
 
   <div class="grid">

@@ -290,6 +290,7 @@ const currentPath = Astro.url.pathname;
         <li><a href="/video-showcase" class={`nav-link ${currentPath === '/video-showcase' ? 'active' : ''}`}>Video</a></li>
         <li><a href="/about" class={`nav-link ${currentPath === '/about' ? 'active' : ''}`}>Über uns</a></li>
         <li><a href="/events/meetup" class={`nav-link ${currentPath === '/events/meetup' ? 'active' : ''}`}>Event</a></li>
+        <li><a href="/jobs" class={`nav-link ${currentPath.startsWith('/jobs') ? 'active' : ''}`}>Jobs</a></li>
         <li><a href="/test-features" class={`nav-link ${currentPath === '/test-features' ? 'active' : ''}`} style="border: 1px dashed var(--accent); color: var(--accent);">✨ Neue Features</a></li>
       </ul>
     </nav>
