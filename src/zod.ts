@@ -90,8 +90,11 @@ export const productZodSchema = z.object({
 // 4. Local Business Schema Zod definition
 export const localBusinessZodSchema = z.object({
   name: z.string().optional().describe('recommended'),
+  url: z.string().url().optional().describe('recommended'),
+  description: z.string().optional(),
   imageUrl: z.string().url('Must be a valid image URL').optional().describe('recommended'),
   telephone: z.string().optional().describe('recommended'),
+  email: z.string().email().optional(),
   priceRange: z.string().optional(),
   address: z.object({
     streetAddress: z.string(),
@@ -105,6 +108,7 @@ export const localBusinessZodSchema = z.object({
     longitude: z.number(),
   }).optional().describe('recommended'),
   openingHours: z.array(z.string()).optional().describe('recommended'),
+  sameAs: z.array(z.string().url()).optional().describe('recommended'),
 });
 
 // 5. Event Schema Zod definition
@@ -114,6 +118,7 @@ export const eventZodSchema = z.object({
   endDate: dateOrStringSchema.optional().describe('recommended'),
   description: z.string().optional().describe('recommended'),
   imageUrl: z.union([z.string(), z.array(z.string())]).optional().describe('recommended'),
+  url: z.string().url().optional().describe('recommended'),
   locationName: z.string(),
   locationAddress: z.object({
     streetAddress: z.string(),
@@ -127,6 +132,14 @@ export const eventZodSchema = z.object({
   price: z.union([z.number(), z.string()]).optional().describe('recommended'),
   priceCurrency: z.string().length(3).optional().describe('recommended'),
   availability: z.enum(['InStock', 'OutOfStock', 'PreOrder', 'OnlineOnly']).optional(),
+  organizer: z.object({
+    name: z.string(),
+    url: z.string().url().optional(),
+  }).optional().describe('recommended'),
+  performer: z.object({
+    name: z.string(),
+    url: z.string().url().optional(),
+  }).optional(),
 });
 
 // 6. Organization Schema Zod definition
@@ -195,7 +208,7 @@ export const profilePageZodSchema = z.object({
 });
 
 // 10. JobPosting Schema Zod definition
-export const jobPostingZodSchema = z.object({
+const jobPostingBaseSchema = z.object({
   title: z.string().min(1, 'Job title cannot be empty'),
   description: z.string().min(1, 'Job description cannot be empty'),
   datePosted: z.string().min(1, 'Date posted cannot be empty'),
@@ -210,17 +223,31 @@ export const jobPostingZodSchema = z.object({
     addressRegion: z.string().optional(),
     postalCode: z.string(),
     addressCountry: z.string(),
-  }),
+  }).optional(),
   baseSalary: z.object({
     value: z.union([z.number(), z.string()]),
     currency: z.string().length(3),
     unit: z.enum(['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR']).optional(),
   }).optional().describe('recommended'),
+  identifier: z.object({
+    name: z.string(),
+    value: z.string(),
+  }).optional().describe('recommended'),
+  directApply: z.boolean().optional().describe('recommended'),
+  jobLocationType: z.literal('TELECOMMUTE').optional(),
+  applicantLocationRequirements: z.union([z.string(), z.array(z.string())]).optional(),
 });
+
+export const jobPostingZodSchema = jobPostingBaseSchema.refine(
+  (data) => data.jobLocation || data.applicantLocationRequirements,
+  { message: 'Either jobLocation or applicantLocationRequirements is required by Google', path: ['jobLocation'] }
+);
 
 // 11. SoftwareApp Schema Zod definition
 export const softwareAppZodSchema = z.object({
   name: z.string().min(1, 'App name cannot be empty'),
+  description: z.string().optional().describe('recommended'),
+  url: z.string().url().optional().describe('recommended'),
   operatingSystem: z.string().optional().describe('recommended'),
   applicationCategory: z.string().optional().describe('recommended'),
   price: z.union([z.string(), z.number()]).optional().describe('recommended'),
@@ -279,7 +306,7 @@ export const recipeZodSchema = z.object({
   recipeCategory: z.string().optional().describe('recommended'),
   recipeCuisine: z.string().optional().describe('recommended'),
   calories: z.union([z.number(), z.string()]).optional().describe('recommended'),
-  ingredients: z.array(z.string()).min(1, 'At least one ingredient is required').describe('recommended'),
+  ingredients: z.array(z.string()).min(1, 'At least one ingredient is required'),
   instructions: z.union([
     z.array(z.string()).min(1, 'At least one instruction is required'),
     z.array(
@@ -290,14 +317,14 @@ export const recipeZodSchema = z.object({
         url: z.string().optional(),
       })
     ).min(1, 'At least one instruction is required')
-  ]).describe('recommended'),
+  ]),
   ratingValue: z.number().min(0).max(5).optional().describe('recommended'),
   reviewCount: z.number().int().nonnegative().optional(),
   datePublished: dateOrStringSchema.optional(),
 });
 
 // 16. Video Schema Zod definition
-export const videoZodSchema = z.object({
+const videoBaseSchema = z.object({
   name: z.string().min(1, 'Video name cannot be empty'),
   description: z.string().min(1, 'Video description cannot be empty'),
   thumbnailUrl: z.union([z.string(), z.array(z.string())]),
@@ -307,7 +334,16 @@ export const videoZodSchema = z.object({
   embedUrl: z.string().optional().describe('recommended'),
   interactionCount: z.union([z.number(), z.string()]).optional().describe('recommended'),
   expires: dateOrStringSchema.optional(),
+  publisher: z.object({
+    name: z.string(),
+    logoUrl: z.string().url().optional(),
+  }).optional().describe('recommended'),
 });
+
+export const videoZodSchema = videoBaseSchema.refine(
+  (data) => data.contentUrl || data.embedUrl,
+  { message: 'Either contentUrl or embedUrl is required for Google video indexing', path: ['contentUrl'] }
+);
 
 // validateRecommended utility
 export interface RecommendedWarning {
@@ -329,12 +365,12 @@ const schemaMap = {
   WebPage: webPageZodSchema,
   WebSite: webSiteZodSchema,
   ProfilePage: profilePageZodSchema,
-  JobPosting: jobPostingZodSchema,
+  JobPosting: jobPostingBaseSchema,
   SoftwareApplication: softwareAppZodSchema,
   CollectionPage: collectionPageZodSchema,
   BreadcrumbList: breadcrumbZodSchema,
   Recipe: recipeZodSchema,
-  VideoObject: videoZodSchema,
+  VideoObject: videoBaseSchema,
 } as const;
 
 export type SchemaType = keyof typeof schemaMap;

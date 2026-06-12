@@ -8,6 +8,7 @@ interface Props {
   endDate?: string;
   description?: string;
   imageUrl?: string | string[];
+  url?: string;
   locationName: string;
   locationAddress: {
     streetAddress: string;
@@ -21,6 +22,8 @@ interface Props {
   price?: number | string;
   priceCurrency?: string;
   availability?: 'InStock' | 'OutOfStock' | 'PreOrder' | 'OnlineOnly';
+  organizer?: { name: string; url?: string };
+  performer?: { name: string; url?: string };
 }
 
 const {
@@ -29,6 +32,7 @@ const {
   endDate,
   description,
   imageUrl,
+  url,
   locationName,
   locationAddress,
   attendanceMode = 'Offline',
@@ -36,6 +40,8 @@ const {
   price,
   priceCurrency,
   availability = 'InStock',
+  organizer,
+  performer,
 } = Astro.props;
 
 const attendanceModeMap = {
@@ -58,6 +64,7 @@ const eventSchema: Event = {
   ...(endDate && { endDate }),
   ...(description && { description }),
   ...(imageUrl && { image: Array.isArray(imageUrl) ? imageUrl : [imageUrl] }),
+  ...(url && { url }),
   eventAttendanceMode: attendanceModeMap[attendanceMode] as any,
   eventStatus: statusMap[status] as any,
   location: {
@@ -78,9 +85,23 @@ const eventSchema: Event = {
       price,
       priceCurrency,
       availability: `https://schema.org/${availability}`,
-      url: Astro.url.href,
+      url: url || Astro.url.href,
     }
-  })
+  }),
+  ...(organizer && {
+    organizer: {
+      '@type': 'Organization',
+      name: organizer.name,
+      ...(organizer.url && { url: organizer.url }),
+    }
+  }),
+  ...(performer && {
+    performer: {
+      '@type': 'Person',
+      name: performer.name,
+      ...(performer.url && { url: performer.url }),
+    }
+  }),
 };
 ---
 <Schema item={eventSchema} />

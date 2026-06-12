@@ -6,8 +6,11 @@ import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 
 interface Props {
   name?: string;
+  url?: string;
+  description?: string;
   imageUrl?: string;
   telephone?: string;
+  email?: string;
   priceRange?: string;
   address?: {
     streetAddress: string;
@@ -21,6 +24,7 @@ interface Props {
     longitude: number;
   };
   openingHours?: string[];
+  sameAs?: string[];
 }
 
 const props = Astro.props;
@@ -28,18 +32,25 @@ const globalConfig = getGlobalConfig();
 const defaults = globalConfig.defaultLocalBusiness || {};
 
 const name = props.name || defaults.name;
+const url = props.url || defaults.url;
+const description = props.description || defaults.description;
 const imageUrl = props.imageUrl || defaults.imageUrl;
 const telephone = props.telephone || defaults.telephone;
+const email = props.email || defaults.email;
 const priceRange = props.priceRange || defaults.priceRange;
 const address = props.address || defaults.address;
 const geo = props.geo || defaults.geo;
 const openingHours = props.openingHours || defaults.openingHours;
+const sameAs = props.sameAs || defaults.sameAs;
 
 const localBusinessSchema: LocalBusiness = {
   '@type': 'LocalBusiness',
   ...(name && { name }),
+  ...(url && { url }),
+  ...(description && { description }),
   ...(imageUrl && { image: imageUrl }),
   ...(telephone && { telephone }),
+  ...(email && { email }),
   ...(priceRange && { priceRange }),
   ...(address && {
     address: {
@@ -59,6 +70,7 @@ const localBusinessSchema: LocalBusiness = {
     }
   }),
   ...(openingHours && { openingHours }),
+  ...(sameAs && { sameAs }),
 };
 ---
 {name && <Schema item={localBusinessSchema} />}

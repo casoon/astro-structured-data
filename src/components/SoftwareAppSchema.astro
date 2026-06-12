@@ -4,6 +4,8 @@ import Schema from './Schema.astro';
 
 interface Props {
   name: string;
+  description?: string;
+  url?: string;
   operatingSystem?: string; // e.g. "Windows, macOS, Linux" or "Web"
   applicationCategory?: string; // e.g. "DeveloperApplication", "Game", "BusinessApplication"
   price?: string | number;
@@ -14,6 +16,8 @@ interface Props {
 
 const {
   name,
+  description,
+  url,
   operatingSystem = 'Web',
   applicationCategory = 'DeveloperApplication',
   price,
@@ -25,6 +29,8 @@ const {
 const appSchema: SoftwareApplication = {
   '@type': 'SoftwareApplication',
   name,
+  ...(description && { description }),
+  ...(url && { url }),
   operatingSystem,
   applicationCategory,
   ...(price !== undefined && priceCurrency && {

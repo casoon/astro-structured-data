@@ -13,7 +13,7 @@ interface Props {
   hiringOrganizationName?: string;
   hiringOrganizationUrl?: string;
   hiringOrganizationLogo?: string;
-  jobLocation: {
+  jobLocation?: {
     streetAddress: string;
     addressLocality: string;
     addressRegion?: string;
@@ -25,6 +25,13 @@ interface Props {
     currency: string;
     unit?: 'HOUR' | 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
   };
+  identifier?: {
+    name: string;
+    value: string;
+  };
+  directApply?: boolean;
+  jobLocationType?: 'TELECOMMUTE';
+  applicantLocationRequirements?: string | string[];
 }
 
 const {
@@ -38,6 +45,10 @@ const {
   hiringOrganizationLogo,
   jobLocation,
   baseSalary,
+  identifier,
+  directApply,
+  jobLocationType,
+  applicantLocationRequirements,
 } = Astro.props;
 
 const globalConfig = getGlobalConfig();
@@ -55,17 +66,19 @@ const jobSchema: JobPosting = {
     url: hiringOrganizationUrl || globalConfig.siteUrl || Astro.url.origin,
     logo: hiringOrganizationLogo || globalConfig.defaultArticlePublisher?.logo?.url || undefined,
   },
-  jobLocation: {
-    '@type': 'Place',
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: jobLocation.streetAddress,
-      addressLocality: jobLocation.addressLocality,
-      ...(jobLocation.addressRegion && { addressRegion: jobLocation.addressRegion }),
-      postalCode: jobLocation.postalCode,
-      addressCountry: jobLocation.addressCountry,
+  ...(jobLocation && {
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: jobLocation.streetAddress,
+        addressLocality: jobLocation.addressLocality,
+        ...(jobLocation.addressRegion && { addressRegion: jobLocation.addressRegion }),
+        postalCode: jobLocation.postalCode,
+        addressCountry: jobLocation.addressCountry,
+      }
     }
-  },
+  }),
   ...(baseSalary && {
     baseSalary: {
       '@type': 'MonetaryAmount',
@@ -76,7 +89,21 @@ const jobSchema: JobPosting = {
         unitText: baseSalary.unit || 'YEAR'
       }
     }
-  })
+  }),
+  ...(identifier && {
+    identifier: {
+      '@type': 'PropertyValue',
+      name: identifier.name,
+      value: identifier.value,
+    }
+  }),
+  ...(directApply !== undefined && { directApply }),
+  ...(jobLocationType && { jobLocationType }),
+  ...(applicantLocationRequirements && {
+    applicantLocationRequirements: Array.isArray(applicantLocationRequirements)
+      ? applicantLocationRequirements.map(r => ({ '@type': 'Country', name: r }))
+      : { '@type': 'Country', name: applicantLocationRequirements },
+  }),
 };
 ---
 <Schema item={jobSchema} />

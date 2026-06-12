@@ -11,6 +11,7 @@ interface Props {
   embedUrl?: string;
   interactionCount?: number | string;
   expires?: string | Date;
+  publisher?: { name: string; logoUrl?: string };
 }
 
 const {
@@ -23,6 +24,7 @@ const {
   embedUrl,
   interactionCount,
   expires,
+  publisher,
 } = Astro.props;
 
 const formattedUploadDate = typeof uploadDate === 'string'
@@ -53,6 +55,16 @@ if (expires) {
   videoSchema.expires = typeof expires === 'string'
     ? expires
     : expires.toISOString();
+}
+
+if (publisher) {
+  videoSchema.publisher = {
+    '@type': 'Organization',
+    name: publisher.name,
+    ...(publisher.logoUrl && {
+      logo: { '@type': 'ImageObject', url: publisher.logoUrl },
+    }),
+  };
 }
 ---
 <Schema item={videoSchema} />
