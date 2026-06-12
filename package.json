@@ -28,7 +28,8 @@
   "files": [
     "dist/",
     "src/",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc && node scripts/build-components.mjs",
