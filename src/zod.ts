@@ -58,7 +58,7 @@ export const productZodSchema = z.object({
   priceCurrency: z.string().length(3, 'Currency must be a 3-letter ISO code').optional().describe('recommended'),
   availability: z.enum(['InStock', 'OutOfStock', 'PreOrder', 'OnlineOnly']).optional(),
   // Advanced offer structures
-  offers: z.union([z.record(z.any()), z.array(z.record(z.any()))]).optional(),
+  offers: z.union([z.record(z.string(), z.any()), z.array(z.record(z.string(), z.any()))]).optional(),
   priceRange: z.object({
     lowPrice: z.union([z.string(), z.number()]),
     highPrice: z.union([z.string(), z.number()]),
@@ -66,7 +66,7 @@ export const productZodSchema = z.object({
     offerCount: z.number().int().positive().optional(),
   }).optional(),
   // Identifiers & Brand
-  brand: z.union([z.string(), z.record(z.any())]).optional().describe('recommended'),
+  brand: z.union([z.string(), z.record(z.string(), z.any())]).optional().describe('recommended'),
   sku: z.string().optional().describe('recommended'),
   gtin: z.string().optional(),
   // Ratings & Reviews
@@ -83,8 +83,8 @@ export const productZodSchema = z.object({
     })
   ).optional(),
   // Shipping & Return Policy
-  shippingDetails: z.record(z.any()).optional(),
-  returnPolicy: z.record(z.any()).optional(),
+  shippingDetails: z.record(z.string(), z.any()).optional(),
+  returnPolicy: z.record(z.string(), z.any()).optional(),
 });
 
 // 4. Local Business Schema Zod definition
@@ -279,7 +279,7 @@ export const breadcrumbZodSchema = z.object({
 
 // 14. AutoBreadcrumb Schema Zod definition
 export const autoBreadcrumbZodSchema = z.object({
-  labels: z.record(z.string()).optional(),
+  labels: z.record(z.string(), z.string()).optional(),
   homeLabel: z.string().optional(),
   ignoreSegments: z.array(z.string()).optional(),
   prependBreadcrumbs: z.array(z.object({
