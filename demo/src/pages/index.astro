@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     question: 'Which Astro versions are supported?',
-    answer: 'Astro 5.x and 6.x. The integration uses the astro:config:setup hook API and Vite virtual modules — both stable, long-term APIs.',
+    answer: 'Astro 5.x, 6.x, and 7.x. The integration uses the astro:config:setup hook API and Vite virtual modules — both stable, long-term APIs. Astro 7 introduces a Rust-based compiler and Vite 8; the integration is fully compatible with both.',
   },
   {
     question: 'Is it free?',
@@ -90,7 +90,7 @@ import { ArticleSchema, BreadcrumbSchema }
   <!-- WebSite schema for this page -->
   <WebSiteSchema
     name="@casoon/astro-structured-data"
-    url="https://astro-structured-data.casoon.dev/"
+    url="https://astro-structured-data.casoon.de/"
   />
 
   <!-- FAQ schema — demonstrates the package while adding SEO value -->
@@ -318,7 +318,7 @@ import { ArticleSchema, BreadcrumbSchema }
 
   <!-- ── Hero ──────────────────────────────────────────────────── -->
   <div class="hero">
-    <div class="hero-badge">MIT License · Astro 5 & 6 · TypeScript</div>
+    <div class="hero-badge">MIT License · Astro 5, 6 & 7 · TypeScript</div>
     <h1>JSON-LD Structured Data<br />for <span>Astro</span></h1>
     <p>
       Schema.org components for Astro — Article, FAQ, Product, Breadcrumb,

@@ -3,10 +3,11 @@
 Astro integration for automatic structured data (JSON-LD) generation. Supports Articles, FAQs, Products, Recipes, Videos, Breadcrumbs, Local Businesses, Events, Organizations, and more — with full TypeScript and Zod validation.
 
 [![npm version](https://img.shields.io/npm/v/@casoon/astro-structured-data.svg)](https://www.npmjs.com/package/@casoon/astro-structured-data)
+[![Astro](https://img.shields.io/badge/astro-5%20%7C%206%20%7C%207-orange.svg)](https://astro.build/)
 [![GitHub repository](https://img.shields.io/badge/github-repo-black.svg?logo=github)](https://github.com/casoon/astro-structured-data)
-[![Website](https://img.shields.io/badge/website-live-brightgreen.svg)](https://astro-structured-data.casoon.dev/)
+[![Website](https://img.shields.io/badge/website-live-brightgreen.svg)](https://astro-structured-data.casoon.de/)
 
-[Landing Page](https://astro-structured-data.casoon.dev/) | [GitHub Repository](https://github.com/casoon/astro-structured-data) | [npm Package](https://www.npmjs.com/package/@casoon/astro-structured-data)
+[Landing Page](https://astro-structured-data.casoon.de/) | [GitHub Repository](https://github.com/casoon/astro-structured-data) | [npm Package](https://www.npmjs.com/package/@casoon/astro-structured-data)
 
 ## Installation
 
@@ -61,6 +62,15 @@ structuredData({
 | `defaultBrand` | `Brand \| string` | — | Default brand for `ProductSchema` |
 | `defaultShippingDetails` | `OfferShippingDetails` | — | Default shipping details for `ProductSchema` |
 | `defaultReturnPolicy` | `MerchantReturnPolicy` | — | Default return policy for `ProductSchema` |
+
+## Compatibility
+
+| Package version | Astro | Node.js |
+|---|---|---|
+| 1.5.x | 5.x · 6.x · **7.x** | ≥ 18 |
+| 1.4.x | 5.x · 6.x | ≥ 18 |
+
+Astro 7 introduces a Rust-based compiler and upgrades to Vite 8. Both changes are purely additive — no integration API was altered — so this package is fully compatible without any changes on your end.
 
 ## Dev Toolbar
 
