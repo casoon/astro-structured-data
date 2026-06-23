@@ -697,7 +697,7 @@ const warnings: RecommendedWarning[] = validateRecommended('Organization', {
 // → [{ field: 'sameAs', message: 'Organization should include "sameAs" ...' }, ...]
 ```
 
-The `type` argument uses schema.org `@type` names: `'Article'`, `'BlogPosting'`, `'NewsArticle'`, `'FAQPage'`, `'Product'`, `'LocalBusiness'`, `'Event'`, `'Organization'`, `'WebPage'`, `'WebSite'`, `'ProfilePage'`, `'JobPosting'`, `'SoftwareApplication'`, `'CollectionPage'`, `'BreadcrumbList'`.
+The `type` argument uses schema.org `@type` names: `'Article'`, `'BlogPosting'`, `'NewsArticle'`, `'FAQPage'`, `'Product'`, `'LocalBusiness'`, `'Event'`, `'Organization'`, `'WebPage'`, `'WebSite'`, `'ProfilePage'`, `'JobPosting'`, `'SoftwareApplication'`, `'CollectionPage'`, `'BreadcrumbList'`, `'Recipe'`, `'VideoObject'`.
 
 Fields marked as recommended are a subset of optional props that Google's Rich Results guidelines list as strongly beneficial — omitting them won't break validation but may reduce search result richness.
 
