@@ -1,6 +1,6 @@
 {
   "name": "@casoon/astro-structured-data",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "An Astro integration to automatically generate structured data (JSON-LD) for articles, FAQs, products, recipes, videos, breadcrumbs, local businesses, events, and more.",
   "homepage": "https://astro-structured-data.casoon.de/",
   "type": "module",

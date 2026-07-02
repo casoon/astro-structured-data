@@ -14,7 +14,7 @@ const useGraph = config.useGraph || false;
 const generateMeta = config.generateMeta || false;
 
 if (useGraph) {
-  registerSchema(Astro.locals, item);
+  registerSchema(Astro.locals, item, Astro.url.pathname);
 }
 
 // Safe serialization of the JSON-LD schema (for inline fallback mode)
@@ -47,10 +47,15 @@ const PRIMARY_META_TYPES = new Set([
   'VideoObject',
 ]);
 
+// `Astro.locals` is not guaranteed to be a fresh object per page under static (SSG)
+// output without an adapter/middleware, so the dedup flag is scoped to the current
+// page path — otherwise the first page built would permanently block meta generation
+// for every page that follows in the same build.
+const currentPage = Astro.url.pathname;
 const canGenerateMeta = !useGraph && generateMeta && PRIMARY_META_TYPES.has(item['@type']);
-const alreadyGenerated = !!Astro.locals.__structuredDataMetaGenerated;
+const alreadyGenerated = Astro.locals.__structuredDataMetaGenerated === currentPage;
 if (canGenerateMeta && !alreadyGenerated) {
-  Astro.locals.__structuredDataMetaGenerated = true;
+  Astro.locals.__structuredDataMetaGenerated = currentPage;
 }
 const seo = canGenerateMeta && !alreadyGenerated
   ? generateMetaTags(item, {

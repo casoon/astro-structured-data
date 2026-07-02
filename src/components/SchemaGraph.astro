@@ -5,7 +5,9 @@
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { generateMetaTags } from '../utils/meta';
 
-const graph = Astro.locals.structuredDataGraph || [];
+const graph = Astro.locals.__structuredDataGraphPage === Astro.url.pathname
+  ? (Astro.locals.structuredDataGraph || [])
+  : [];
 const hasItems = graph.length > 0;
 
 // Remove the individual @context fields inside the graph items to keep it clean,
