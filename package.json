@@ -33,6 +33,7 @@
   ],
   "scripts": {
     "build": "tsc && node scripts/build-components.mjs",
+    "test": "node --test test/*.test.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
