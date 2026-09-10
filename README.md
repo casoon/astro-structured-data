@@ -45,12 +45,14 @@ structuredData({
 })
 ```
 
+The integration registers a middleware that completes every HTML page once it has fully rendered: it inserts the `@graph` block (graph mode) and the meta tags (`generateMeta`) and runs the page-level checks. Because it needs the complete page, HTML responses are buffered instead of streamed. Nothing needs to be set up for this.
+
 ## Configuration
 
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `siteUrl` | `string` | — | Absolute http(s) base URL — falls back to Astro's `site` config; one of the two is required |
-| `useGraph` | `boolean` | `false` | Wrap all schemas in a `@graph` array |
+| `useGraph` | `boolean` | `false` | Combine all schemas of a page into one `@graph` block (requires `<SchemaGraph />` in the layout) |
 | `generateMeta` | `boolean` | `false` | Generate standard HTML head meta tags (og:*, twitter:*, canonical, etc.) from schemas |
 | `siteName` | `string` | — | Global site name used for `og:site_name` |
 | `locale` | `string` | — | Global locale used for `og:locale` (e.g. `de_DE`) |
@@ -81,7 +83,7 @@ Invalid structured data is never rendered. Every component validates its props a
 - **No invented values:** components never fill in placeholder data. Where schema.org needs a value (e.g. an organization name), it comes from a prop or a configured default — otherwise the build fails.
 - **Page-level checks:** all schemas on a page must agree on their sitemap hints, and in graph mode a page with schemas must render `<SchemaGraph />` exactly once.
 
-The exported Zod schemas ignore unknown top-level keys, so they can be used directly in Content Collections whose frontmatter has additional fields; the components themselves are strict.
+The exported Zod schemas ignore unknown top-level keys, so they can be used directly in Content Collections whose frontmatter has additional fields; the components themselves are strict. The generic [`<Schema>`](#schema) component is the exception: it only requires an `@type` and outputs your object as given.
 
 ## Compatibility
 
@@ -92,6 +94,17 @@ The exported Zod schemas ignore unknown top-level keys, so they can be used dire
 | 1.4.x | 5.x · 6.x | ≥ 18 |
 
 Astro 7 introduces a Rust-based compiler and upgrades to Vite 8. Both changes are purely additive — no integration API was altered — so this package is fully compatible without any changes on your end.
+
+## Upgrading from 1.x
+
+2.0 validates all data strictly and fails the build instead of rendering invalid structured data. Most upgrades come down to fixing the data the build reports:
+
+1. **Run a build.** Every invalid prop is reported with component, page and field (see [Validation](#validation)). Unknown props and unknown integration options are errors now, too.
+2. **Provide values that used to be invented:** `LocalBusinessSchema` and `OrganizationSchema` need a `name`, `JobPostingSchema` a `hiringOrganizationName` (each can also come from the configured defaults). `baseSalary` needs a `unit`. `employmentType`, `operatingSystem` and `applicationCategory` are no longer defaulted — set them explicitly where you relied on `'FULL_TIME'`, `'Web'` or `'DeveloperApplication'`.
+3. **Graph mode:** keep exactly one `<SchemaGraph />` in the base layout. Its position no longer affects which schemas are included.
+4. **Online events:** use `attendanceMode="Online"` with `onlineUrl` instead of a placeholder address.
+5. **Options:** `defaultArticlePublisher` is `{ name, logo?: { url } }` and `defaultLocalBusiness` takes the `LocalBusinessSchema` props.
+6. **Meta tags** now come from the middleware and are inserted into `<head>`; tags your layout already defines are kept. If you worked around meta tags ending up in `<body>`, you can drop that workaround.
 
 ## Dev Toolbar
 
@@ -115,7 +128,7 @@ For each schema it shows:
 
 ## Automated SEO & Sitemap Integration
 
-When `generateMeta: true` is enabled, the integration derives `<meta>` and `<link>` elements from the page's primary schema and inserts them into `<head>`. This runs as middleware after the page has fully rendered, so it sees every schema on the page regardless of where the components are placed (layout head, page body, …) — including components that await data before rendering their schema. To see the complete page, the middleware reads the whole HTML before sending it: HTML responses are buffered instead of streamed.
+When `generateMeta: true` is enabled, the integration derives `<meta>` and `<link>` elements from the page's primary schema and inserts them into `<head>`. This runs as middleware after the page has fully rendered, so it sees every schema on the page regardless of where the components are placed (layout head, page body, …) — including components that await data before rendering their schema.
 
 - **Primary schema:** the most page-specific schema wins — Article/BlogPosting/NewsArticle, Product, Recipe, VideoObject, Event, JobPosting, SoftwareApplication, ProfilePage, FAQPage, WebPage types — before site-wide LocalBusiness and WebSite schemas.
 - **Your tags win:** tags the page already defines (same `name`/`property`, canonical, or `hreflang`) are kept and not duplicated.
@@ -683,6 +696,23 @@ Docs: [schema.org/VideoObject](https://schema.org/VideoObject) · [Google: Video
 
 ---
 
+### Schema
+
+Generic component for schema.org types without a dedicated component. Only `@type` is required; the object is output as given (except keys that only drive meta tags or the sitemap, such as `robots`, `alternates` or `changefreq`), so checking its content is up to you. Like every component it accepts the sitemap props `changefreq` and `priority`.
+
+```astro
+---
+import { Schema } from '@casoon/astro-structured-data/components';
+---
+<Schema item={{ '@type': 'Course', name: 'Astro Basics', provider: { '@type': 'Organization', name: 'ACME' } }} />
+```
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `item` | `{ '@type': string \| string[]; [key: string]: unknown }` | Yes | schema.org object |
+
+---
+
 ### SchemaGraph
 
 Renders all schemas of the page as a single `@graph` block when `useGraph: true` is set (renders nothing otherwise). Place it once in your base layout where the block should appear, e.g. at the end of `<body>`. It only marks the position: the `@graph` is filled in by the integration's middleware after the whole page has rendered, so schema components can be placed anywhere — before or after it, and in components that await data. A page with schemas but without `<SchemaGraph />`, or with more than one, fails the build instead of silently losing data.
@@ -783,7 +813,7 @@ const { wordCount, readingTimeMinutes } = calculateReadingTime(post.body);
 
 Returns `{ wordCount: number; readingTimeMinutes: number; timeRequired: string }`.
 
-### Build-time warnings
+## Build-time checks
 
 After every build the integration scans all output HTML for `<script type="application/ld+json">` blocks. A block that is not valid JSON fails the build. With `warnOnMissingRecommended: true` (the default) it also logs one warning per missing recommended field per type (nested properties as dot paths, e.g. `mainEntity.sameAs`):
 
@@ -795,6 +825,14 @@ To disable:
 
 ```js
 structuredData({ warnOnMissingRecommended: false })
+```
+
+## Development
+
+```bash
+npm test        # unit tests and end-to-end tests (real static build, dev server and Node SSR)
+npm run check   # type-check, including the .astro components
+npm run build
 ```
 
 ## License
