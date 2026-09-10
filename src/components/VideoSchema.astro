@@ -1,20 +1,13 @@
 ---
 import Schema from './Schema.astro';
+import { videoZodSchema, type VideoProps } from '../zod';
+import { parseProps } from '../utils/validate';
 
-interface Props {
-  name: string;
-  description: string;
-  thumbnailUrl: string | string[];
-  uploadDate: string | Date;
-  duration?: string;
-  contentUrl?: string;
-  embedUrl?: string;
-  interactionCount?: number | string;
-  expires?: string | Date;
-  publisher?: { name: string; logoUrl?: string };
-}
+type Props = VideoProps;
 
 const {
+  changefreq,
+  priority,
   name,
   description,
   thumbnailUrl,
@@ -25,18 +18,14 @@ const {
   interactionCount,
   expires,
   publisher,
-} = Astro.props;
-
-const formattedUploadDate = typeof uploadDate === 'string'
-  ? uploadDate
-  : uploadDate.toISOString();
+} = parseProps('VideoSchema', videoZodSchema, Astro.props, Astro.url.pathname);
 
 const videoSchema: Record<string, any> = {
   '@type': 'VideoObject',
   name,
   description,
   thumbnailUrl: Array.isArray(thumbnailUrl) ? thumbnailUrl : [thumbnailUrl],
-  uploadDate: formattedUploadDate,
+  uploadDate,
 };
 
 if (duration) videoSchema.duration = duration;
@@ -51,11 +40,7 @@ if (interactionCount !== undefined) {
   };
 }
 
-if (expires) {
-  videoSchema.expires = typeof expires === 'string'
-    ? expires
-    : expires.toISOString();
-}
+if (expires) videoSchema.expires = expires;
 
 if (publisher) {
   videoSchema.publisher = {
@@ -67,4 +52,4 @@ if (publisher) {
   };
 }
 ---
-<Schema item={videoSchema} />
+<Schema item={videoSchema} changefreq={changefreq} priority={priority} />

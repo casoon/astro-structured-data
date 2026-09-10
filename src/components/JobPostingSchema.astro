@@ -3,43 +3,20 @@ import type { JobPosting } from 'schema-dts';
 import Schema from './Schema.astro';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { jobPostingZodSchema, type JobPostingProps } from '../zod';
+import { fail, parseProps } from '../utils/validate';
 
-interface Props {
-  title: string;
-  description: string; // Google prefers HTML for description
-  datePosted: string;
-  validThrough?: string;
-  employmentType?: 'FULL_TIME' | 'PART_TIME' | 'CONTRACTOR' | 'TEMPORARY' | 'INTERN' | 'VOLUNTEER' | 'OTHER';
-  hiringOrganizationName?: string;
-  hiringOrganizationUrl?: string;
-  hiringOrganizationLogo?: string;
-  jobLocation?: {
-    streetAddress: string;
-    addressLocality: string;
-    addressRegion?: string;
-    postalCode: string;
-    addressCountry: string;
-  };
-  baseSalary?: {
-    value: number | string;
-    currency: string;
-    unit?: 'HOUR' | 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
-  };
-  identifier?: {
-    name: string;
-    value: string;
-  };
-  directApply?: boolean;
-  jobLocationType?: 'TELECOMMUTE';
-  applicantLocationRequirements?: string | string[];
-}
+type Props = JobPostingProps;
 
+const page = Astro.url.pathname;
 const {
+  changefreq,
+  priority,
   title,
   description,
   datePosted,
   validThrough,
-  employmentType = 'FULL_TIME',
+  employmentType,
   hiringOrganizationName,
   hiringOrganizationUrl,
   hiringOrganizationLogo,
@@ -49,9 +26,14 @@ const {
   directApply,
   jobLocationType,
   applicantLocationRequirements,
-} = Astro.props;
+} = parseProps('JobPostingSchema', jobPostingZodSchema, Astro.props, page);
 
 const globalConfig = getGlobalConfig();
+const organizationName = hiringOrganizationName ?? globalConfig.defaultArticlePublisher?.name;
+if (!organizationName) {
+  fail('JobPostingSchema', page, 'Missing hiring organization: set "hiringOrganizationName" or defaultArticlePublisher.name');
+}
+const organizationLogo = hiringOrganizationLogo ?? globalConfig.defaultArticlePublisher?.logo?.url;
 
 const jobSchema: JobPosting = {
   '@type': 'JobPosting',
@@ -59,12 +41,12 @@ const jobSchema: JobPosting = {
   description,
   datePosted,
   ...(validThrough && { validThrough }),
-  employmentType,
+  ...(employmentType && { employmentType }),
   hiringOrganization: {
     '@type': 'Organization',
-    name: hiringOrganizationName || globalConfig.defaultArticlePublisher?.name || 'Employer',
-    url: hiringOrganizationUrl || globalConfig.siteUrl || Astro.url.origin,
-    logo: hiringOrganizationLogo || globalConfig.defaultArticlePublisher?.logo?.url || undefined,
+    name: organizationName,
+    url: hiringOrganizationUrl ?? globalConfig.siteUrl,
+    ...(organizationLogo && { logo: organizationLogo }),
   },
   ...(jobLocation && {
     jobLocation: {
@@ -86,7 +68,7 @@ const jobSchema: JobPosting = {
       value: {
         '@type': 'QuantitativeValue',
         value: baseSalary.value,
-        unitText: baseSalary.unit || 'YEAR'
+        unitText: baseSalary.unit,
       }
     }
   }),
@@ -104,6 +86,6 @@ const jobSchema: JobPosting = {
       ? applicantLocationRequirements.map(r => ({ '@type': 'Country', name: r }))
       : { '@type': 'Country', name: applicantLocationRequirements },
   }),
-};
+} as JobPosting;
 ---
-<Schema item={jobSchema} />
+<Schema item={jobSchema} changefreq={changefreq} priority={priority} />

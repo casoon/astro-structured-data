@@ -3,16 +3,13 @@ import type { WebSite } from 'schema-dts';
 import Schema from './Schema.astro';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { webSiteZodSchema, type WebSiteProps } from '../zod';
+import { parseProps } from '../utils/validate';
 
-interface Props {
-  name: string;
-  url?: string;
-  searchQueryInput?: string; // e.g. "q" or "query" to enable Sitelinks Searchbox
-}
+type Props = WebSiteProps;
 
-const { name, url, searchQueryInput } = Astro.props;
-const globalConfig = getGlobalConfig();
-const siteUrl = url || globalConfig.siteUrl || Astro.url.origin;
+const { changefreq, priority, name, url, searchQueryInput } = parseProps('WebSiteSchema', webSiteZodSchema, Astro.props, Astro.url.pathname);
+const siteUrl: string = url ?? getGlobalConfig().siteUrl;
 
 const websiteSchema: WebSite = {
   '@type': 'WebSite',
@@ -30,4 +27,4 @@ const websiteSchema: WebSite = {
   })
 };
 ---
-<Schema item={websiteSchema} />
+<Schema item={websiteSchema} changefreq={changefreq} priority={priority} />

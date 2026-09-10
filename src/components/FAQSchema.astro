@@ -1,17 +1,12 @@
 ---
 import type { FAQPage } from 'schema-dts';
 import Schema from './Schema.astro';
+import { faqZodSchema, type FAQProps } from '../zod';
+import { parseProps } from '../utils/validate';
 
-interface QuestionAnswer {
-  question: string;
-  answer: string;
-}
+type Props = FAQProps;
 
-interface Props {
-  questions: QuestionAnswer[];
-}
-
-const { questions } = Astro.props;
+const { changefreq, priority, questions } = parseProps('FAQSchema', faqZodSchema, Astro.props, Astro.url.pathname);
 
 const faqSchema: FAQPage = {
   '@type': 'FAQPage',
@@ -25,4 +20,4 @@ const faqSchema: FAQPage = {
   }))
 };
 ---
-<Schema item={faqSchema} />
+<Schema item={faqSchema} changefreq={changefreq} priority={priority} />

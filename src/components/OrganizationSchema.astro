@@ -3,24 +3,15 @@ import type { Organization } from 'schema-dts';
 import Schema from './Schema.astro';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { organizationZodSchema, type OrganizationProps } from '../zod';
+import { fail, parseProps } from '../utils/validate';
 
-interface Props {
-  name?: string;
-  url?: string;
-  logoUrl?: string;
-  sameAs?: string[];
-  telephone?: string;
-  email?: string;
-  address?: {
-    streetAddress: string;
-    addressLocality: string;
-    addressRegion?: string;
-    postalCode: string;
-    addressCountry: string;
-  };
-}
+type Props = OrganizationProps;
 
+const page = Astro.url.pathname;
 const {
+  changefreq,
+  priority,
   name,
   url,
   logoUrl,
@@ -28,18 +19,25 @@ const {
   telephone,
   email,
   address,
-} = Astro.props;
+} = parseProps('OrganizationSchema', organizationZodSchema, Astro.props, page);
 
 const globalConfig = getGlobalConfig();
+const resolvedName = name ?? globalConfig.defaultArticlePublisher?.name;
+if (!resolvedName) {
+  fail('OrganizationSchema', page, 'Missing organization name: set the "name" prop or defaultArticlePublisher.name');
+}
+const resolvedLogo = logoUrl ?? globalConfig.defaultArticlePublisher?.logo?.url;
 
-const orgSchema: Organization = {
+const orgSchema = {
   '@type': 'Organization',
-  name: name || globalConfig.defaultArticlePublisher?.name || 'Organization',
-  url: url || globalConfig.siteUrl || Astro.url.origin,
-  logo: {
-    '@type': 'ImageObject',
-    url: logoUrl || globalConfig.defaultArticlePublisher?.logo?.url || '',
-  },
+  name: resolvedName,
+  url: url ?? globalConfig.siteUrl,
+  ...(resolvedLogo && {
+    logo: {
+      '@type': 'ImageObject',
+      url: resolvedLogo,
+    },
+  }),
   ...(sameAs && { sameAs }),
   ...(telephone && { telephone }),
   ...(email && { email }),
@@ -53,6 +51,6 @@ const orgSchema: Organization = {
       addressCountry: address.addressCountry,
     }
   })
-};
+} satisfies Organization;
 ---
-<Schema item={orgSchema} />
+<Schema item={orgSchema} changefreq={changefreq} priority={priority} />

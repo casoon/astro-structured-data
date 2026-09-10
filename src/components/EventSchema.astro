@@ -1,32 +1,18 @@
 ---
 import type { Event } from 'schema-dts';
 import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { eventZodSchema, type EventProps } from '../zod';
+import { parseProps } from '../utils/validate';
+import { pageUrl } from '../utils/meta';
 
-interface Props {
-  name: string;
-  startDate: string;
-  endDate?: string;
-  description?: string;
-  imageUrl?: string | string[];
-  url?: string;
-  locationName: string;
-  locationAddress: {
-    streetAddress: string;
-    addressLocality: string;
-    addressRegion?: string;
-    postalCode: string;
-    addressCountry: string;
-  };
-  attendanceMode?: 'Offline' | 'Online' | 'Mixed';
-  status?: 'Scheduled' | 'Cancelled' | 'Postponed' | 'Rescheduled';
-  price?: number | string;
-  priceCurrency?: string;
-  availability?: 'InStock' | 'OutOfStock' | 'PreOrder' | 'OnlineOnly';
-  organizer?: { name: string; url?: string };
-  performer?: { name: string; url?: string };
-}
+type Props = EventProps;
 
+const page = Astro.url.pathname;
 const {
+  changefreq,
+  priority,
   name,
   startDate,
   endDate,
@@ -35,6 +21,7 @@ const {
   url,
   locationName,
   locationAddress,
+  onlineUrl,
   attendanceMode = 'Offline',
   status = 'Scheduled',
   price,
@@ -42,7 +29,7 @@ const {
   availability = 'InStock',
   organizer,
   performer,
-} = Astro.props;
+} = parseProps('EventSchema', eventZodSchema, Astro.props, page);
 
 const attendanceModeMap = {
   Offline: 'https://schema.org/OfflineEventAttendanceMode',
@@ -57,6 +44,23 @@ const statusMap = {
   Rescheduled: 'https://schema.org/EventRescheduled',
 };
 
+// The schema guarantees the venue (Offline/Mixed) and the stream URL (Online/Mixed).
+const place = locationName && locationAddress
+  ? {
+      '@type': 'Place',
+      name: locationName,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: locationAddress.streetAddress,
+        addressLocality: locationAddress.addressLocality,
+        ...(locationAddress.addressRegion && { addressRegion: locationAddress.addressRegion }),
+        postalCode: locationAddress.postalCode,
+        addressCountry: locationAddress.addressCountry,
+      },
+    }
+  : undefined;
+const virtualLocation = onlineUrl ? { '@type': 'VirtualLocation', url: onlineUrl } : undefined;
+
 const eventSchema: Event = {
   '@type': 'Event',
   name,
@@ -67,25 +71,15 @@ const eventSchema: Event = {
   ...(url && { url }),
   eventAttendanceMode: attendanceModeMap[attendanceMode] as any,
   eventStatus: statusMap[status] as any,
-  location: {
-    '@type': 'Place',
-    name: locationName,
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: locationAddress.streetAddress,
-      addressLocality: locationAddress.addressLocality,
-      ...(locationAddress.addressRegion && { addressRegion: locationAddress.addressRegion }),
-      postalCode: locationAddress.postalCode,
-      addressCountry: locationAddress.addressCountry,
-    }
-  },
-  ...(price && priceCurrency && {
+  location: place && virtualLocation ? [place, virtualLocation] : (place ?? virtualLocation),
+  // The schema guarantees price and priceCurrency are set together (price 0 = free event).
+  ...(price !== undefined && {
     offers: {
       '@type': 'Offer',
       price,
       priceCurrency,
       availability: `https://schema.org/${availability}`,
-      url: url || Astro.url.href,
+      url: url ?? pageUrl(page, getGlobalConfig().siteUrl),
     }
   }),
   ...(organizer && {
@@ -102,6 +96,6 @@ const eventSchema: Event = {
       ...(performer.url && { url: performer.url }),
     }
   }),
-};
+} as Event;
 ---
-<Schema item={eventSchema} />
+<Schema item={eventSchema} changefreq={changefreq} priority={priority} />

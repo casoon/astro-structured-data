@@ -1,6 +1,6 @@
 # @casoon/astro-structured-data
 
-Astro integration for automatic structured data (JSON-LD) generation. Supports Articles, FAQs, Products, Recipes, Videos, Breadcrumbs, Local Businesses, Events, Organizations, and more — with full TypeScript and Zod validation.
+Astro integration for automatic structured data (JSON-LD) generation. Supports Articles, FAQs, Products, Recipes, Videos, Breadcrumbs, Local Businesses, Events, Organizations, and more — with TypeScript-typed components and matching Zod schemas for validating your content.
 
 [![npm version](https://img.shields.io/npm/v/@casoon/astro-structured-data.svg)](https://www.npmjs.com/package/@casoon/astro-structured-data)
 [![Astro](https://img.shields.io/badge/astro-5%20%7C%206%20%7C%207-orange.svg)](https://astro.build/)
@@ -49,7 +49,7 @@ structuredData({
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `siteUrl` | `string` | — | Absolute base URL — falls back to Astro's `site` config |
+| `siteUrl` | `string` | — | Absolute http(s) base URL — falls back to Astro's `site` config; one of the two is required |
 | `useGraph` | `boolean` | `false` | Wrap all schemas in a `@graph` array |
 | `generateMeta` | `boolean` | `false` | Generate standard HTML head meta tags (og:*, twitter:*, canonical, etc.) from schemas |
 | `siteName` | `string` | — | Global site name used for `og:site_name` |
@@ -57,16 +57,37 @@ structuredData({
 | `twitterSite` | `string` | — | Twitter site handle used for `twitter:site` (e.g. `@my_site`) |
 | `twitterCreator` | `string` | — | Fallback Twitter creator handle used for `twitter:creator` (e.g. `@author`) |
 | `warnOnMissingRecommended` | `boolean` | `true` | Log warnings during build when recommended schema.org fields are absent |
-| `defaultLocalBusiness` | `LocalBusiness` | — | Site-wide local business defaults merged into `LocalBusinessSchema` |
-| `defaultArticlePublisher` | `Organization` | — | Default publisher for `ArticleSchema` and `OrganizationSchema` |
+| `defaultLocalBusiness` | `LocalBusinessSchema` props | — | Site-wide local business defaults merged into `LocalBusinessSchema` |
+| `defaultArticlePublisher` | `{ name: string; logo?: { url: string } }` | — | Default publisher for `ArticleSchema`, `WebPageSchema`, `OrganizationSchema` and the hiring organization of `JobPostingSchema` |
 | `defaultBrand` | `Brand \| string` | — | Default brand for `ProductSchema` |
 | `defaultShippingDetails` | `OfferShippingDetails` | — | Default shipping details for `ProductSchema` |
 | `defaultReturnPolicy` | `MerchantReturnPolicy` | — | Default return policy for `ProductSchema` |
+
+Options are validated when the integration is created: unknown keys (typos) and invalid values fail the build.
+
+## Validation
+
+Invalid structured data is never rendered. Every component validates its props against its Zod schema at render time; any violation throws and fails the build (or the request, in SSR) with a message naming the component, the page and the offending fields:
+
+```
+[astro-structured-data] <EventSchema> on /events/meetup/ received invalid props:
+✖ Must be an ISO 4217 currency code like "EUR"
+  → at priceCurrency
+```
+
+- **Unknown props are rejected**, so typos cannot silently drop data.
+- **Formats:** dates are ISO 8601 (`2026-06-01`, `2026-06-01T18:00:00+02:00`) or `Date` objects; durations are ISO 8601 (`PT1H30M`); currencies are ISO 4217 (`EUR`); URLs are absolute `http(s)` URLs or root-relative paths (`/img.jpg`); text fields must not be empty.
+- **Cross-field rules**, e.g. `price` and `priceCurrency` only together, `ratingValue` and `reviewCount` only together, `imageWidth`/`imageHeight`/… only with an image, an end date not before its start date, at most one of `offers` / `priceRange` / `price`.
+- **No invented values:** components never fill in placeholder data. Where schema.org needs a value (e.g. an organization name), it comes from a prop or a configured default — otherwise the build fails.
+- **Page-level checks:** all schemas on a page must agree on their sitemap hints, and in graph mode a page with schemas must render `<SchemaGraph />` exactly once.
+
+The exported Zod schemas ignore unknown top-level keys, so they can be used directly in Content Collections whose frontmatter has additional fields; the components themselves are strict.
 
 ## Compatibility
 
 | Package version | Astro | Node.js |
 |---|---|---|
+| **2.0.x** | 5.x · 6.x · 7.x | ≥ 18 |
 | 1.5.x | 5.x · 6.x · **7.x** | ≥ 18 |
 | 1.4.x | 5.x · 6.x | ≥ 18 |
 
@@ -94,7 +115,14 @@ For each schema it shows:
 
 ## Automated SEO & Sitemap Integration
 
-When `generateMeta: true` is enabled, the integration automatically derives and renders corresponding `<meta>` and `<link>` elements inside the page `<head>` during render time:
+When `generateMeta: true` is enabled, the integration derives `<meta>` and `<link>` elements from the page's primary schema and inserts them into `<head>`. This runs as middleware after the page has fully rendered, so it sees every schema on the page regardless of where the components are placed (layout head, page body, …) — including components that await data before rendering their schema. To see the complete page, the middleware reads the whole HTML before sending it: HTML responses are buffered instead of streamed.
+
+- **Primary schema:** the most page-specific schema wins — Article/BlogPosting/NewsArticle, Product, Recipe, VideoObject, Event, JobPosting, SoftwareApplication, ProfilePage, FAQPage, WebPage types — before site-wide LocalBusiness and WebSite schemas.
+- **Your tags win:** tags the page already defines (same `name`/`property`, canonical, or `hreflang`) are kept and not duplicated.
+- **Canonical / `og:url`:** built from `siteUrl` and the page path, or taken from a `WebPageSchema` `url` / an article's `mainEntityOfPage`. The `url` of an event, business or product is never used as the page's canonical.
+- A page with a primary schema but no `</head>` fails the build.
+
+Generated tags:
 * **Canonical**: `<link rel="canonical" href="...">`
 * **Description**: `<meta name="description" content="...">`
 * **Robots**: `<meta name="robots" content="...">` (derived from `item.robots` or `item.noindex` / `item.nofollow`)
@@ -105,8 +133,8 @@ When `generateMeta: true` is enabled, the integration automatically derives and 
 * **Twitter Cards**: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`
 
 ### Sitemap Metadata Support
-You can also define sitemap crawl properties directly in your components (e.g. `changefreq="weekly" priority={0.8}`). 
-These properties are automatically encoded as data-attributes on the JSON-LD `<script>` tag. Post-build sitemap generators like `@casoon/astro-site-files` can read these tags directly from the HTML to dynamically build/patch the sitemap entries, meaning you don't need to duplicate sitemap logic in your configs. This feature is completely decoupled and will fall back gracefully to the sitemap defaults if `@casoon/astro-site-files` is not installed or configured.
+Every schema component (and the generic `<Schema>`) accepts sitemap crawl properties (e.g. `<ArticleSchema ... changefreq="weekly" priority={0.8} />`).
+These properties are encoded as data-attributes on the JSON-LD `<script>` tag (the `@graph` script in graph mode) and are not part of the JSON-LD itself. A page has one sitemap entry, so all schemas on a page must agree on these values — conflicting or invalid values (`changefreq` outside the sitemap protocol values, `priority` outside 0–1) fail the build. Post-build sitemap generators like `@casoon/astro-site-files` can read these tags directly from the HTML to dynamically build/patch the sitemap entries, meaning you don't need to duplicate sitemap logic in your configs. This feature is completely decoupled and will fall back gracefully to the sitemap defaults if `@casoon/astro-site-files` is not installed or configured.
 
 ## Components
 
@@ -142,8 +170,8 @@ Docs: [schema.org/Article](https://schema.org/Article) · [Google: Article](http
 | `dateModified` | `string \| Date` | No | Last modified date |
 | `authorName` | `string \| string[]` | Yes | Author name(s) |
 | `authorType` | `'Person' \| 'Organization'` | No | Default: `'Person'` |
-| `authorUrl` | `string` | No | Author profile URL |
-| `authorId` | `string` | No | Author `@id` for linked data |
+| `authorUrl` | `string` | No | Author profile URL (single author only) |
+| `authorId` | `string` | No | Author `@id` for linked data (single author only) |
 | `imageUrl` | `string` | No | Article image URL |
 | `imageWidth` | `number` | No | Image width in pixels |
 | `imageHeight` | `number` | No | Image height in pixels |
@@ -209,14 +237,14 @@ Docs: [schema.org/Product](https://schema.org/Product) · [Google: Product](http
 | `imageUrl` | `string \| string[]` | Yes | Product image URL(s) |
 | `price` | `string \| number` | No | Price (simple offer) |
 | `priceCurrency` | `string` | No | ISO 4217 currency code, e.g. `'EUR'` |
-| `availability` | `'InStock' \| 'OutOfStock' \| 'PreOrder' \| 'OnlineOnly'` | No | Offer availability |
+| `availability` | `'InStock' \| 'OutOfStock' \| 'PreOrder' \| 'OnlineOnly'` | No | Offer availability (requires `price`) |
 | `offers` | `Offer \| Offer[]` | No | Full offer object(s) for advanced use cases |
 | `priceRange` | `PriceRange` | No | Price range for variable pricing |
 | `brand` | `string \| Brand` | No | Brand name or object (falls back to `defaultBrand`) |
 | `sku` | `string` | No | Stock keeping unit |
 | `gtin` | `string` | No | GTIN barcode |
-| `ratingValue` | `number` | No | Aggregate rating (0–5) |
-| `reviewCount` | `number` | No | Number of reviews |
+| `ratingValue` | `number` | No | Aggregate rating (0–5), only together with `reviewCount` |
+| `reviewCount` | `number` | No | Number of reviews, only together with `ratingValue` |
 | `reviews` | `ReviewItem[]` | No | Individual review objects |
 | `shippingDetails` | `object` | No | Shipping details (falls back to `defaultShippingDetails`) |
 | `returnPolicy` | `object` | No | Return policy (falls back to `defaultReturnPolicy`) |
@@ -241,11 +269,11 @@ Docs: [schema.org/LocalBusiness](https://schema.org/LocalBusiness) · [Google: L
 />
 ```
 
-All props fall back to `defaultLocalBusiness` from the integration config.
+All props fall back to `defaultLocalBusiness` from the integration config. A `name` is required — as a prop or in the defaults.
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `name` | `string` | No | Business name |
+| `name` | `string` | Yes* | Business name (*unless `defaultLocalBusiness.name` is set) |
 | `url` | `string` | No | Business website URL |
 | `description` | `string` | No | Short business description |
 | `imageUrl` | `string` | No | Business image URL |
@@ -323,7 +351,17 @@ Docs: [schema.org/Event](https://schema.org/Event) · [Google: Event](https://de
   attendanceMode="Offline"
   status="Scheduled"
 />
+
+<!-- Online event: no venue, the stream URL becomes a VirtualLocation -->
+<EventSchema
+  name="Astro Live Webinar"
+  startDate="2024-06-20T17:00:00+02:00"
+  attendanceMode="Online"
+  onlineUrl="https://example.com/live"
+/>
 ```
+
+The location follows the `attendanceMode`, as Google requires: `'Offline'` needs `locationName` + `locationAddress` (output as `Place`), `'Online'` needs `onlineUrl` and allows no venue (output as `VirtualLocation`), `'Mixed'` needs both (output as `[Place, VirtualLocation]`). Any other combination fails the build.
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
@@ -332,8 +370,9 @@ Docs: [schema.org/Event](https://schema.org/Event) · [Google: Event](https://de
 | `endDate` | `string \| Date` | No | End date/time |
 | `description` | `string` | No | Event description |
 | `imageUrl` | `string \| string[]` | No | Event image URL(s) |
-| `locationName` | `string` | Yes | Venue name |
-| `locationAddress` | `{ streetAddress, addressLocality, addressRegion?, postalCode, addressCountry }` | Yes | Venue address |
+| `locationName` | `string` | Offline/Mixed | Venue name |
+| `locationAddress` | `{ streetAddress, addressLocality, addressRegion?, postalCode, addressCountry }` | Offline/Mixed | Venue address |
+| `onlineUrl` | `string` | Online/Mixed | Absolute http(s) URL of the stream or virtual event (output as `VirtualLocation`) |
 | `attendanceMode` | `'Offline' \| 'Online' \| 'Mixed'` | No | Default: `'Offline'` |
 | `status` | `'Scheduled' \| 'Cancelled' \| 'Postponed' \| 'Rescheduled'` | No | Default: `'Scheduled'` |
 | `url` | `string` | No | Event page URL |
@@ -359,9 +398,9 @@ Docs: [schema.org/Organization](https://schema.org/Organization) · [Google: Org
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `name` | `string` | No | Organization name (falls back to `defaultArticlePublisher.name`) |
+| `name` | `string` | Yes* | Organization name (*unless `defaultArticlePublisher.name` is set) |
 | `url` | `string` | No | Organization URL (falls back to `siteUrl`) |
-| `logoUrl` | `string` | No | Logo URL (falls back to `defaultArticlePublisher.logo`) |
+| `logoUrl` | `string` | No | Logo URL (falls back to `defaultArticlePublisher.logo`; omitted if neither is set) |
 | `sameAs` | `string[]` | No | Social profile / same-entity URLs |
 | `telephone` | `string` | No | Phone number |
 | `email` | `string` | No | Email address |
@@ -409,18 +448,18 @@ Generic page schema — use for landing pages, legal pages, or any page that doe
 | `description` | `string` | No | Page description |
 | `url` | `string` | No | Canonical URL (falls back to current page URL) |
 | `inLanguage` | `string` | No | Content language, e.g. `'de'` |
-| `datePublished` | `string` | No | Publication date |
-| `dateModified` | `string` | No | Last modified date |
+| `datePublished` | `string \| Date` | No | Publication date |
+| `dateModified` | `string \| Date` | No | Last modified date |
 | `isAccessibleForFree` | `boolean` | No | Default: `true` |
 | `image` | `string` | No | Page image URL |
 | `imageWidth` | `number` | No | Image width in pixels |
 | `imageHeight` | `number` | No | Image height in pixels |
 | `imageFormat` | `string` | No | Image MIME type |
 | `imageCaption` | `string` | No | Image caption |
-| `author` | `{ name: string; url?: string; id?: string; type?: string }` | No | Page author |
+| `author` | `{ name: string; url?: string; id?: string; type?: 'Person' \| 'Organization' }` | No | Page author |
 | `publisher` | `{ name: string; url?: string; logo?: string }` | No | Publisher (falls back to `defaultArticlePublisher`) |
-| `robots` | `string` | No | Robots directive, e.g. `'noindex'` |
-| `alternates` | `{ href: string; hreflang: string }[]` | No | Alternate language versions |
+| `robots` | `string` | No | Robots directive, e.g. `'noindex'` (meta tag only, not part of the JSON-LD) |
+| `alternates` | `{ href: string; hreflang: string }[]` | No | Alternate language versions (hreflang links only, not part of the JSON-LD) |
 
 ---
 
@@ -458,7 +497,7 @@ For product listing / archive pages.
   name="All Products"
   description="Browse our full product catalogue"
   products={[
-    { name: 'Widget A', url: '/products/widget-a', imageUrl: '...', price: 9.99, priceCurrency: 'EUR' },
+    { name: 'Widget A', url: '/products/widget-a', imageUrl: '/images/widget-a.jpg', price: 9.99, priceCurrency: 'EUR' },
     { name: 'Widget B', url: '/products/widget-b' },
   ]}
 />
@@ -480,6 +519,7 @@ Docs: [schema.org/JobPosting](https://schema.org/JobPosting) · [Google: Job Pos
 <JobPostingSchema
   title="Senior Developer"
   description="<p>We're looking for a senior developer...</p>"
+  hiringOrganizationName="ACME GmbH"
   datePosted="2024-06-01"
   jobLocation={{
     streetAddress: 'Hauptstraße 1',
@@ -498,6 +538,7 @@ For remote positions, use `jobLocationType` instead of (or in addition to) `jobL
 <JobPostingSchema
   title="Remote Frontend Engineer"
   description="<p>Fully remote position open worldwide.</p>"
+  hiringOrganizationName="ACME GmbH"
   datePosted="2024-06-01"
   jobLocationType="TELECOMMUTE"
   applicantLocationRequirements="DE"
@@ -505,24 +546,24 @@ For remote positions, use `jobLocationType` instead of (or in addition to) `jobL
 />
 ```
 
-> **Note:** Google requires either `jobLocation` or `applicantLocationRequirements` — at least one must be provided.
+> **Note:** Following Google's rules, on-site jobs need `jobLocation`; fully remote jobs set `jobLocationType="TELECOMMUTE"` plus `applicantLocationRequirements`; hybrid jobs set all three. `applicantLocationRequirements` is only allowed for remote jobs.
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `title` | `string` | Yes | Job title |
 | `description` | `string` | Yes | Job description (HTML accepted by Google) |
-| `datePosted` | `string` | Yes | ISO date the posting was published |
-| `validThrough` | `string` | No | ISO date the posting expires |
-| `employmentType` | `'FULL_TIME' \| 'PART_TIME' \| 'CONTRACTOR' \| 'TEMPORARY' \| 'INTERN' \| 'VOLUNTEER' \| 'OTHER'` | No | Default: `'FULL_TIME'` |
-| `hiringOrganizationName` | `string` | No | Hiring company name (falls back to `defaultArticlePublisher`) |
+| `datePosted` | `string \| Date` | Yes | ISO date the posting was published |
+| `validThrough` | `string \| Date` | No | ISO date the posting expires (not before `datePosted`) |
+| `employmentType` | `'FULL_TIME' \| 'PART_TIME' \| 'CONTRACTOR' \| 'TEMPORARY' \| 'INTERN' \| 'VOLUNTEER' \| 'OTHER'` | No | Employment type (omitted if not set) |
+| `hiringOrganizationName` | `string` | Yes* | Hiring company name (*unless `defaultArticlePublisher.name` is set) |
 | `hiringOrganizationUrl` | `string` | No | Hiring company URL |
 | `hiringOrganizationLogo` | `string` | No | Hiring company logo URL |
-| `jobLocation` | `{ streetAddress, addressLocality, addressRegion?, postalCode, addressCountry }` | No* | Job location — required unless `applicantLocationRequirements` is set |
-| `baseSalary` | `{ value: number \| string; currency: string; unit?: 'HOUR' \| 'DAY' \| 'WEEK' \| 'MONTH' \| 'YEAR' }` | No | Salary details |
+| `jobLocation` | `{ streetAddress, addressLocality, addressRegion?, postalCode, addressCountry }` | No* | Job location — required unless `jobLocationType` is `'TELECOMMUTE'` |
+| `baseSalary` | `{ value: number \| string; currency: string; unit: 'HOUR' \| 'DAY' \| 'WEEK' \| 'MONTH' \| 'YEAR' }` | No | Salary details |
 | `identifier` | `{ name: string; value: string }` | No | Employer-specific job ID (e.g. `{ name: 'Acme', value: 'JR-12345' }`) |
 | `directApply` | `boolean` | No | Shows "Apply on your site" badge in Google rich results |
 | `jobLocationType` | `'TELECOMMUTE'` | No | Set for remote positions |
-| `applicantLocationRequirements` | `string \| string[]` | No* | Country/region where remote applicants must be located — required unless `jobLocation` is set |
+| `applicantLocationRequirements` | `string \| string[]` | No* | Country/region where remote applicants must be located — required for `'TELECOMMUTE'` jobs |
 
 ---
 
@@ -547,12 +588,12 @@ Docs: [schema.org/SoftwareApplication](https://schema.org/SoftwareApplication) �
 | `name` | `string` | Yes | App name |
 | `description` | `string` | No | Short app description |
 | `url` | `string` | No | Link to the app or its landing page |
-| `operatingSystem` | `string` | No | e.g. `'Web'`, `'Windows, macOS'`. Default: `'Web'` |
-| `applicationCategory` | `string` | No | e.g. `'BusinessApplication'`, `'Game'`. Default: `'DeveloperApplication'` |
+| `operatingSystem` | `string` | No | e.g. `'Web'`, `'Windows, macOS'` (omitted if not set) |
+| `applicationCategory` | `string` | No | e.g. `'BusinessApplication'`, `'Game'` (omitted if not set) |
 | `price` | `string \| number` | No | Price (use `0` for free apps) |
 | `priceCurrency` | `string` | No | ISO 4217 currency code |
-| `ratingValue` | `number` | No | Aggregate rating (0–5) |
-| `reviewCount` | `number` | No | Number of reviews |
+| `ratingValue` | `number` | No | Aggregate rating (0–5), only together with `reviewCount` |
+| `reviewCount` | `number` | No | Number of reviews, only together with `ratingValue` |
 
 ---
 
@@ -605,8 +646,8 @@ Docs: [schema.org/Recipe](https://schema.org/Recipe) · [Google: Recipe](https:/
 | `calories` | `number \| string` | No | Calorie count |
 | `ingredients` | `string[]` | Yes | List of ingredient descriptions |
 | `instructions` | `string[] \| InstructionStep[]` | Yes | Step-by-step instructions |
-| `ratingValue` | `number` | No | Rating value (0-5) |
-| `reviewCount` | `number` | No | Number of ratings |
+| `ratingValue` | `number` | No | Rating value (0-5), only together with `reviewCount` |
+| `reviewCount` | `number` | No | Number of ratings, only together with `ratingValue` |
 | `datePublished` | `string \| Date` | No | Publication date |
 
 ---
@@ -644,7 +685,7 @@ Docs: [schema.org/VideoObject](https://schema.org/VideoObject) · [Google: Video
 
 ### SchemaGraph
 
-Renders all schemas registered via `useGraph: true` as a single `@graph` block. Place once in your base layout.
+Renders all schemas of the page as a single `@graph` block when `useGraph: true` is set (renders nothing otherwise). Place it once in your base layout where the block should appear, e.g. at the end of `<body>`. It only marks the position: the `@graph` is filled in by the integration's middleware after the whole page has rendered, so schema components can be placed anywhere — before or after it, and in components that await data. A page with schemas but without `<SchemaGraph />`, or with more than one, fails the build instead of silently losing data.
 
 ```astro
 ---
@@ -653,13 +694,13 @@ import { SchemaGraph } from '@casoon/astro-structured-data/components';
 <SchemaGraph />
 ```
 
-No props. Reads from `Astro.locals.structuredDataGraph` populated by the other components when `useGraph` is enabled.
+No props. Reads the schemas the other components registered for the current page.
 
 ---
 
 ## Zod schemas
 
-All components ship with a matching Zod schema, exported from `@casoon/astro-structured-data/zod`. Use them in Content Collections, form validation, or any runtime validation.
+All components ship with a matching Zod schema, exported from `@casoon/astro-structured-data/zod`. Use them in Content Collections, form validation, or any runtime validation. The components validate their props with exactly these schemas, and the component prop types are exported from the same entry point (`ArticleProps`, `EventProps`, `ProductProps`, …).
 
 ```ts
 import {
@@ -699,7 +740,7 @@ const warnings: RecommendedWarning[] = validateRecommended('Organization', {
 
 The `type` argument uses schema.org `@type` names: `'Article'`, `'BlogPosting'`, `'NewsArticle'`, `'FAQPage'`, `'Product'`, `'LocalBusiness'`, `'Event'`, `'Organization'`, `'WebPage'`, `'WebSite'`, `'ProfilePage'`, `'JobPosting'`, `'SoftwareApplication'`, `'CollectionPage'`, `'BreadcrumbList'`, `'Recipe'`, `'VideoObject'`.
 
-Fields marked as recommended are a subset of optional props that Google's Rich Results guidelines list as strongly beneficial — omitting them won't break validation but may reduce search result richness.
+Fields marked as recommended are a subset of optional props that Google's Rich Results guidelines list as strongly beneficial — omitting them won't break validation but may reduce search result richness. Each recommended prop is declared once in the Zod schema together with the schema.org property it produces; `validateRecommended` (props) and the build-time check (rendered JSON-LD) are both derived from that declaration.
 
 ## Utilities
 
@@ -727,6 +768,7 @@ const { wordCount, readingTimeMinutes } = calculateReadingTime(post.body);
 ---
 <ArticleSchema
   title={post.data.title}
+  description={post.data.description}
   datePublished={post.data.date}
   authorName={post.data.author}
   wordCount={wordCount}
@@ -743,7 +785,7 @@ Returns `{ wordCount: number; readingTimeMinutes: number; timeRequired: string }
 
 ### Build-time warnings
 
-When `warnOnMissingRecommended: true` (the default), the same recommended-field logic runs automatically after every build. The integration scans all output HTML for `<script type="application/ld+json">` blocks and logs one warning per missing field per type:
+After every build the integration scans all output HTML for `<script type="application/ld+json">` blocks. A block that is not valid JSON fails the build. With `warnOnMissingRecommended: true` (the default) it also logs one warning per missing recommended field per type (nested properties as dot paths, e.g. `mainEntity.sameAs`):
 
 ```
 [structured-data] Organization is missing recommended field "sameAs" — add it for richer search results.

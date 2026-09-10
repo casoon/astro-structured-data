@@ -11,7 +11,7 @@ export default defineConfig({
       generateMeta: true,
       siteName: 'Astro Demo Store Website',
       locale: 'de_DE',
-      twitterSite: '@astro_demo_store',
+      twitterSite: '@astrodemostore',
       defaultLocalBusiness: {
         name: 'Astro Demo Store',
         imageUrl: 'https://example.com/store.jpg',

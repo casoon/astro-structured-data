@@ -1,16 +1,16 @@
 /**
- * Registers a schema object in the Astro request locals graph store.
- * This is used to collect all structured data on a page and render it as a single @graph block.
+ * Per-page store of all schema objects rendered on a page, kept in `Astro.locals`. The
+ * middleware reads it after the page has fully rendered to build the `@graph` block (graph
+ * mode) and the meta tags.
  *
- * `pageKey` scopes the store to the current page. Under static (SSG) output without an
- * adapter/middleware, Astro does not guarantee a fresh `locals` object per page, so without
- * this the graph would silently accumulate schemas across every page in the build.
+ * `pageKey` scopes the store to the current page. Under static (SSG) output Astro does not
+ * guarantee a fresh `locals` object per page, so without this the store would silently
+ * accumulate schemas across every page in the build.
  */
 export function registerSchema(locals: any, schema: Record<string, any>, pageKey?: string) {
   if (!locals) return;
   if (!locals.structuredDataGraph || locals.__structuredDataGraphPage !== pageKey) {
-    locals.structuredDataGraph = [];
-    locals.__structuredDataGraphPage = pageKey;
+    resetSchemas(locals, pageKey);
   }
 
   // Prevent duplicate entries of identical items
@@ -21,4 +21,13 @@ export function registerSchema(locals: any, schema: Record<string, any>, pageKey
   if (!isDuplicate) {
     locals.structuredDataGraph.push(schema);
   }
+}
+
+export function resetSchemas(locals: any, pageKey?: string) {
+  locals.structuredDataGraph = [];
+  locals.__structuredDataGraphPage = pageKey;
+}
+
+export function getRegisteredSchemas(locals: any, pageKey?: string): Record<string, any>[] {
+  return locals?.__structuredDataGraphPage === pageKey ? (locals.structuredDataGraph ?? []) : [];
 }

@@ -1,22 +1,20 @@
 ---
 import type { ProfilePage } from 'schema-dts';
 import Schema from './Schema.astro';
+import { profilePageZodSchema, type ProfilePageProps } from '../zod';
+import { parseProps } from '../utils/validate';
 
-interface Props {
-  name: string;
-  description?: string;
-  imageUrl?: string;
-  sameAs?: string[];
-  publishingPrinciples?: string;
-}
+type Props = ProfilePageProps;
 
 const {
+  changefreq,
+  priority,
   name,
   description,
   imageUrl,
   sameAs,
   publishingPrinciples,
-} = Astro.props;
+} = parseProps('ProfilePageSchema', profilePageZodSchema, Astro.props, Astro.url.pathname);
 
 const profileSchema: ProfilePage = {
   '@type': 'ProfilePage',
@@ -30,4 +28,4 @@ const profileSchema: ProfilePage = {
   }
 };
 ---
-<Schema item={profileSchema} />
+<Schema item={profileSchema} changefreq={changefreq} priority={priority} />

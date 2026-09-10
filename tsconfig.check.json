@@ -1,0 +1,13 @@
+{
+  // Type-checks the .astro components too (the build tsconfig excludes them because
+  // they ship as source and are bundled by the consumer's Vite — hence bundler
+  // resolution here). Used by `npm run check`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src/**/*"],
+  "exclude": []
+}

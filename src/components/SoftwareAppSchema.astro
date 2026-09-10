@@ -1,52 +1,46 @@
 ---
 import type { SoftwareApplication } from 'schema-dts';
 import Schema from './Schema.astro';
+import { softwareAppZodSchema, type SoftwareAppProps } from '../zod';
+import { parseProps } from '../utils/validate';
 
-interface Props {
-  name: string;
-  description?: string;
-  url?: string;
-  operatingSystem?: string; // e.g. "Windows, macOS, Linux" or "Web"
-  applicationCategory?: string; // e.g. "DeveloperApplication", "Game", "BusinessApplication"
-  price?: string | number;
-  priceCurrency?: string;
-  ratingValue?: number;
-  reviewCount?: number;
-}
+type Props = SoftwareAppProps;
 
 const {
+  changefreq,
+  priority,
   name,
   description,
   url,
-  operatingSystem = 'Web',
-  applicationCategory = 'DeveloperApplication',
+  operatingSystem, // e.g. "Windows, macOS, Linux" or "Web"
+  applicationCategory, // e.g. "DeveloperApplication", "Game", "BusinessApplication"
   price,
   priceCurrency,
   ratingValue,
   reviewCount,
-} = Astro.props;
+} = parseProps('SoftwareAppSchema', softwareAppZodSchema, Astro.props, Astro.url.pathname);
 
 const appSchema: SoftwareApplication = {
   '@type': 'SoftwareApplication',
   name,
   ...(description && { description }),
   ...(url && { url }),
-  operatingSystem,
-  applicationCategory,
-  ...(price !== undefined && priceCurrency && {
+  ...(operatingSystem && { operatingSystem }),
+  ...(applicationCategory && { applicationCategory }),
+  ...(price !== undefined && {
     offers: {
       '@type': 'Offer',
       price,
       priceCurrency,
     }
   }),
-  ...(ratingValue && reviewCount && {
+  ...(ratingValue !== undefined && reviewCount !== undefined && {
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue,
       reviewCount,
     }
   })
-};
+} as SoftwareApplication;
 ---
-<Schema item={appSchema} />
+<Schema item={appSchema} changefreq={changefreq} priority={priority} />

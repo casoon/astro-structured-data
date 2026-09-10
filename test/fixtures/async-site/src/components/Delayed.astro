@@ -1,0 +1,14 @@
+---
+// Loads "data" before rendering its schema, so the schema is registered only while the
+// page body is already streaming — after <SchemaGraph /> and the <head> have rendered.
+import { ArticleSchema } from '../../../../../dist/components.js';
+
+await new Promise((resolve) => setTimeout(resolve, 50));
+---
+<ArticleSchema
+  title="Delayed article"
+  description="Rendered after an await"
+  datePublished="2026-01-01"
+  authorName="Ada"
+  changefreq="weekly"
+/>

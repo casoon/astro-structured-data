@@ -7,7 +7,49 @@ export interface GeneratedMeta {
   alternates?: Array<{ href: string; hreflang: string }>;
   openGraph: Record<string, string | string[]>;
   twitter: Record<string, string>;
-  sitemapAttrs: Record<string, string>;
+}
+
+/** Absolute URL of a page on the configured site (never the dev/build server origin). */
+export function pageUrl(pathname: string, siteUrl: string): string {
+  return new URL(pathname, siteUrl).href;
+}
+
+// Schema types that may drive page-level meta tags, most page-specific first. Site-wide
+// types (LocalBusiness, WebSite) come last so a global business/site schema in the layout
+// never wins over the schema describing the actual page.
+export const PRIMARY_META_TYPES = [
+  'Article', 'BlogPosting', 'NewsArticle',
+  'Product', 'ProductGroup',
+  'Recipe',
+  'VideoObject',
+  'Event',
+  'JobPosting',
+  'SoftwareApplication', 'WebApplication', 'MobileApplication',
+  'ProfilePage',
+  'FAQPage',
+  'ItemPage', 'AboutPage', 'ContactPage', 'CollectionPage',
+  'WebPage',
+  'LocalBusiness',
+  'WebSite',
+];
+
+export function findPrimaryItem(items: Record<string, any>[]): Record<string, any> | undefined {
+  for (const type of PRIMARY_META_TYPES) {
+    const item = items.find((it) => it['@type'] === type);
+    if (item) return item;
+  }
+  return undefined;
+}
+
+const ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
+
+/** Meta descriptions are plain text; some schema fields (e.g. JobPosting.description) may contain HTML. */
+function toPlainText(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (entity) => ENTITIES[entity])
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function getFirstString(val: any): string | undefined {
@@ -85,11 +127,15 @@ function resolveAbsUrl(url: string, siteUrl?: string): string {
   return url;
 }
 
+// Types whose `url` is the URL of the page itself. For other types (Event, LocalBusiness,
+// Product, ...) `url` points at the described thing, which may live on another site.
+const PAGE_TYPES = new Set(['WebPage', 'ItemPage', 'AboutPage', 'ContactPage', 'CollectionPage', 'ProfilePage', 'FAQPage']);
+
 function resolveCanonical(item: Record<string, any>, canonicalUrl: string): string {
   if (item.mainEntityOfPage && typeof item.mainEntityOfPage === 'object' && item.mainEntityOfPage['@id']) {
     return item.mainEntityOfPage['@id'];
   }
-  if (item.url && typeof item.url === 'string') return item.url;
+  if (PAGE_TYPES.has(item['@type']) && typeof item.url === 'string') return item.url;
   return canonicalUrl;
 }
 
@@ -277,13 +323,6 @@ function buildVideoOpenGraph(
   }
 }
 
-function extractSitemapAttrs(item: Record<string, any>): Record<string, string> {
-  const attrs: Record<string, string> = {};
-  if (item.changefreq) attrs['data-sitemap-changefreq'] = item.changefreq;
-  if (item.priority !== undefined) attrs['data-sitemap-priority'] = item.priority.toString();
-  return attrs;
-}
-
 export function generateMetaTags(
   item: Record<string, any>,
   context: {
@@ -296,7 +335,10 @@ export function generateMetaTags(
   }
 ): GeneratedMeta {
   const type = item['@type'];
-  const title = item.headline || item.name;
+  // A ProfilePage describes its person in `mainEntity`; a JobPosting names itself via `title`.
+  const subject = type === 'ProfilePage' && item.mainEntity && typeof item.mainEntity === 'object' ? item.mainEntity : item;
+  const title: string | undefined = subject.headline ?? subject.name ?? (type === 'JobPosting' ? subject.title : undefined);
+  const description = typeof subject.description === 'string' ? toPlainText(subject.description) || undefined : undefined;
 
   const openGraph: Record<string, string | string[]> = {};
   const twitter: Record<string, string> = {};
@@ -305,15 +347,15 @@ export function generateMetaTags(
     openGraph['og:title'] = title;
     twitter['twitter:title'] = title;
   }
-  if (item.description) {
-    openGraph['og:description'] = item.description;
-    twitter['twitter:description'] = item.description;
+  if (description) {
+    openGraph['og:description'] = description;
+    twitter['twitter:description'] = description;
   }
 
   const canonical = resolveCanonical(item, context.canonicalUrl);
   openGraph['og:url'] = canonical;
 
-  resolveImageTags(item, context.siteUrl, openGraph, twitter);
+  resolveImageTags(subject, context.siteUrl, openGraph, twitter);
   twitter['twitter:card'] = openGraph['og:image'] ? 'summary_large_image' : 'summary';
 
   const siteName = resolveSiteName(item, context.siteName);
@@ -335,13 +377,12 @@ export function generateMetaTags(
 
   return {
     canonical,
-    description: item.description,
+    description,
     robots: extractRobots(item),
     author: getAuthorName(item.author),
     readingTime: extractReadingTime(item),
     alternates: extractAlternates(item),
     openGraph,
     twitter,
-    sitemapAttrs: extractSitemapAttrs(item),
   };
 }

@@ -3,39 +3,28 @@ import type { BreadcrumbList } from 'schema-dts';
 import Schema from './Schema.astro';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { autoBreadcrumbZodSchema, type AutoBreadcrumbProps } from '../zod';
+import { parseProps } from '../utils/validate';
 
-interface Props {
-  labels?: Record<string, string>; // Overrides for specific path segments
-  homeLabel?: string;
-  ignoreSegments?: string[];
-  prependBreadcrumbs?: Array<{ name: string; url: string }>;
-  appendBreadcrumbs?: Array<{ name: string; url: string }>;
-}
+type Props = AutoBreadcrumbProps;
 
 const {
+  changefreq,
+  priority,
   labels = {},
   homeLabel = 'Home',
   ignoreSegments = [],
   prependBreadcrumbs = [],
   appendBreadcrumbs = [],
-} = Astro.props;
+} = parseProps('AutoBreadcrumbSchema', autoBreadcrumbZodSchema, Astro.props, Astro.url.pathname);
 
-const globalConfig = getGlobalConfig();
-const siteUrl = globalConfig.siteUrl || Astro.url.origin;
-
-const resolveUrl = (urlStr: string) => {
-  if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
-    return urlStr;
-  }
-  return new URL(urlStr, siteUrl).toString();
-};
-
-const breadcrumbItems: Array<{ name: string; url: string }> = [];
+const siteUrl: string = getGlobalConfig().siteUrl;
+const resolveUrl = (urlStr: string) => new URL(urlStr, siteUrl).toString();
 
 // 1. Add home/root breadcrumb
-if (homeLabel) {
-  breadcrumbItems.push({ name: homeLabel, url: resolveUrl('/') });
-}
+const breadcrumbItems: Array<{ name: string; url: string }> = [
+  { name: homeLabel, url: resolveUrl('/') },
+];
 
 // 2. Add prepended breadcrumbs
 prependBreadcrumbs.forEach((item) => {
@@ -80,4 +69,4 @@ const breadcrumbSchema: BreadcrumbList = {
   })),
 };
 ---
-<Schema item={breadcrumbSchema} />
+<Schema item={breadcrumbSchema} changefreq={changefreq} priority={priority} />

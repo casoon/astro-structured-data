@@ -3,49 +3,35 @@ import type { LocalBusiness } from 'schema-dts';
 import Schema from './Schema.astro';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { localBusinessZodSchema, type LocalBusinessProps } from '../zod';
+import { fail, parseProps } from '../utils/validate';
 
-interface Props {
-  name?: string;
-  url?: string;
-  description?: string;
-  imageUrl?: string;
-  telephone?: string;
-  email?: string;
-  priceRange?: string;
-  address?: {
-    streetAddress: string;
-    addressLocality: string;
-    addressRegion?: string;
-    postalCode: string;
-    addressCountry: string;
-  };
-  geo?: {
-    latitude: number;
-    longitude: number;
-  };
-  openingHours?: string[];
-  sameAs?: string[];
+type Props = LocalBusinessProps;
+
+const page = Astro.url.pathname;
+const props = parseProps('LocalBusinessSchema', localBusinessZodSchema, Astro.props, page);
+// Site-wide defaults are validated against the same schema when the integration is set up.
+const defaults = getGlobalConfig().defaultLocalBusiness ?? {};
+
+const name = props.name ?? defaults.name;
+const url = props.url ?? defaults.url;
+const description = props.description ?? defaults.description;
+const imageUrl = props.imageUrl ?? defaults.imageUrl;
+const telephone = props.telephone ?? defaults.telephone;
+const email = props.email ?? defaults.email;
+const priceRange = props.priceRange ?? defaults.priceRange;
+const address = props.address ?? defaults.address;
+const geo = props.geo ?? defaults.geo;
+const openingHours = props.openingHours ?? defaults.openingHours;
+const sameAs = props.sameAs ?? defaults.sameAs;
+
+if (!name) {
+  fail('LocalBusinessSchema', page, 'Missing business name: set the "name" prop or defaultLocalBusiness.name');
 }
 
-const props = Astro.props;
-const globalConfig = getGlobalConfig();
-const defaults = globalConfig.defaultLocalBusiness || {};
-
-const name = props.name || defaults.name;
-const url = props.url || defaults.url;
-const description = props.description || defaults.description;
-const imageUrl = props.imageUrl || defaults.imageUrl;
-const telephone = props.telephone || defaults.telephone;
-const email = props.email || defaults.email;
-const priceRange = props.priceRange || defaults.priceRange;
-const address = props.address || defaults.address;
-const geo = props.geo || defaults.geo;
-const openingHours = props.openingHours || defaults.openingHours;
-const sameAs = props.sameAs || defaults.sameAs;
-
-const localBusinessSchema: LocalBusiness = {
+const localBusinessSchema = {
   '@type': 'LocalBusiness',
-  ...(name && { name }),
+  name,
   ...(url && { url }),
   ...(description && { description }),
   ...(imageUrl && { image: imageUrl }),
@@ -71,6 +57,6 @@ const localBusinessSchema: LocalBusiness = {
   }),
   ...(openingHours && { openingHours }),
   ...(sameAs && { sameAs }),
-};
+} satisfies LocalBusiness;
 ---
-{name && <Schema item={localBusinessSchema} />}
+<Schema item={localBusinessSchema} changefreq={props.changefreq} priority={props.priority} />

@@ -1,73 +1,30 @@
 import type { AstroIntegration } from 'astro';
-import type { LocalBusiness, Organization, Brand, MerchantReturnPolicy, OfferShippingDetails } from 'schema-dts';
 import { z } from 'zod';
 import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import { missingRecommended, structuredDataOptionsSchema, type StructuredDataOptions } from './zod.js';
 
-export interface StructuredDataOptions {
-  siteUrl?: string;
-  useGraph?: boolean;
-  generateMeta?: boolean;
-  siteName?: string;
-  locale?: string;
-  twitterSite?: string;
-  twitterCreator?: string;
-  warnOnMissingRecommended?: boolean;
-  defaultLocalBusiness?: Omit<LocalBusiness, '@context' | '@type'>;
-  defaultArticlePublisher?: Omit<Organization, '@context' | '@type'>;
-  defaultBrand?: Omit<Brand, '@context' | '@type'> | string;
-  defaultShippingDetails?: Omit<OfferShippingDetails, '@context' | '@type'>;
-  defaultReturnPolicy?: Omit<MerchantReturnPolicy, '@context' | '@type'>;
-}
-
-const configSchema = z.object({
-  siteUrl: z.string().url('siteUrl must be a valid absolute URL (e.g. https://example.com)').optional(),
-  useGraph: z.boolean().optional(),
-  generateMeta: z.boolean().optional(),
-  siteName: z.string().optional(),
-  locale: z.string().optional(),
-  twitterSite: z.string().optional(),
-  twitterCreator: z.string().optional(),
-  warnOnMissingRecommended: z.boolean().optional(),
-  defaultLocalBusiness: z.any().optional(),
-  defaultArticlePublisher: z.any().optional(),
-  defaultBrand: z.union([z.string(), z.any()]).optional(),
-  defaultShippingDetails: z.any().optional(),
-  defaultReturnPolicy: z.any().optional(),
-});
-
-// Recommended fields per schema.org type (using schema.org field names)
-const RECOMMENDED_FIELDS: Record<string, string[]> = {
-  Organization: ['sameAs', 'telephone', 'email', 'address'],
-  Article: ['dateModified', 'publisher', 'image'],
-  BlogPosting: ['dateModified', 'publisher', 'image'],
-  NewsArticle: ['dateModified', 'publisher', 'image'],
-  Product: ['offers', 'brand', 'sku', 'aggregateRating'],
-  LocalBusiness: ['image', 'telephone', 'address', 'geo', 'openingHours'],
-  Event: ['endDate', 'description', 'image'],
-  WebPage: ['description', 'image', 'author', 'datePublished', 'dateModified'],
-  JobPosting: ['validThrough', 'employmentType', 'baseSalary'],
-  SoftwareApplication: ['operatingSystem', 'applicationCategory', 'offers', 'aggregateRating'],
-  Recipe: ['prepTime', 'cookTime', 'recipeYield', 'recipeCategory', 'recipeCuisine', 'nutrition', 'recipeIngredient', 'recipeInstructions', 'aggregateRating'],
-  VideoObject: ['duration', 'contentUrl', 'embedUrl', 'interactionStatistic'],
-};
+export type { StructuredDataOptions };
 
 const JSONLD_RE = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
 
 export default function structuredData(options: StructuredDataOptions = {}): AstroIntegration {
-  configSchema.parse(options);
+  const parsed = structuredDataOptionsSchema.safeParse(options);
+  if (!parsed.success) {
+    throw new Error(`[astro-structured-data] Invalid integration options:\n${z.prettifyError(parsed.error)}`);
+  }
+
   return {
     name: 'astro-structured-data',
     hooks: {
-      'astro:config:setup': ({ addDevToolbarApp, updateConfig, config, logger }) => {
+      'astro:config:setup': ({ addDevToolbarApp, addMiddleware, updateConfig, config }) => {
         const siteUrl = options.siteUrl ?? config.site;
         if (!siteUrl) {
-          logger.error(
-            'astro-structured-data: no siteUrl provided and no `site` set in astro.config. ' +
+          throw new Error(
+            '[astro-structured-data] No siteUrl provided and no `site` set in astro.config. ' +
             'Add `site: "https://example.com"` to your Astro config or pass `siteUrl` to the integration.'
           );
-          return;
         }
         const resolvedOptions = { ...options, siteUrl };
 
@@ -96,6 +53,12 @@ export default function structuredData(options: StructuredDataOptions = {}): Ast
           },
         });
 
+        // Page-level checks and meta tags need the fully rendered page, so they run as middleware.
+        addMiddleware({
+          entrypoint: new URL('./middleware.js', import.meta.url),
+          order: 'pre',
+        });
+
         // Add the Dev Toolbar App for validation
         addDevToolbarApp({
           id: 'structured-data-validator',
@@ -106,8 +69,6 @@ export default function structuredData(options: StructuredDataOptions = {}): Ast
       },
 
       'astro:build:done': async ({ dir, logger }) => {
-        if (options.warnOnMissingRecommended === false) return;
-
         const outputDir = fileURLToPath(dir);
         let entries: string[];
         try {
@@ -125,22 +86,22 @@ export default function structuredData(options: StructuredDataOptions = {}): Ast
 
           for (const match of html.matchAll(JSONLD_RE)) {
             let data: any;
-            try { data = JSON.parse(match[1]); } catch { continue; }
+            try {
+              data = JSON.parse(match[1]);
+            } catch (error) {
+              throw new Error(`[astro-structured-data] Invalid JSON-LD in ${file}: ${(error as Error).message}`);
+            }
+            if (options.warnOnMissingRecommended === false) continue;
 
             const items: any[] = Array.isArray(data['@graph']) ? data['@graph'] : [data];
 
             for (const item of items) {
-              const type = item['@type'] as string | undefined;
-              if (!type) continue;
-              const recommended = RECOMMENDED_FIELDS[type];
-              if (!recommended) continue;
-
-              for (const field of recommended) {
-                const key = `${type}:${field}`;
-                if (!warned.has(key) && item[field] == null) {
+              for (const field of missingRecommended(item)) {
+                const key = `${item['@type']}:${field}`;
+                if (!warned.has(key)) {
                   warned.add(key);
                   logger.warn(
-                    `[structured-data] ${type} is missing recommended field "${field}" — add it for richer search results. Disable with warnOnMissingRecommended: false`
+                    `[structured-data] ${item['@type']} is missing recommended field "${field}" — add it for richer search results. Disable with warnOnMissingRecommended: false`
                   );
                 }
               }

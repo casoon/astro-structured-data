@@ -1,17 +1,12 @@
 ---
 import type { BreadcrumbList } from 'schema-dts';
 import Schema from './Schema.astro';
+import { breadcrumbZodSchema, type BreadcrumbProps } from '../zod';
+import { parseProps } from '../utils/validate';
 
-interface BreadcrumbItem {
-  name: string;
-  url: string;
-}
+type Props = BreadcrumbProps;
 
-interface Props {
-  items: BreadcrumbItem[];
-}
-
-const { items } = Astro.props;
+const { changefreq, priority, items } = parseProps('BreadcrumbSchema', breadcrumbZodSchema, Astro.props, Astro.url.pathname);
 
 const breadcrumbSchema: BreadcrumbList = {
   '@type': 'BreadcrumbList',
@@ -23,4 +18,4 @@ const breadcrumbSchema: BreadcrumbList = {
   })),
 };
 ---
-<Schema item={breadcrumbSchema} />
+<Schema item={breadcrumbSchema} changefreq={changefreq} priority={priority} />

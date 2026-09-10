@@ -2,32 +2,16 @@
 import Schema from './Schema.astro';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { webPageZodSchema, type WebPageProps } from '../zod';
+import { parseProps } from '../utils/validate';
+import { pageUrl } from '../utils/meta';
 
-interface Alternate {
-  href: string;
-  hreflang: string;
-}
+type Props = WebPageProps;
 
-interface Props {
-  title: string;
-  description?: string;
-  url?: string;
-  inLanguage?: string;
-  datePublished?: string;
-  dateModified?: string;
-  isAccessibleForFree?: boolean;
-  image?: string;
-  imageWidth?: number;
-  imageHeight?: number;
-  imageFormat?: string;
-  imageCaption?: string;
-  author?: { name: string; url?: string; id?: string; type?: string };
-  publisher?: { name: string; url?: string; logo?: string };
-  robots?: string;
-  alternates?: Alternate[];
-}
-
+const page = Astro.url.pathname;
 const {
+  changefreq,
+  priority,
   title,
   description,
   url,
@@ -44,24 +28,24 @@ const {
   publisher,
   robots,
   alternates,
-} = Astro.props;
+} = parseProps('WebPageSchema', webPageZodSchema, Astro.props, page);
 
 const globalConfig = getGlobalConfig();
-const pageUrl = url || Astro.url.href;
 
 const webpageSchema: Record<string, any> = {
   '@type': 'WebPage',
   name: title,
-  url: pageUrl,
+  url: url ?? pageUrl(page, globalConfig.siteUrl),
   isAccessibleForFree,
 };
 
 if (description) webpageSchema.description = description;
 if (inLanguage) webpageSchema.inLanguage = inLanguage;
 if (datePublished) webpageSchema.datePublished = datePublished;
-if (dateModified || datePublished) webpageSchema.dateModified = dateModified || datePublished;
+if (dateModified || datePublished) webpageSchema.dateModified = dateModified ?? datePublished;
+// robots/alternates drive meta tags only; they are stripped from the JSON-LD output.
 if (robots) webpageSchema.robots = robots;
-if (alternates?.length) webpageSchema.alternates = alternates;
+if (alternates) webpageSchema.alternates = alternates;
 
 if (image) {
   webpageSchema.image = {
@@ -76,24 +60,24 @@ if (image) {
 
 if (author) {
   webpageSchema.author = {
-    '@type': author.type || 'Person',
+    '@type': author.type ?? 'Person',
     name: author.name,
     ...(author.id ? { '@id': author.id } : {}),
     ...(author.url ? { url: author.url } : {}),
   };
 }
 
-const publisherName = publisher?.name || globalConfig.defaultArticlePublisher?.name;
-const publisherUrl = publisher?.url || globalConfig.siteUrl;
-const publisherLogo = publisher?.logo || globalConfig.defaultArticlePublisher?.logo?.url;
+const publisherName = publisher?.name ?? globalConfig.defaultArticlePublisher?.name;
+const publisherUrl = publisher?.url ?? globalConfig.siteUrl;
+const publisherLogo = publisher?.logo ?? globalConfig.defaultArticlePublisher?.logo?.url;
 
 if (publisherName) {
   webpageSchema.publisher = {
     '@type': 'Organization',
     name: publisherName,
-    ...(publisherUrl ? { url: publisherUrl } : {}),
+    url: publisherUrl,
     ...(publisherLogo ? { logo: { '@type': 'ImageObject', url: publisherLogo } } : {}),
   };
 }
 ---
-<Schema item={webpageSchema} />
+<Schema item={webpageSchema} changefreq={changefreq} priority={priority} />

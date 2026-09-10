@@ -1,57 +1,44 @@
 ---
 import type { CollectionPage } from 'schema-dts';
 import Schema from './Schema.astro';
+// @ts-ignore
+import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import { collectionPageZodSchema, type CollectionPageProps } from '../zod';
+import { parseProps } from '../utils/validate';
+import { pageUrl } from '../utils/meta';
 
-interface ProductListItem {
-  name: string;
-  url: string;
-  price?: number | string;
-  priceCurrency?: string;
-  imageUrl?: string;
-}
+type Props = CollectionPageProps;
 
-interface Props {
-  name: string;
-  description: string;
-  products: ProductListItem[];
-}
-
-const { name, description, products } = Astro.props;
+const page = Astro.url.pathname;
+const { changefreq, priority, name, description, products } = parseProps('CollectionPageSchema', collectionPageZodSchema, Astro.props, page);
 
 const collectionSchema: CollectionPage = {
   '@type': 'CollectionPage',
   name,
   description,
-  url: Astro.url.href,
+  url: pageUrl(page, getGlobalConfig().siteUrl),
   mainEntity: {
     '@type': 'ItemList',
     numberOfItems: products.length,
-    itemListElement: products.map((prod, index) => {
-      const item: Record<string, any> = {
+    itemListElement: products.map((prod, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
         '@type': 'Product',
         name: prod.name,
         url: prod.url,
-      };
-
-      if (prod.imageUrl) {
-        item.image = prod.imageUrl;
-      }
-
-      if (prod.price !== undefined && prod.priceCurrency) {
-        item.offers = {
-          '@type': 'Offer',
-          price: prod.price,
-          priceCurrency: prod.priceCurrency,
-        };
-      }
-
-      return {
-        '@type': 'ListItem',
-        position: index + 1,
-        item
-      };
-    })
+        ...(prod.imageUrl && { image: prod.imageUrl }),
+        // The schema guarantees price and priceCurrency are set together.
+        ...(prod.price !== undefined && {
+          offers: {
+            '@type': 'Offer',
+            price: prod.price,
+            priceCurrency: prod.priceCurrency,
+          },
+        }),
+      },
+    }))
   }
 };
 ---
-<Schema item={collectionSchema} />
+<Schema item={collectionSchema} changefreq={changefreq} priority={priority} />

@@ -1,92 +1,34 @@
 ---
+import { z } from 'zod';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
+import type { SitemapProps } from '../zod';
 import { registerSchema } from '../utils/graph';
-import { generateMetaTags } from '../utils/meta';
+import { collectSitemapHints, serializeJsonLd, sitemapAttributes, stripNonSchemaKeys } from '../utils/json-ld';
+import { parseProps } from '../utils/validate';
 
-interface Props {
-  item: Record<string, any>;
-}
+type Props = { item: Record<string, any> } & SitemapProps;
 
-const { item } = Astro.props;
-const config = getGlobalConfig();
-const useGraph = config.useGraph || false;
-const generateMeta = config.generateMeta || false;
-
-if (useGraph) {
-  registerSchema(Astro.locals, item, Astro.url.pathname);
-}
-
-// Safe serialization of the JSON-LD schema (for inline fallback mode)
-const jsonLd = JSON.stringify({
-  '@context': 'https://schema.org',
-  ...item,
+const propsSchema = z.object({
+  item: z.looseObject({
+    '@type': z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]),
+  }),
 });
 
-const sitemapAttrs: Record<string, string> = {};
-if (item.changefreq) {
-  sitemapAttrs['data-sitemap-changefreq'] = item.changefreq;
-}
-if (item.priority !== undefined) {
-  sitemapAttrs['data-sitemap-priority'] = item.priority.toString();
-}
+const page = Astro.url.pathname;
+const { item: rawItem, changefreq, priority } = parseProps('Schema', propsSchema, Astro.props, page);
 
-// Only primary schema types generate meta tags; first one per page wins.
-const PRIMARY_META_TYPES = new Set([
-  'Article', 'BlogPosting', 'NewsArticle',
-  'WebPage', 'ItemPage', 'AboutPage', 'ContactPage', 'CollectionPage',
-  'Product', 'ProductGroup',
-  'LocalBusiness',
-  'Event',
-  'JobPosting',
-  'SoftwareApplication', 'WebApplication', 'MobileApplication',
-  'ProfilePage',
-  'FAQPage',
-  'WebSite',
-  'Recipe',
-  'VideoObject',
-]);
+// Sitemap hints ride along on the item (for the graph and the middleware) and are
+// stripped from the JSON-LD output. Hints on the item and as props must agree.
+const hints = collectSitemapHints([rawItem, { changefreq, priority }]);
+const item: Record<string, any> = { ...rawItem, ...hints };
+registerSchema(Astro.locals, item, page);
 
-// `Astro.locals` is not guaranteed to be a fresh object per page under static (SSG)
-// output without an adapter/middleware, so the dedup flag is scoped to the current
-// page path — otherwise the first page built would permanently block meta generation
-// for every page that follows in the same build.
-const currentPage = Astro.url.pathname;
-const canGenerateMeta = !useGraph && generateMeta && PRIMARY_META_TYPES.has(item['@type']);
-const alreadyGenerated = Astro.locals.__structuredDataMetaGenerated === currentPage;
-if (canGenerateMeta && !alreadyGenerated) {
-  Astro.locals.__structuredDataMetaGenerated = currentPage;
-}
-const seo = canGenerateMeta && !alreadyGenerated
-  ? generateMetaTags(item, {
-      siteUrl: config.siteUrl,
-      canonicalUrl: Astro.url.href,
-      siteName: config.siteName,
-      locale: config.locale,
-      twitterSite: config.twitterSite,
-      twitterCreator: config.twitterCreator,
-    })
-  : null;
+const useGraph = getGlobalConfig().useGraph ?? false;
+const jsonLd = serializeJsonLd({
+  '@context': 'https://schema.org',
+  ...stripNonSchemaKeys(item),
+});
+const sitemapAttrs = sitemapAttributes(hints);
 ---
-{!useGraph && (
-  <>
-    {seo?.canonical && <link rel="canonical" href={seo.canonical} />}
-    {seo?.description && <meta name="description" content={seo.description} />}
-    {seo?.robots && <meta name="robots" content={seo.robots} />}
-    {seo?.author && <meta name="author" content={seo.author} />}
-    {seo?.readingTime && <meta name="reading-time" content={seo.readingTime} />}
-    {seo?.alternates?.map(({ href, hreflang }) => (
-      <link rel="alternate" hreflang={hreflang} href={href} />
-    ))}
-    {seo && Object.entries(seo.openGraph).map(([prop, val]) => (
-      Array.isArray(val)
-        ? val.map((v) => <meta property={prop} content={v} />)
-        : <meta property={prop} content={val} />
-    ))}
-    {seo && Object.entries(seo.twitter).map(([name, val]) => (
-      <meta name={name} content={val} />
-    ))}
-    <script type="application/ld+json" {...(seo?.sitemapAttrs || sitemapAttrs)} set:html={jsonLd} />
-  </>
-)}
-
+{!useGraph && <script is:inline type="application/ld+json" {...sitemapAttrs} set:html={jsonLd} />}

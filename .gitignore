@@ -1,6 +1,8 @@
 node_modules/
 dist/
 *.tgz
+.astro/
+test/fixtures/**/.e2e-*/
 
 # Demo
 demo/node_modules/

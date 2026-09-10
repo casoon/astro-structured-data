@@ -276,15 +276,21 @@ function renderGooglePreview(data: any): HTMLDivElement | null {
     evTitle.innerText = headline;
     details.appendChild(evTitle);
 
-    let locationStr = '';
-    if (data.location) {
-      if (typeof data.location === 'string') locationStr = data.location;
-      else if (data.location.name) locationStr = data.location.name;
-      else if (data.location.address) {
-        const addr = data.location.address;
-        locationStr = typeof addr === 'string' ? addr : `${addr.streetAddress || ''}, ${addr.addressLocality || ''}`;
-      }
-    }
+    // An event has a Place, a VirtualLocation, or both (Mixed).
+    const locations: any[] = Array.isArray(data.location) ? data.location : data.location ? [data.location] : [];
+    const locationStr = locations
+      .map((location) => {
+        if (typeof location === 'string') return location;
+        if (location['@type'] === 'VirtualLocation') return 'Online';
+        if (location.name) return location.name;
+        if (location.address) {
+          const addr = location.address;
+          return typeof addr === 'string' ? addr : `${addr.streetAddress || ''}, ${addr.addressLocality || ''}`;
+        }
+        return '';
+      })
+      .filter(Boolean)
+      .join(' · ');
 
     let timeStr = '';
     if (data.startDate) {
