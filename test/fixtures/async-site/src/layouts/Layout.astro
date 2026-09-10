@@ -1,0 +1,15 @@
+---
+import { SchemaGraph } from '../../../../../dist/components.js';
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Async fixture</title>
+    <!-- Pages put site-wide schemas here via slot="head" (the usual layout pattern). -->
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+    <SchemaGraph />
+  </body>
+</html>

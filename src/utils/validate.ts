@@ -3,8 +3,10 @@ import { sitemapShape } from '../zod.js';
 
 type SitemapOutput = z.output<z.ZodObject<typeof sitemapShape>>;
 
-// Attributes Astro itself adds to component props (e.g. `data-astro-cid-*` for scoped styles).
-const FRAMEWORK_PROP_RE = /^data-astro-/;
+// Attributes that belong to Astro, not to the component: `slot` (places the component in a
+// named slot of its parent, e.g. `<ArticleSchema slot="head" />`) and `data-astro-*`
+// (e.g. `data-astro-cid-*` for scoped styles).
+const isFrameworkProp = (key: string) => key === 'slot' || key.startsWith('data-astro-');
 
 /**
  * Validates component props against the component's Zod schema (plus the sitemap props).
@@ -16,7 +18,7 @@ export function parseProps<T extends z.ZodObject>(
   props: Record<string, unknown>,
   page: string
 ): z.output<T> & SitemapOutput {
-  const ownProps = Object.fromEntries(Object.entries(props).filter(([key]) => !FRAMEWORK_PROP_RE.test(key)));
+  const ownProps = Object.fromEntries(Object.entries(props).filter(([key]) => !isFrameworkProp(key)));
   const result = schema.safeExtend(sitemapShape).strict().safeParse(ownProps);
   if (!result.success) {
     throw new Error(

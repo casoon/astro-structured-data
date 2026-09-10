@@ -1,18 +1,13 @@
 ---
-import { LocalBusinessSchema, SchemaGraph } from '../../../../../dist/components.js';
+import { LocalBusinessSchema } from '../../../../../dist/components.js';
+import Layout from '../layouts/Layout.astro';
 import Delayed from '../components/Delayed.astro';
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Async fixture</title>
-    <!-- Site-wide schema that renders first; the page's own schema must still win. -->
-    <LocalBusinessSchema name="Fixture Shop" />
-  </head>
-  <body>
-    <main>
-      <Delayed />
-    </main>
-    <SchemaGraph />
-  </body>
-</html>
+<Layout>
+  <!-- Site-wide schema placed into the layout's named head slot; it renders first, but the
+       page's own (delayed) schema must still win. -->
+  <LocalBusinessSchema slot="head" name="Fixture Shop" />
+  <main>
+    <Delayed />
+  </main>
+</Layout>

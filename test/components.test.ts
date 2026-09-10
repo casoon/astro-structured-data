@@ -132,8 +132,9 @@ describe.each(cases)('$name', ({ name, component, type, minimal, full }) => {
     expect(scripts[0].attrs).toBe('');
   });
 
-  test('ignores attributes Astro adds itself (scoped-style ids)', async () => {
-    const { scripts } = await render(component, { ...minimal, 'data-astro-cid-kjarsomr': true });
+  test('ignores attributes that belong to Astro (named slot, scoped-style ids)', async () => {
+    const { scripts } = await render(component, { ...minimal, slot: 'head', 'data-astro-cid-kjarsomr': true });
+    expect(scripts[0].data).not.toHaveProperty('slot');
     expect(scripts[0].data).not.toHaveProperty('data-astro-cid-kjarsomr');
   });
 

@@ -77,7 +77,7 @@ Invalid structured data is never rendered. Every component validates its props a
   → at priceCurrency
 ```
 
-- **Unknown props are rejected**, so typos cannot silently drop data.
+- **Unknown props are rejected**, so typos cannot silently drop data. Attributes that belong to Astro itself — `slot` (e.g. `<ArticleSchema slot="head" />`) and `data-astro-*` — are not props of the component and are ignored.
 - **Formats:** dates are ISO 8601 (`2026-06-01`, `2026-06-01T18:00:00+02:00`) or `Date` objects; durations are ISO 8601 (`PT1H30M`); currencies are ISO 4217 (`EUR`); URLs are absolute `http(s)` URLs or root-relative paths (`/img.jpg`); text fields must not be empty.
 - **Cross-field rules**, e.g. `price` and `priceCurrency` only together, `ratingValue` and `reviewCount` only together, `imageWidth`/`imageHeight`/… only with an image, an end date not before its start date, at most one of `offers` / `priceRange` / `price`.
 - **No invented values:** components never fill in placeholder data. Where schema.org needs a value (e.g. an organization name), it comes from a prop or a configured default — otherwise the build fails.
