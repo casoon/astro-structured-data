@@ -9,6 +9,8 @@ Astro integration for automatic structured data (JSON-LD) generation. Supports A
 
 [Landing Page](https://astro-structured-data.casoon.de/) | [GitHub Repository](https://github.com/casoon/astro-structured-data) | [npm Package](https://www.npmjs.com/package/@casoon/astro-structured-data)
 
+**Website and documentation:** [casoon.github.io/astro-structured-data](https://casoon.github.io/astro-structured-data/)
+
 ## Installation
 
 ```bash

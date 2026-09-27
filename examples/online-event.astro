@@ -1,0 +1,16 @@
+---
+import { EventSchema } from '@casoon/astro-structured-data/components';
+---
+
+<!-- Online event: no venue, the stream URL becomes a VirtualLocation. -->
+<EventSchema
+  name="Astro Live Webinar"
+  description="Structured data in Astro, live with Q&A."
+  startDate="2026-10-20T17:00:00+02:00"
+  endDate="2026-10-20T18:30:00+02:00"
+  attendanceMode="Online"
+  onlineUrl="https://example.com/live"
+  organizer={{ name: 'Example GmbH', url: 'https://example.com' }}
+  price={0}
+  priceCurrency="EUR"
+/>

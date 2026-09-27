@@ -1,0 +1,13 @@
+---
+import { EventSchema } from '@casoon/astro-structured-data/components';
+---
+
+<!-- Invalid on purpose: the build stops instead of emitting broken JSON-LD. -->
+<EventSchema
+  name="Tech Meetup Berlin"
+  startDate="15.06.2026"
+  attendanceMode="Offline"
+  locationName="Hub Berlin"
+  price={10}
+  priceCurrency="euro"
+/>

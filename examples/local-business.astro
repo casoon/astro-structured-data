@@ -1,0 +1,16 @@
+---
+import { LocalBusinessSchema } from '@casoon/astro-structured-data/components';
+---
+
+<LocalBusinessSchema
+  name="My Shop"
+  telephone="+49 30 1234567"
+  address={{
+    streetAddress: 'Hauptstraße 42',
+    addressLocality: 'Berlin',
+    postalCode: '10119',
+    addressCountry: 'DE',
+  }}
+  geo={{ latitude: 52.53, longitude: 13.41 }}
+  openingHours={['Mo-Fr 09:00-18:00', 'Sa 10:00-16:00']}
+/>

@@ -1,0 +1,66 @@
+---
+title: Package exports
+sidebarLabel: Package exports
+description: The four entry points of the package and the functions they export.
+order: 3
+---
+
+| Entry point | Contents |
+| --- | --- |
+| `@casoon/astro-structured-data` | The integration (default export) and the `StructuredDataOptions` type |
+| `@casoon/astro-structured-data/components` | The Astro components |
+| `@casoon/astro-structured-data/zod` | Zod schemas, prop types, `validateRecommended` |
+| `@casoon/astro-structured-data/utils` | `calculateReadingTime` |
+
+## structuredData
+
+<ApiEntry
+  kind="function"
+  name="structuredData"
+  since="since 1.0.0"
+  lang="ts"
+  signature={`export default function structuredData(options?: StructuredDataOptions): AstroIntegration`}
+  params={[
+    { name: 'options', type: 'StructuredDataOptions', desc: 'See Integration options. Validated immediately; invalid options throw.' },
+  ]}
+>
+  Registers the configuration the components read, the middleware for meta tags and graph mode,
+  the Dev Toolbar panel, and the post-build JSON-LD check.
+</ApiEntry>
+
+## validateRecommended
+
+<ApiEntry
+  kind="function"
+  name="validateRecommended"
+  since="since 1.3.0"
+  lang="ts"
+  signature={`function validateRecommended(type: SchemaType, data: Record<string, unknown>): RecommendedWarning[]`}
+  params={[
+    { name: 'type', type: 'SchemaType', desc: 'schema.org @type name, e.g. "Organization" or "BlogPosting".' },
+    { name: 'data', type: 'Record<string, unknown>', desc: 'The props or schema object to check.' },
+  ]}
+>
+  Returns one `{ field, message }` entry per missing recommended field. The build-time warning
+  uses the same declaration.
+</ApiEntry>
+
+## calculateReadingTime
+
+<ApiEntry
+  kind="function"
+  name="calculateReadingTime"
+  since="since 1.3.0"
+  lang="ts"
+  signature={`function calculateReadingTime(text: string, wordsPerMinute?: number): {
+  wordCount: number;
+  readingTimeMinutes: number;
+  timeRequired: string;
+}`}
+  params={[
+    { name: 'text', type: 'string', desc: 'Plain text or HTML.' },
+    { name: 'wordsPerMinute', type: 'number', desc: 'Reading speed. Default 200.' },
+  ]}
+>
+  `timeRequired` is an ISO 8601 duration such as `PT4M`.
+</ApiEntry>

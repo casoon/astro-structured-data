@@ -1,0 +1,83 @@
+---
+title: Installation
+description: Install the package, register the integration and tell it the URL of your site.
+order: 1
+---
+
+<Tabs
+  label="Package manager"
+  tabs={[
+    { id: 'npm', label: 'npm' },
+    { id: 'pnpm', label: 'pnpm' },
+    { id: 'yarn', label: 'yarn' },
+  ]}
+>
+<div slot="npm">
+
+```sh
+npm install @casoon/astro-structured-data
+```
+
+</div>
+<div slot="pnpm">
+
+```sh
+pnpm add @casoon/astro-structured-data
+```
+
+</div>
+<div slot="yarn">
+
+```sh
+yarn add @casoon/astro-structured-data
+```
+
+</div>
+</Tabs>
+
+## Register the integration
+
+```js
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import structuredData from '@casoon/astro-structured-data';
+
+export default defineConfig({
+  site: 'https://example.com', // used automatically by the integration
+  integrations: [
+    structuredData({
+      generateMeta: true,
+      siteName: 'My Awesome Website',
+      locale: 'de_DE',
+      twitterSite: '@mywebsite',
+    }),
+  ],
+});
+```
+
+The integration needs an absolute base URL to build canonical URLs, `mainEntityOfPage` and
+breadcrumb items. It takes Astro's `site`; without it, pass `siteUrl`:
+
+```js
+structuredData({ siteUrl: 'https://example.com' })
+```
+
+<Callout type="caution">
+  Options are validated when the integration is created. Unknown keys (typos), invalid values
+  and a missing site URL stop the build.
+</Callout>
+
+## Requirements
+
+| Package version | Astro | Node.js |
+| --- | --- | --- |
+| **2.0.x** | 5.x · 6.x · 7.x | ≥ 18 |
+| 1.5.x | 5.x · 6.x · 7.x | ≥ 18 |
+| 1.4.x | 5.x · 6.x | ≥ 18 |
+
+The runtime dependencies are `zod` and `schema-dts` (types only). The components add no client
+JavaScript to your pages; the Dev Toolbar panel exists only in `astro dev`.
+
+## Next steps
+
+Continue with the [Quickstart](../quickstart/) to put a first schema on a page.

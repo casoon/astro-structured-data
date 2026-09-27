@@ -1,0 +1,16 @@
+---
+import { JobPostingSchema } from '@casoon/astro-structured-data/components';
+---
+
+<!-- Fully remote: jobLocationType plus applicantLocationRequirements, no jobLocation. -->
+<JobPostingSchema
+  title="Remote Frontend Engineer"
+  description="<p>Fully remote position open worldwide.</p>"
+  hiringOrganizationName="ACME GmbH"
+  datePosted="2026-09-01"
+  validThrough="2026-12-31"
+  jobLocationType="TELECOMMUTE"
+  applicantLocationRequirements="DE"
+  employmentType="FULL_TIME"
+  baseSalary={{ value: 72000, currency: 'EUR', unit: 'YEAR' }}
+/>

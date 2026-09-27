@@ -1,0 +1,107 @@
+---
+import {
+  Badge,
+  Badges,
+  BuildOutput,
+  CodeBlock,
+  Facts,
+  Features,
+  Hero,
+  Install,
+  Quickstart,
+  Terminal,
+} from '@casoon/pages-theme/components';
+import Base from '@casoon/pages-theme/layouts/Base.astro';
+import { examples } from '../showcase';
+
+const byslug = (slug: string) => {
+  const example = examples.find((e) => e.slug === slug);
+  if (!example) throw new Error(`Missing showcase example "${slug}"`);
+  return example;
+};
+const blogPost = byslug('blog-post');
+const invalidEvent = byslug('invalid-event');
+
+const configCode = `import { defineConfig } from 'astro/config';
+import structuredData from '@casoon/astro-structured-data';
+
+export default defineConfig({
+  site: 'https://example.com',
+  integrations: [structuredData({ generateMeta: true })],
+});`;
+---
+
+<Base>
+  <Hero
+    title="JSON-LD for Astro, typed and validated."
+    lead="astro-structured-data renders schema.org JSON-LD from Astro components. Props are checked against Zod schemas at build time: invalid data stops the build instead of reaching Google."
+  >
+    <Install
+      commands={[
+        { label: 'npm', command: 'npm install @casoon/astro-structured-data' },
+        { label: 'pnpm', command: 'pnpm add @casoon/astro-structured-data' },
+        { label: 'yarn', command: 'yarn add @casoon/astro-structured-data' },
+      ]}
+    />
+    <Badges>
+      <Badge>MIT</Badge>
+      <Badge>npm 2.0.1</Badge>
+      <Badge>Astro 5 · 6 · 7</Badge>
+      <Badge>Node ≥ 18</Badge>
+    </Badges>
+    <Terminal slot="output" title="examples/blog-post.astro → JSON-LD" dots>
+      <Fragment set:html={blogPost.output.html} />
+    </Terminal>
+  </Hero>
+
+  <Facts
+    items={[
+      { value: '18', label: 'Astro components, one per schema type plus generic and graph' },
+      { value: '16', label: 'Zod schemas exported for content collections and forms' },
+      { value: '232', label: 'tests, including real static, dev and SSR builds' },
+      { value: '0 kB', label: 'client JavaScript added to your pages' },
+    ]}
+  />
+
+  <Features
+    items={[
+      {
+        title: 'Validated at build time',
+        body: 'Every component parses its props with its Zod schema: ISO 8601 dates, ISO 4217 currencies, absolute or root-relative URLs, cross-field rules. Unknown props are errors, so typos cannot drop data silently.',
+      },
+      {
+        title: 'No invented values',
+        body: 'Components never fill in placeholders. A name, a hiring organisation or a salary unit comes from a prop or a configured default, otherwise the build fails.',
+      },
+      {
+        title: 'Meta tags from the same data',
+        body: 'With generateMeta, a middleware derives canonical, Open Graph and Twitter tags from the primary schema of the page. Tags your layout already sets are kept.',
+      },
+      {
+        title: 'One @graph per page',
+        body: 'With useGraph, all schemas of a page are merged into a single @graph block, wherever the components sit and even when they await data.',
+      },
+    ]}
+  />
+
+  <BuildOutput
+    heading="Rejected at build time"
+    caption="Real output: the error the component throws for examples/invalid-event.astro while this site was built."
+    file="examples/invalid-event.astro"
+  >
+    <Terminal>
+      <Fragment set:html={invalidEvent.output.html} />
+    </Terminal>
+  </BuildOutput>
+
+  <Quickstart
+    lead="Register the integration, then place components on your pages. The full walkthrough and every component are in the documentation."
+    steps={[
+      'Install the package and add the integration to <code>astro.config.mjs</code>.',
+      'Set <code>site</code> in the Astro config, or pass <code>siteUrl</code> to the integration.',
+      'Import components from <code>@casoon/astro-structured-data/components</code> and pass your data as props.',
+    ]}
+  >
+    <CodeBlock code={configCode} lang="js" title="astro.config.mjs" label="Config" />
+  </Quickstart>
+</Base>

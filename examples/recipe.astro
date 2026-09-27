@@ -1,0 +1,19 @@
+---
+import { RecipeSchema } from '@casoon/astro-structured-data/components';
+---
+
+<RecipeSchema
+  name="Classic Chocolate Chip Cookies"
+  description="Crispy edges, chewy and soft in the center."
+  imageUrl="/images/cookies.jpg"
+  authorName="Baker Bob"
+  prepTime="PT15M"
+  cookTime="PT10M"
+  recipeYield="12 cookies"
+  ingredients={['200g butter', '150g brown sugar', '2 eggs', '300g flour', '200g chocolate chips']}
+  instructions={[
+    { name: 'Preheat', text: 'Preheat oven to 190°C.' },
+    { name: 'Make dough', text: 'Mix butter, sugar and eggs. Fold in flour and chocolate chips.' },
+    { name: 'Bake', text: 'Scoop onto a sheet and bake for 10 minutes.' },
+  ]}
+/>

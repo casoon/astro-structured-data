@@ -1,0 +1,10 @@
+---
+import { AutoBreadcrumbSchema } from '@casoon/astro-structured-data/components';
+---
+
+<!-- Rendered on /en/blog/my-post/: the path becomes the breadcrumb trail. -->
+<AutoBreadcrumbSchema
+  homeLabel="Start"
+  ignoreSegments={['en']}
+  labels={{ 'my-post': 'My Post' }}
+/>
