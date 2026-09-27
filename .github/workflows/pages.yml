@@ -28,7 +28,7 @@ jobs:
 
       - name: Build package
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npm run build
 
       # Project repos have no package.json at the root, so the pnpm version is set here.
