@@ -39,17 +39,25 @@ Props are checked before anything is rendered. A date like `15.06.2026` or a cur
 
 ```
 [astro-structured-data] <EventSchema> on /events/meetup/ received invalid props:
-✖ Invalid input
+✖ Must be an ISO 8601 date (YYYY-MM-DD) or date-time, or a Date
   → at startDate
 ✖ Must be an ISO 4217 currency code like "EUR"
   → at priceCurrency
 ```
 
 Fix the reported fields and build again. The [validation guide](../../guides/validation/)
-lists every rule.
+lists every rule, and each [component page](../../components/article/) the rules of its props.
 
 ## Check in the browser
 
 In `astro dev`, open the **Structured Data** panel of the Astro Dev Toolbar. It lists every
 JSON-LD block on the page with a rich result preview, the missing recommended fields, a copy
-button and a link to the schema.org validator.
+button and a link to the schema.org validator; see
+[Dev Toolbar and build report](../../guides/dev-toolbar/).
+
+## Next steps
+
+- [Setups by kind of site](../../guides/site-setups/): which components a blog, shop, local
+  business, event page or job board needs.
+- [Meta tags](../../guides/meta-tags/): canonical, Open Graph and Twitter tags from the same data.
+- [Components](../../reference/components/): every component with its props.

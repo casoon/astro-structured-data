@@ -2,7 +2,6 @@
 import {
   Badge,
   Badges,
-  BuildOutput,
   Button,
   CodeBlock,
   Facts,
@@ -10,29 +9,12 @@ import {
   Hero,
   Install,
   Quickstart,
-  Terminal,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
 import { url } from '@casoon/pages-theme/url';
 // Animated SVG built with castwright from captures/build.terminal.yaml (real builds, see capture.sh).
 import buildSvg from '../../captures/build.svg?url';
 import Diagram from '../components/Diagram.astro';
-import { examples } from '../showcase';
-
-const byslug = (slug: string) => {
-  const example = examples.find((e) => e.slug === slug);
-  if (!example) throw new Error(`Missing showcase example "${slug}"`);
-  return example;
-};
-const invalidEvent = byslug('invalid-event');
-
-const configCode = `import { defineConfig } from 'astro/config';
-import structuredData from '@casoon/astro-structured-data';
-
-export default defineConfig({
-  site: 'https://example.com',
-  integrations: [structuredData({ generateMeta: true })],
-});`;
 
 const pageCode = `---
 import { ArticleSchema } from '@casoon/astro-structured-data/components';
@@ -45,12 +27,83 @@ const { post } = Astro.props;
   authorName={post.data.author}
   imageUrl={post.data.cover}
 />`;
+
+// The data of examples/blog-post.astro, product.astro and online-event.astro.
+const previews = [
+  {
+    component: 'ArticleSchema',
+    type: 'BlogPosting',
+    doc: 'docs/components/article/',
+    path: 'example.com › blog',
+    title: 'Structured data for Astro sites',
+    meta: ['Sep 10, 2026', 'Jane Doe', '4 min read'],
+    text: 'How JSON-LD is generated from typed, validated component props.',
+  },
+  {
+    component: 'ProductSchema',
+    type: 'Product',
+    doc: 'docs/components/product/',
+    path: 'example.com › shop',
+    title: 'Super Gadget – Gadget Co',
+    rating: { value: '4.5', count: '128' },
+    meta: ['€29.99', 'In stock'],
+    text: 'The best gadget ever',
+  },
+  {
+    component: 'EventSchema',
+    type: 'Event',
+    doc: 'docs/components/event/',
+    path: 'example.com › events',
+    title: 'Astro Live Webinar',
+    meta: ['Tue, Oct 20, 17:00', 'Online', 'Free'],
+    text: 'Structured data in Astro, live with Q&A.',
+  },
+];
+
+const groups = [
+  {
+    label: 'Content',
+    items: [
+      ['ArticleSchema', 'article'],
+      ['RecipeSchema', 'recipe'],
+      ['VideoSchema', 'video'],
+      ['FAQSchema', 'faq'],
+    ],
+  },
+  {
+    label: 'Shops and apps',
+    items: [
+      ['ProductSchema', 'product'],
+      ['CollectionPageSchema', 'collection-page'],
+      ['SoftwareAppSchema', 'software-app'],
+    ],
+  },
+  {
+    label: 'Businesses',
+    items: [
+      ['LocalBusinessSchema', 'local-business'],
+      ['OrganizationSchema', 'organization'],
+      ['EventSchema', 'event'],
+      ['JobPostingSchema', 'job-posting'],
+    ],
+  },
+  {
+    label: 'Site structure',
+    items: [
+      ['WebSiteSchema', 'website'],
+      ['WebPageSchema', 'webpage'],
+      ['ProfilePageSchema', 'profile-page'],
+      ['BreadcrumbSchema', 'breadcrumbs'],
+      ['AutoBreadcrumbSchema', 'breadcrumbs'],
+    ],
+  },
+];
 ---
 
 <Base>
   <Hero
-    title="Structured data for Astro, from the content you already have."
-    lead="Search engines read schema.org JSON-LD to understand a page and to show it as a rich result: an article with its date and image, a product with price and stock, an event with its date and venue. astro-structured-data turns your page data into that JSON-LD and the matching meta tags, and stops the build when the data would not be valid."
+    title="Rich results for your Astro site, checked before you ship."
+    lead="Put a component on the page and pass the data it already has. astro-structured-data writes the schema.org JSON-LD and meta tags that search engines read, and stops the build when the data would not be valid."
   >
     <Install
       commands={[
@@ -75,81 +128,109 @@ const { post } = Astro.props;
     />
   </Hero>
 
+  <section class="section" aria-labelledby="results-heading">
+    <p class="cp-label">What it is for</p>
+    <h2 id="results-heading">From the data on your page to a richer search result</h2>
+    <p class="intro">
+      Dates, prices, ratings and venues only show up in search when the page describes them as
+      schema.org data. The components turn your props into exactly that.
+    </p>
+    <ul class="previews">
+      {
+        previews.map((p) => (
+          <li class="preview">
+            <a class="source" href={url(p.doc)}>
+              <code>&lt;{p.component}&gt;</code>
+              <span aria-hidden="true">→</span>
+              <span>{p.type}</span>
+            </a>
+            <div class="result">
+              <p class="path">{p.path}</p>
+              <p class="title">{p.title}</p>
+              {p.rating && (
+                <p class="rating">
+                  <span class="stars" aria-hidden="true">★★★★☆</span>
+                  <span>
+                    {p.rating.value} ({p.rating.count} reviews)
+                  </span>
+                </p>
+              )}
+              <p class="meta">
+                {p.meta.map((m) => (
+                  <span>{m}</span>
+                ))}
+              </p>
+              <p class="text">{p.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="note">
+      Illustration with the data of three examples from the <a href={url('showcase/')}>showcase</a>.
+      Whether and how a rich result appears is decided by the search engine.
+    </p>
+  </section>
+
   <Features
     heading="Why it exists"
     items={[
       {
-        title: 'Rich results need structured data',
-        body: 'Prices, ratings, event dates, recipe times or job details only appear in search results when the page describes them as schema.org data. That data has to match what Google and other search engines expect, field by field.',
-      },
-      {
         title: 'Hand-written JSON-LD fails silently',
-        body: 'A date in the wrong format, a currency symbol instead of a code or a missing required field produces no error. The markup is simply not used, and you find out weeks later in Search Console, if at all.',
+        body: 'A German date, a € sign instead of EUR or a missing field raises no error. The markup is simply ignored, and you notice weeks later in Search Console.',
       },
       {
         title: 'Your pages already have the data',
-        body: 'Titles, dates, prices and addresses sit in frontmatter, content collections or your CMS. Pass them as props instead of maintaining a second copy as JSON.',
+        body: 'Titles, dates, prices and addresses sit in frontmatter, content collections or your CMS. Pass them as props instead of keeping a second copy as JSON.',
       },
       {
-        title: 'Checked where you can fix it',
-        body: 'Every component validates its props at build time. Wrong data stops the build with the component, the page and the field, so it never reaches production.',
+        title: 'Errors surface in the build',
+        body: 'Every component checks its props. Wrong data stops the build with the component, the page and the field, so it never reaches production.',
       },
     ]}
   />
 
-  <section class="how" aria-labelledby="output-heading">
-    <h2 id="output-heading">What ends up in your page</h2>
-    <div class="text">
-      <p>
-        Each component writes a <code>&lt;script type="application/ld+json"&gt;</code> block with
-        the schema.org object, or, with <code>useGraph</code>, all schemas of a page go into
-        one <code>@graph</code> block. With <code>generateMeta</code>, the same data also produces the
-        canonical link and the Open Graph and Twitter tags, so search results and link previews
-        show the same title, description and image. Tags your layout sets itself are kept.
-      </p>
-      <p>
-        After <code>astro build</code> the integration checks every JSON-LD block and lists the
-        recommended fields that are still missing. In <code>astro dev</code>, a Dev Toolbar panel
-        shows each schema of the page with a rich result preview. Nothing is added to the
-        JavaScript your visitors download.
-      </p>
-    </div>
+  <section class="section" aria-labelledby="how-heading">
+    <p class="cp-label">How it works</p>
+    <h2 id="how-heading">Props in, JSON-LD and meta tags out</h2>
+    <p class="intro">
+      Each component validates its props and writes a JSON-LD block. Optionally, all schemas of a
+      page are merged into one <code>@graph</code>, and canonical, Open Graph and Twitter tags are
+      derived from the same data. Nothing is added to the JavaScript your visitors download.
+    </p>
     <Diagram name="how-it-works" format="svg" narrow={{ width: 360, height: 1000 }} />
     <div class="links">
-      <Button href={url('showcase/')} variant="secondary">Input and output of every example</Button>
-      <Button href={url('docs/guides/meta-tags/')} variant="secondary">Meta tags in detail</Button>
+      <Button href={url('docs/guides/validation/')} variant="secondary">Validation rules</Button>
+      <Button href={url('docs/guides/meta-tags/')} variant="secondary">Meta tags</Button>
+      <Button href={url('docs/guides/graph-mode/')} variant="secondary">Graph mode</Button>
     </div>
   </section>
 
-  <Features
-    heading="For which pages"
-    items={[
+  <section class="section" aria-labelledby="types-heading">
+    <p class="cp-label">Components</p>
+    <h2 id="types-heading">One component for each kind of page</h2>
+    <p class="intro">
+      Blogs, shops, local businesses, events, job boards: each component knows which fields its
+      rich result needs.
+      The generic <a href={url('docs/components/schema/')}><code>&lt;Schema&gt;</code></a> covers any other schema.org type.
+    </p>
+    <div class="groups">
       {
-        title: 'Blogs and magazines',
-        body: 'ArticleSchema for posts with author, publisher, dates and reading time; BreadcrumbSchema or AutoBreadcrumbSchema for the path; WebSiteSchema and OrganizationSchema once in the layout.',
-      },
-      {
-        title: 'Shops',
-        body: 'ProductSchema with price, availability, brand, ratings and reviews, full offers with shipping and return policies, and shop-wide defaults for brand, shipping and returns. CollectionPageSchema for category pages.',
-      },
-      {
-        title: 'Local businesses',
-        body: 'LocalBusinessSchema with address, coordinates and opening hours, defined once in the configuration and reused on every page.',
-      },
-      {
-        title: 'Events and jobs',
-        body: 'EventSchema for venues, online streams or both; JobPostingSchema for on-site and fully remote positions with salary and application details.',
-      },
-      {
-        title: 'Recipes, videos, software',
-        body: 'RecipeSchema with steps, times and nutrition, VideoSchema with duration and embed URL, SoftwareAppSchema with platform, price and rating.',
-      },
-      {
-        title: 'Anything else',
-        body: 'FAQSchema, ProfilePageSchema and WebPageSchema cover the rest of a typical site; the generic Schema component outputs any other schema.org type you need.',
-      },
-    ]}
-  />
+        groups.map((g) => (
+          <div class="group">
+            <h3>{g.label}</h3>
+            <ul>
+              {g.items.map(([name, slug]) => (
+                <li>
+                  <a href={url(`docs/components/${slug}/`)}>{name}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </section>
 
   <Facts
     items={[
@@ -160,25 +241,14 @@ const { post } = Astro.props;
     ]}
   />
 
-  <BuildOutput
-    heading="Wrong data stops the build"
-    caption="Real output: the error the component throws for examples/invalid-event.astro while this site was built."
-    file="examples/invalid-event.astro"
-  >
-    <Terminal>
-      <Fragment set:html={invalidEvent.output.html} />
-    </Terminal>
-  </BuildOutput>
-
   <Quickstart
-    lead="Register the integration once, then put the components on your pages and pass the data you already have. The documentation covers every component and option."
+    lead="Register the integration once, then put the components on your pages. The documentation covers every component, prop and option."
     steps={[
-      'Install the package and add the integration to <code>astro.config.mjs</code>; set <code>site</code> there or pass <code>siteUrl</code>.',
-      'Import a component from <code>@casoon/astro-structured-data/components</code> in a page or layout and pass your data as props.',
+      'Install the package and add <code>structuredData()</code> to the integrations in <code>astro.config.mjs</code>, with <code>site</code> set.',
+      'Import a component from <code>@casoon/astro-structured-data/components</code> and pass your data as props.',
       'Run <code>astro build</code>: wrong data stops the build, missing recommended fields are listed.',
     ]}
   >
-    <CodeBlock code={configCode} lang="js" title="astro.config.mjs" label="Config" />
     <CodeBlock code={pageCode} lang="astro" title="src/layouts/Post.astro" label="Page" />
   </Quickstart>
 </Base>
@@ -192,31 +262,159 @@ const { post } = Astro.props;
     height: auto;
     margin: 0 auto;
   }
-  .how {
+  .section {
     max-width: var(--max);
     margin: 0 auto;
     padding: 0 24px 96px;
   }
   h2 {
-    margin: 0 0 14px;
+    max-width: 28ch;
+    text-wrap: balance;
+    margin: 10px 0 14px;
     color: var(--heading);
-    font-size: 30px;
+    font-size: clamp(26px, 4vw, 34px);
     font-weight: 600;
+    line-height: 1.15;
     letter-spacing: -0.02em;
   }
-  .text {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
-    gap: 0 48px;
+  .intro {
+    max-width: 62ch;
+    margin: 0 0 32px;
+    font-size: 16.5px;
   }
-  .text p {
-    margin: 0 0 16px;
-    font-size: 15.5px;
+  .note {
+    margin: 20px 0 0;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .note a,
+  .intro a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
   .links {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
     gap: 12px;
+  }
+
+  /* Search result illustrations */
+  .previews {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .preview {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .source {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-deep);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    text-decoration: none;
+  }
+  .source code {
+    color: var(--accent);
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+  .source:hover span:last-child {
+    color: var(--heading);
+  }
+  .result {
+    padding: 18px 18px 22px;
+  }
+  .result p {
+    margin: 0;
+  }
+  .path {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .title {
+    margin: 4px 0 8px !important;
+    color: var(--accent);
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 0;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .meta > span + span::before {
+    content: '·';
+    margin: 0 8px;
+  }
+  .rating {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 2px !important;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .stars {
+    color: var(--brand);
+    letter-spacing: 1px;
+  }
+  .text {
+    margin-top: 8px !important;
+    font-size: 14.5px;
+  }
+
+  /* Component groups */
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+    gap: 28px 32px;
+  }
+  .group h3 {
+    margin: 0 0 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--heading);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .group ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .group a {
+    display: inline-block;
+    padding: 5px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    text-decoration: none;
+  }
+  .group a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 </style>

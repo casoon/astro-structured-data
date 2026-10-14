@@ -31,11 +31,13 @@ and does not check its content.
 ## How the docs are organised
 
 - **Getting started**: install the integration and put a first schema on a page.
-- **Guides**: validation, meta tags and sitemap hints, graph mode, content collections, and
-  upgrading from 1.x.
-- **Reference**: integration options, the component list and the exported functions. The
-  complete prop tables are in the
-  [README](https://github.com/casoon/astro-structured-data#components).
+- **Guides**: setups for blogs, shops, local businesses, events and job boards; validation,
+  meta tags and sitemap hints, graph mode, content collections, the Dev Toolbar and build
+  report, on-demand rendering, and upgrading from 1.x.
+- **Components**: one page per component with an example, the JSON-LD it produces, every
+  prop and the rules it checks.
+- **Reference**: integration options, an overview of all components and the exported
+  functions.
 
 The product page is at [astro-structured-data.casoon.de](https://astro-structured-data.casoon.de/),
 the package on [npm](https://www.npmjs.com/package/@casoon/astro-structured-data).

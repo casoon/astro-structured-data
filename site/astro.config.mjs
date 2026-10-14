@@ -34,6 +34,7 @@ export default defineConfig({
       docsGroups: {
         'getting-started': 'Getting started',
         guides: 'Guides',
+        components: 'Components',
         reference: 'Reference',
       },
     }),

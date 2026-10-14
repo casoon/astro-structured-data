@@ -57,7 +57,7 @@ tags.
 apply even when another schema on the page, such as an article, is the primary one:
 
 ```astro
-<WebPageSchema name="Draft" robots="noindex" />
+<WebPageSchema title="Draft" robots="noindex" />
 <ArticleSchema title="Draft post" … />
 ```
 

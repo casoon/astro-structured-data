@@ -12,31 +12,31 @@ import { ArticleSchema, FAQSchema } from '@casoon/astro-structured-data/componen
 
 | Component | schema.org type | Required props |
 | --- | --- | --- |
-| `ArticleSchema` | `BlogPosting` (default), `Article`, `NewsArticle` | `title`, `description`, `datePublished`, `authorName` |
-| `FAQSchema` | `FAQPage` | `questions` |
-| `ProductSchema` | `Product` | `name`, `description`, `imageUrl` |
-| `LocalBusinessSchema` | `LocalBusiness` | `name` (or `defaultLocalBusiness.name`) |
-| `EventSchema` | `Event` | `name`, `startDate`; venue and/or `onlineUrl` by `attendanceMode` |
-| `OrganizationSchema` | `Organization` | `name` (or `defaultArticlePublisher.name`) |
-| `WebSiteSchema` | `WebSite` | `name` |
-| `WebPageSchema` | `WebPage` | `title` |
-| `ProfilePageSchema` | `ProfilePage` | `name` |
-| `CollectionPageSchema` | `CollectionPage` | `name`, `description`, `products` |
-| `JobPostingSchema` | `JobPosting` | `title`, `description`, `datePosted`, `hiringOrganizationName`; `jobLocation` unless remote |
-| `SoftwareAppSchema` | `SoftwareApplication` | `name` |
-| `RecipeSchema` | `Recipe` | `name`, `description`, `imageUrl`, `authorName`, `ingredients`, `instructions` |
-| `VideoSchema` | `VideoObject` | `name`, `description`, `thumbnailUrl`, `uploadDate`; `contentUrl` or `embedUrl` |
-| `BreadcrumbSchema` | `BreadcrumbList` | `items` |
-| `AutoBreadcrumbSchema` | `BreadcrumbList` from the URL path | – |
-| `Schema` | any, from `item['@type']` | `item` |
-| `SchemaGraph` | the page's `@graph` in graph mode | – |
+| [`ArticleSchema`](../../components/article/) | `BlogPosting` (default), `Article`, `NewsArticle` | `title`, `description`, `datePublished`, `authorName` |
+| [`FAQSchema`](../../components/faq/) | `FAQPage` | `questions` |
+| [`ProductSchema`](../../components/product/) | `Product` | `name`, `description`, `imageUrl` |
+| [`LocalBusinessSchema`](../../components/local-business/) | `LocalBusiness` | `name` (or `defaultLocalBusiness.name`) |
+| [`EventSchema`](../../components/event/) | `Event` | `name`, `startDate`; venue and/or `onlineUrl` by `attendanceMode` |
+| [`OrganizationSchema`](../../components/organization/) | `Organization` | `name` (or `defaultArticlePublisher.name`) |
+| [`WebSiteSchema`](../../components/website/) | `WebSite` | `name` |
+| [`WebPageSchema`](../../components/webpage/) | `WebPage` | `title` |
+| [`ProfilePageSchema`](../../components/profile-page/) | `ProfilePage` | `name` |
+| [`CollectionPageSchema`](../../components/collection-page/) | `CollectionPage` | `name`, `description`, `products` |
+| [`JobPostingSchema`](../../components/job-posting/) | `JobPosting` | `title`, `description`, `datePosted`, `hiringOrganizationName`; `jobLocation` unless remote |
+| [`SoftwareAppSchema`](../../components/software-app/) | `SoftwareApplication` | `name` |
+| [`RecipeSchema`](../../components/recipe/) | `Recipe` | `name`, `description`, `imageUrl`, `authorName`, `ingredients`, `instructions` |
+| [`VideoSchema`](../../components/video/) | `VideoObject` | `name`, `description`, `thumbnailUrl`, `uploadDate`; `contentUrl` or `embedUrl` |
+| [`BreadcrumbSchema`](../../components/breadcrumbs/) | `BreadcrumbList` | `items` |
+| [`AutoBreadcrumbSchema`](../../components/breadcrumbs/) | `BreadcrumbList` from the URL path | – |
+| [`Schema`](../../components/schema/) | any, from `item['@type']` | `item` |
+| [`SchemaGraph`](../../components/schema/) | the page's `@graph` in graph mode | – |
 
 Every component also accepts the sitemap hints `changefreq` and `priority`
 (see [Meta tags and sitemap hints](../../guides/meta-tags/)).
 
-The complete prop tables, with types and defaults, are in the
-[README](https://github.com/casoon/astro-structured-data#components). Each component there
-links to its schema.org type and to Google's rich result documentation.
+Each component has its own page with an example, the JSON-LD it produces, the complete prop
+table with types and defaults, and links to its schema.org type and Google's rich result
+documentation.
 
 ## Generic schema
 

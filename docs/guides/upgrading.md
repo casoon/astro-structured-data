@@ -1,7 +1,7 @@
 ---
 title: Upgrading from 1.x
 description: 2.0 validates strictly and fails the build instead of rendering invalid data. Most upgrades come down to fixing what the build reports.
-order: 5
+order: 7
 ---
 
 1. **Run a build.** Every invalid prop is reported with component, page and field (see
