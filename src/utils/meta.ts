@@ -33,12 +33,34 @@ export const PRIMARY_META_TYPES = [
   'WebSite',
 ];
 
+/** `@type` may be a single type or a list of types. */
+export function typesOf(item: Record<string, any>): string[] {
+  const type = item['@type'];
+  if (Array.isArray(type)) return type.filter((t): t is string => typeof t === 'string');
+  return typeof type === 'string' ? [type] : [];
+}
+
+const hasType = (item: Record<string, any>, ...types: string[]) => typesOf(item).some((t) => types.includes(t));
+
 export function findPrimaryItem(items: Record<string, any>[]): Record<string, any> | undefined {
   for (const type of PRIMARY_META_TYPES) {
-    const item = items.find((it) => it['@type'] === type);
+    const item = items.find((it) => hasType(it, type));
     if (item) return item;
   }
   return undefined;
+}
+
+// Types whose `url` is the URL of the page itself. For other types (Event, LocalBusiness,
+// Product, ...) `url` points at the described thing, which may live on another site.
+const PAGE_TYPES = ['WebPage', 'ItemPage', 'AboutPage', 'ContactPage', 'CollectionPage', 'ProfilePage', 'FAQPage'];
+
+/**
+ * The schemas describing the page itself (WebPage, FAQPage, …) — the source of page-level tags
+ * (canonical, robots, hreflang alternates), whichever content schema drives title, description
+ * and image. A page may have several; settings from each of them count.
+ */
+export function findPageItems(items: Record<string, any>[]): Record<string, any>[] {
+  return items.filter((it) => hasType(it, ...PAGE_TYPES));
 }
 
 const ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
@@ -96,6 +118,13 @@ function getImageObject(val: any): { url: string; width?: number; height?: numbe
   return undefined;
 }
 
+/** Profile URLs of the authors — what Open Graph's `article:author` expects, not names. */
+function getAuthorUrls(author: any): string[] {
+  return (Array.isArray(author) ? author : [author])
+    .map((a) => (a && typeof a === 'object' ? a.url : undefined))
+    .filter((url): url is string => typeof url === 'string');
+}
+
 function getAuthorName(author: any): string | undefined {
   if (!author) return undefined;
   if (typeof author === 'string') return author;
@@ -118,40 +147,41 @@ function getTwitterHandleFromSameAs(sameAs: any): string | undefined {
   return undefined;
 }
 
+/** Resolves like a browser: "/img.jpg" against the origin, "img.jpg" against the site path. */
 function resolveAbsUrl(url: string, siteUrl?: string): string {
-  if (!url.startsWith('http') && siteUrl) {
-    const base = siteUrl.replace(/\/$/, '');
-    const path = url.startsWith('/') ? url : `/${url}`;
-    return `${base}${path}`;
-  }
-  return url;
+  return siteUrl ? new URL(url, siteUrl).href : url;
 }
 
-// Types whose `url` is the URL of the page itself. For other types (Event, LocalBusiness,
-// Product, ...) `url` points at the described thing, which may live on another site.
-const PAGE_TYPES = new Set(['WebPage', 'ItemPage', 'AboutPage', 'ContactPage', 'CollectionPage', 'ProfilePage', 'FAQPage']);
-
-function resolveCanonical(item: Record<string, any>, canonicalUrl: string): string {
+function resolveCanonical(item: Record<string, any>, pageItems: Record<string, any>[], canonicalUrl: string): string {
+  const pageUrl = pageItems.find((page) => page !== item && typeof page.url === 'string')?.url;
+  if (pageUrl) return pageUrl;
   if (item.mainEntityOfPage && typeof item.mainEntityOfPage === 'object' && item.mainEntityOfPage['@id']) {
     return item.mainEntityOfPage['@id'];
   }
-  if (PAGE_TYPES.has(item['@type']) && typeof item.url === 'string') return item.url;
+  if (hasType(item, ...PAGE_TYPES) && typeof item.url === 'string') return item.url;
   return canonicalUrl;
+}
+
+const DURATION_RE = /^P(?:(\d+(?:\.\d+)?)W)?(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?$/i;
+
+/**
+ * Seconds of an ISO 8601 duration with weeks, days and time parts (`PT1H30M`, `P1DT1H`).
+ * Years and months have no fixed length, so durations using them give `undefined`.
+ */
+function durationSeconds(duration: string): number | undefined {
+  const match = duration.match(DURATION_RE);
+  if (!match) return undefined;
+  const [weeks, days, hours, minutes, seconds] = match.slice(1).map((part) => Number(part ?? 0));
+  return Math.round(weeks * 604800 + days * 86400 + hours * 3600 + minutes * 60 + seconds);
 }
 
 function extractReadingTime(item: Record<string, any>): string | undefined {
   if (item.readingTime !== undefined) return item.readingTime.toString();
   if (typeof item.timeRequired === 'string') {
-    const match = item.timeRequired.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
-    if (match) {
-      const hours = parseInt(match[1] || '0', 10);
-      const minutes = parseInt(match[2] || '0', 10);
-      const seconds = parseInt(match[3] || '0', 10);
-      const totalMinutes = hours * 60 + minutes + (seconds >= 30 ? 1 : 0);
-      if (totalMinutes > 0) return `${totalMinutes} min`;
-    } else {
-      return item.timeRequired;
-    }
+    const seconds = durationSeconds(item.timeRequired);
+    if (seconds === undefined) return item.timeRequired;
+    const totalMinutes = Math.round(seconds / 60);
+    if (totalMinutes > 0) return `${totalMinutes} min`;
   }
   return undefined;
 }
@@ -189,6 +219,21 @@ function extractAlternates(item: Record<string, any>): Array<{ href: string; hre
     }
   }
   return alternates.length > 0 ? alternates : undefined;
+}
+
+/** All robots directives set on the page; conflicting ones are all kept, crawlers apply the most restrictive. */
+function mergeRobots(values: Array<string | undefined>): string | undefined {
+  const directives = new Set(values.flatMap((value) => value?.split(',').map((d) => d.trim()).filter(Boolean) ?? []));
+  return directives.size > 0 ? [...directives].join(', ') : undefined;
+}
+
+/** One alternate per hreflang; the first schema setting a language wins. */
+function mergeAlternates(lists: Array<Array<{ href: string; hreflang: string }> | undefined>) {
+  const byLang = new Map<string, { href: string; hreflang: string }>();
+  for (const alt of lists.flat()) {
+    if (alt && !byLang.has(alt.hreflang.toLowerCase())) byLang.set(alt.hreflang.toLowerCase(), alt);
+  }
+  return byLang.size > 0 ? [...byLang.values()] : undefined;
 }
 
 function resolveImageTags(
@@ -262,6 +307,7 @@ function resolveTwitterSite(item: Record<string, any>, twitterSite?: string): st
 
 function buildArticleOpenGraph(
   item: Record<string, any>,
+  siteUrl: string | undefined,
   twitterCreator: string | undefined,
   openGraph: Record<string, string | string[]>,
   twitter: Record<string, string>
@@ -277,8 +323,8 @@ function buildArticleOpenGraph(
       ? item.dateModified
       : new Date(item.dateModified).toISOString();
   }
-  const articleAuthor = getAuthorName(item.author);
-  if (articleAuthor) openGraph['article:author'] = articleAuthor;
+  const authorUrls = getAuthorUrls(item.author).map((url) => resolveAbsUrl(url, siteUrl));
+  if (authorUrls.length > 0) openGraph['article:author'] = authorUrls;
   if (item.articleSection) {
     if (typeof item.articleSection === 'string') {
       openGraph['article:section'] = item.articleSection;
@@ -311,15 +357,9 @@ function buildVideoOpenGraph(
     openGraph['og:video'] = absVideo;
     if (item.embedUrl) openGraph['og:video:secure_url'] = absVideo;
   }
-  if (item.duration) {
-    const match = item.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
-    if (match) {
-      const hours = parseInt(match[1] || '0', 10);
-      const minutes = parseInt(match[2] || '0', 10);
-      const seconds = parseInt(match[3] || '0', 10);
-      const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-      if (totalSeconds > 0) openGraph['video:duration'] = totalSeconds.toString();
-    }
+  if (typeof item.duration === 'string') {
+    const totalSeconds = durationSeconds(item.duration);
+    if (totalSeconds) openGraph['video:duration'] = totalSeconds.toString();
   }
 }
 
@@ -332,12 +372,13 @@ export function generateMetaTags(
     locale?: string;
     twitterSite?: string;
     twitterCreator?: string;
-  }
+  },
+  /** Schemas describing the page itself (see `findPageItems`). */
+  pageItems: Record<string, any>[] = []
 ): GeneratedMeta {
-  const type = item['@type'];
   // A ProfilePage describes its person in `mainEntity`; a JobPosting names itself via `title`.
-  const subject = type === 'ProfilePage' && item.mainEntity && typeof item.mainEntity === 'object' ? item.mainEntity : item;
-  const title: string | undefined = subject.headline ?? subject.name ?? (type === 'JobPosting' ? subject.title : undefined);
+  const subject = hasType(item, 'ProfilePage') && item.mainEntity && typeof item.mainEntity === 'object' ? item.mainEntity : item;
+  const title: string | undefined = subject.headline ?? subject.name ?? (hasType(item, 'JobPosting') ? subject.title : undefined);
   const description = typeof subject.description === 'string' ? toPlainText(subject.description) || undefined : undefined;
 
   const openGraph: Record<string, string | string[]> = {};
@@ -352,7 +393,7 @@ export function generateMetaTags(
     twitter['twitter:description'] = description;
   }
 
-  const canonical = resolveCanonical(item, context.canonicalUrl);
+  const canonical = resolveCanonical(item, pageItems, context.canonicalUrl);
   openGraph['og:url'] = canonical;
 
   resolveImageTags(subject, context.siteUrl, openGraph, twitter);
@@ -364,9 +405,9 @@ export function generateMetaTags(
   const locale = resolveLocale(item, context.locale);
   if (locale) openGraph['og:locale'] = locale;
 
-  if (type === 'Article' || type === 'BlogPosting' || type === 'NewsArticle') {
-    buildArticleOpenGraph(item, context.twitterCreator, openGraph, twitter);
-  } else if (type === 'VideoObject') {
+  if (hasType(item, 'Article', 'BlogPosting', 'NewsArticle')) {
+    buildArticleOpenGraph(item, context.siteUrl, context.twitterCreator, openGraph, twitter);
+  } else if (hasType(item, 'VideoObject')) {
     buildVideoOpenGraph(item, context.siteUrl, openGraph);
   } else {
     openGraph['og:type'] = 'website';
@@ -378,10 +419,10 @@ export function generateMetaTags(
   return {
     canonical,
     description,
-    robots: extractRobots(item),
+    robots: mergeRobots([item, ...pageItems].map(extractRobots)),
     author: getAuthorName(item.author),
     readingTime: extractReadingTime(item),
-    alternates: extractAlternates(item),
+    alternates: mergeAlternates([...pageItems, item].map(extractAlternates)),
     openGraph,
     twitter,
   };

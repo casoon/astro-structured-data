@@ -80,6 +80,80 @@ test('keeps tags the page defines itself and does not duplicate them', async () 
   expect(html).toContain('<meta property="og:description" content="Post description">');
 });
 
+test('ignores commented-out tags when checking what the page defines', async () => {
+  const webPage = { '@type': 'WebPage', robots: 'noindex' };
+  const html = head(await (await run([webPage, article], {
+    html: page(`<!-- <meta name="robots" content="index"> --><!--<link rel="canonical" href="/old/">-->`),
+  })).text());
+  expect(html).toContain('<meta name="robots" content="noindex">');
+  expect(html).toContain('<link rel="canonical" href="https://example.com/blog/post/">');
+  expect(html).toContain('<meta property="og:url" content="https://example.com/blog/post/">');
+});
+
+test('inserts at the real end of <head>, not at a </head> inside a comment', async () => {
+  const html = await (await run([article], { html: page('<!-- old layout: </head> --><title>T</title>') })).text();
+  const comment = html.indexOf('-->');
+  expect(html.indexOf('<meta property="og:title"')).toBeGreaterThan(comment);
+  expect(html.indexOf('<meta property="og:title"')).toBeLessThan(html.lastIndexOf('</head>'));
+});
+
+test('adds no image details of the schema image when the page sets its own image', async () => {
+  const withImage = { ...article, image: { '@type': 'ImageObject', url: '/schema.jpg', width: 1200, height: 630, caption: 'Schema image' } };
+  const html = head(await (await run([withImage], { html: page('<meta property="og:image" content="https://example.com/own.jpg">') })).text());
+  expect(html.match(/og:image/g)).toHaveLength(1);
+  expect(html).not.toContain('twitter:image');
+  expect(html).not.toContain('schema.jpg');
+});
+
+test('tags and </head> inside a script are not taken for real ones', async () => {
+  const webPage = { '@type': 'WebPage', robots: 'noindex' };
+  const script = `<script>const tpl = '<meta name="robots" content="index"></head>';</script>`;
+  const html = await (await run([webPage, article], { html: page(script) })).text();
+  expect(html).toContain(script);
+  const noindex = html.indexOf('<meta name="robots" content="noindex">');
+  expect(noindex).toBeGreaterThan(html.indexOf('</script>'));
+  expect(noindex).toBeLessThan(html.lastIndexOf('</head>'));
+});
+
+test('tags and </head> inside a <template> do not count', async () => {
+  const webPage = { '@type': 'WebPage', robots: 'noindex' };
+  const tpl = '<template><meta name="robots" content="index"></head></template>';
+  const html = await (await run([webPage, article], { html: page(tpl) })).text();
+  const noindex = html.indexOf('<meta name="robots" content="noindex">');
+  expect(noindex).toBeGreaterThan(html.indexOf('</template>'));
+  expect(noindex).toBeLessThan(html.lastIndexOf('</head>'));
+});
+
+test('og:url follows a canonical link the page defines itself', async () => {
+  const html = await (await run([article], { html: page(`<link rel="canonical" href="/custom/">`) })).text();
+  expect(html).toContain('<meta property="og:url" content="https://example.com/custom/">');
+  expect(html).not.toContain('content="https://example.com/blog/post/"');
+});
+
+test('keeps noindex from a WebPage that follows a FAQPage', async () => {
+  const faq = { '@type': 'FAQPage', mainEntity: [] };
+  const webPage = { '@type': 'WebPage', robots: 'noindex' };
+  const html = head(await (await run([faq, webPage, article])).text());
+  expect(html).toContain('<meta name="robots" content="noindex">');
+  expect(html).toContain('<meta property="og:title" content="Post title">');
+});
+
+test('takes page-level tags from WebPage while the article drives the content tags', async () => {
+  const webPage = {
+    '@type': 'WebPage',
+    url: 'https://example.com/canonical/',
+    robots: 'noindex',
+    alternates: [{ href: 'https://example.com/de/post/', hreflang: 'de' }],
+  };
+  const html = head(await (await run([webPage, article])).text());
+  expect(html).toContain('<meta property="og:title" content="Post title">');
+  expect(html).toContain('<meta property="og:type" content="article">');
+  expect(html).toContain('<meta name="robots" content="noindex">');
+  expect(html).toContain('<link rel="alternate" hreflang="de" href="https://example.com/de/post/">');
+  expect(html).toContain('<link rel="canonical" href="https://example.com/canonical/">');
+  expect(html).toContain('<meta property="og:url" content="https://example.com/canonical/">');
+});
+
 test('escapes attribute values', async () => {
   const html = await (await run([{ ...article, headline: 'A "quoted" <b>title</b> & more' }])).text();
   expect(html).toContain('content="A &quot;quoted&quot; &lt;b&gt;title&lt;/b&gt; &amp; more"');

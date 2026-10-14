@@ -21,4 +21,10 @@ order: 5
 6. **Meta tags** now come from the middleware and are inserted into `<head>`; tags your layout
    already defines are kept. A workaround for meta tags ending up in `<body>` can go.
 
+**Coming from 2.0:** 2.1 also validates the structure of the schema.org objects passed to
+`ProductSchema` (`offers`, `brand`, `shippingDetails`, `returnPolicy`) and of the matching
+`default*` options. If the build now reports fields inside these objects, fix the values; for
+example `priceCurrency: 'EUR'` instead of `'€'`, `addressCountry: 'DE'` instead of
+`'Germany'`.
+
 The full list of changes is in the [changelog](../../../changelog/).

@@ -36,19 +36,29 @@ const pathname = Astro.url.pathname;
 const segments = pathname.split('/').filter(Boolean);
 const ignoreSet = new Set(ignoreSegments.map((s) => s.toLowerCase()));
 
+// Names and label/ignore lookups use the decoded segment ("über-uns"); URLs keep the path as is.
+const decode = (segment: string) => {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment; // malformed escape: show it as written
+  }
+};
+
 let currentPath = '';
 segments.forEach((segment) => {
   currentPath += `/${segment}`;
-  if (ignoreSet.has(segment.toLowerCase())) {
+  const decoded = decode(segment);
+  if (ignoreSet.has(decoded.toLowerCase())) {
     return;
   }
 
-  let name = labels[segment] || segment;
-  if (!labels[segment]) {
+  let name = labels[decoded] ?? labels[segment];
+  if (!name) {
     // Format kebab-case/snake_case segment to readable title
-    name = segment
+    name = decoded
       .replace(/[-_]+/g, ' ')
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+      .replace(/(^|\s)(\p{L})/gu, (_, space: string, char: string) => space + char.toUpperCase());
   }
 
   breadcrumbItems.push({ name, url: resolveUrl(currentPath) });

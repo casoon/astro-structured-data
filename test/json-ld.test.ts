@@ -1,6 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { collectSitemapHints, serializeJsonLd, sitemapAttributes, stripNonSchemaKeys } from '../src/utils/json-ld.ts';
+import { collectSitemapHints, renderGraphScript, serializeJsonLd, sitemapAttributes, stripNonSchemaKeys } from '../src/utils/json-ld.ts';
 
 const LINE_SEP = String.fromCharCode(0x2028);
 const PARA_SEP = String.fromCharCode(0x2029);
@@ -54,4 +54,16 @@ test('rejects conflicting sitemap hints on one page', () => {
 test('rejects invalid sitemap hints', () => {
   assert.throws(() => collectSitemapHints([{ '@type': 'A', changefreq: 'sometimes' }]), /Invalid sitemap changefreq/);
   assert.throws(() => collectSitemapHints([{ '@type': 'A', priority: 1.5 }]), /Invalid sitemap priority/);
+});
+
+test('graph keeps custom contexts on their node and drops only the schema.org one', () => {
+  const custom = ['https://schema.org', { ex: 'https://example.com/vocab#' }];
+  const html = renderGraphScript([
+    { '@context': 'https://schema.org/', '@type': 'WebSite', name: 'S' },
+    { '@context': custom, '@type': 'Thing', 'ex:code': 'A1' },
+  ]);
+  const data = JSON.parse(html.replace(/^<script[^>]*>|<\/script>$/g, ''));
+  assert.equal(data['@context'], 'https://schema.org');
+  assert.ok(!('@context' in data['@graph'][0]));
+  assert.deepEqual(data['@graph'][1]['@context'], custom);
 });

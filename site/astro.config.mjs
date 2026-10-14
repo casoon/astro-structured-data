@@ -25,7 +25,7 @@ export default defineConfig({
       description:
         'Astro integration that generates validated JSON-LD structured data from typed components.',
       repo: 'casoon/astro-structured-data',
-      version: '2.0.1',
+      version: '2.1.0',
       license: 'MIT',
       packages: [
         { label: 'npm', href: 'https://www.npmjs.com/package/@casoon/astro-structured-data' },

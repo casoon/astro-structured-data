@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import * as C from '../src/components/index.ts';
-import { missingRecommended, validateRecommended, type SchemaType } from '../src/zod.ts';
+import { missingRecommended, structuredDataOptionsSchema, validateRecommended, type SchemaType } from '../src/zod.ts';
 import { address, render } from './helpers.ts';
 
 const config = vi.hoisted(() => ({ current: {} as Record<string, any> }));
@@ -328,5 +328,57 @@ describe('invalid data fails the build', () => {
   test('Schema rejects sitemap hints that disagree between item and props', async () => {
     await expect(render(C.Schema, { item: { '@type': 'Thing', changefreq: 'daily' }, changefreq: 'weekly' }))
       .rejects.toThrow(/Conflicting sitemap changefreq/);
+  });
+});
+
+describe('ProductSchema offers', () => {
+  const freeShipping = { shippingRate: { value: 0, currency: 'EUR' }, shippingDestination: { addressCountry: 'DE' } };
+
+  test('an offer keeps its own shipping details over the configured default', async () => {
+    // The integration hands the components the parsed options.
+    config.current = {
+      ...config.current,
+      ...structuredDataOptionsSchema.parse({ defaultShippingDetails: { shippingRate: { value: 5, currency: 'EUR' } } }),
+    };
+    const { scripts } = await render(C.ProductSchema, {
+      ...product,
+      offers: [{ price: 10, priceCurrency: 'EUR', shippingDetails: freeShipping }, { price: 20, priceCurrency: 'EUR' }],
+    });
+    const [own, defaulted] = scripts[0].data.offers;
+    expect(own.shippingDetails.shippingRate.value).toBe(0);
+    expect(defaulted.shippingDetails.shippingRate).toEqual({ '@type': 'MonetaryAmount', value: 5, currency: 'EUR' });
+  });
+
+  test('outputs the nested schema.org types of shipping details and return policies', async () => {
+    const { scripts } = await render(C.ProductSchema, {
+      ...product,
+      price: 10,
+      priceCurrency: 'EUR',
+      shippingDetails: { ...freeShipping, deliveryTime: { handlingTime: { minValue: 0, maxValue: 1, unitCode: 'DAY' } } },
+      returnPolicy: { returnPolicyCategory: 'MerchantReturnNotPermitted', returnShippingFeesAmount: { value: 0, currency: 'EUR' } },
+    });
+    const offer = scripts[0].data.offers;
+    expect(offer.shippingDetails['@type']).toBe('OfferShippingDetails');
+    expect(offer.shippingDetails.shippingRate['@type']).toBe('MonetaryAmount');
+    expect(offer.shippingDetails.shippingDestination['@type']).toBe('DefinedRegion');
+    expect(offer.shippingDetails.deliveryTime['@type']).toBe('ShippingDeliveryTime');
+    expect(offer.shippingDetails.deliveryTime.handlingTime['@type']).toBe('QuantitativeValue');
+    expect(offer.hasMerchantReturnPolicy.returnShippingFeesAmount['@type']).toBe('MonetaryAmount');
+  });
+});
+
+describe('AutoBreadcrumbSchema', () => {
+  test('decodes segments for names and labels, keeps them encoded in URLs', async () => {
+    const names = async (props: Record<string, unknown>) => {
+      const { scripts } = await render(C.AutoBreadcrumbSchema, props, {}, '/%C3%BCber-uns/team/');
+      return scripts[0].data.itemListElement.map((el: any) => [el.name, el.item]);
+    };
+    expect(await names({})).toEqual([
+      ['Home', 'https://example.com/'],
+      ['Über Uns', 'https://example.com/%C3%BCber-uns'],
+      ['Team', 'https://example.com/%C3%BCber-uns/team'],
+    ]);
+    expect((await names({ labels: { 'über-uns': 'Über uns' } }))[1][0]).toBe('Über uns');
+    expect(await names({ ignoreSegments: ['über-uns'] })).toHaveLength(2);
   });
 });

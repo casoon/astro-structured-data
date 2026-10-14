@@ -57,6 +57,32 @@ test('fails the build on invalid JSON-LD', async () => {
   await expect(buildDone('<script type="application/ld+json">{"@type": </script>')).rejects.toThrow(/Invalid JSON-LD in index\.html/);
 });
 
+test.each([
+  `<script type='application/ld+json'>{</script>`,
+  '<script type=application/ld+json>{</script>',
+  '<script id="x" TYPE = "Application/LD+JSON" >{</SCRIPT >',
+])('finds JSON-LD in any valid attribute spelling: %s', async (html) => {
+  await expect(buildDone(html)).rejects.toThrow(/Invalid JSON-LD/);
+});
+
+test('ignores other script types', async () => {
+  expect(await buildDone('<script type="application/ld+jsonx">{</script><script data-type="application/ld+json">{</script>')).toEqual([]);
+});
+
+test('skips JSON-LD inside HTML comments', async () => {
+  expect(await buildDone('<!-- <script type="application/ld+json">{ example </script> -->')).toEqual([]);
+});
+
+test('ignores JSON-LD markup inside a JavaScript string', async () => {
+  const html = `<script>const tpl = '<script type="application/ld+json">' + data + '<\\/script>'; run(tpl);</script>`;
+  expect(await buildDone(html)).toEqual([]);
+});
+
+test('checks every item of a top-level JSON-LD array', async () => {
+  const warnings = await buildDone(jsonLd([{ '@type': 'WebSite', name: 'S' }, { '@type': 'Organization', name: 'ACME' }] as any));
+  expect(warnings.join('\n')).toMatch(/Organization is missing recommended field "sameAs"/);
+});
+
 test('warns about missing recommended fields using schema.org paths', async () => {
   const warnings = await buildDone(jsonLd({ '@type': 'ProfilePage', mainEntity: { '@type': 'Person', name: 'Ada' } }));
   expect(warnings.join('\n')).toMatch(/"mainEntity\.description"/);

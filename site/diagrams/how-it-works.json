@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "type": "flow",
+  "title": "How astro-structured-data turns props into JSON-LD and meta tags",
+  "description": "You pass your data as props to a schema component; integration options such as the site URL, a default publisher or brand fill in the rest. Each component validates its props against its Zod schema. Invalid data stops the build with the component, the page and the field. Valid data becomes schema.org JSON-LD, written as one script per schema. After the page has rendered, a middleware merges all schemas into one @graph block when useGraph is on and derives canonical, Open Graph and Twitter tags when generateMeta is on. After astro build, every JSON-LD block is checked for valid JSON and missing recommended fields.",
+  "source": "src/components/*.astro, src/zod.ts, src/middleware.ts, src/index.ts",
+  "width": 1084,
+  "height": 780,
+  "flow": {
+    "lanes": [
+      {
+        "id": "project",
+        "label": "Your project"
+      },
+      {
+        "id": "lib",
+        "label": "Integration"
+      },
+      {
+        "id": "page",
+        "label": "Your page"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "props",
+        "label": "Props",
+        "sublabel": "<ArticleSchema …>",
+        "lane": "project",
+        "kind": "start"
+      },
+      {
+        "id": "options",
+        "label": "Options",
+        "sublabel": "site, publisher, brand",
+        "lane": "project"
+      },
+      {
+        "id": "valid",
+        "label": "Valid?",
+        "sublabel": "Zod schema",
+        "lane": "lib",
+        "kind": "decision"
+      },
+      {
+        "id": "stop",
+        "label": "Build stops",
+        "sublabel": "page, field",
+        "lane": "project",
+        "kind": "end"
+      },
+      {
+        "id": "jsonld",
+        "label": "JSON-LD",
+        "lane": "lib"
+      },
+      {
+        "id": "middleware",
+        "label": "Middleware",
+        "sublabel": "after rendering",
+        "lane": "lib"
+      },
+      {
+        "id": "script",
+        "label": "JSON-LD script",
+        "sublabel": "or one @graph",
+        "lane": "page",
+        "kind": "end"
+      },
+      {
+        "id": "meta",
+        "label": "Meta tags",
+        "sublabel": "canonical, OG, Twitter",
+        "lane": "page",
+        "kind": "end"
+      },
+      {
+        "id": "check",
+        "label": "Build check",
+        "sublabel": "JSON, recommended",
+        "lane": "lib"
+      }
+    ],
+    "edges": [
+      {
+        "from": "props",
+        "to": "valid"
+      },
+      {
+        "from": "options",
+        "to": "valid"
+      },
+      {
+        "from": "valid",
+        "to": "stop",
+        "label": "no"
+      },
+      {
+        "from": "valid",
+        "to": "jsonld",
+        "label": "yes"
+      },
+      {
+        "from": "jsonld",
+        "to": "script"
+      },
+      {
+        "from": "jsonld",
+        "to": "middleware"
+      },
+      {
+        "from": "middleware",
+        "to": "meta",
+        "label": "generateMeta"
+      },
+      {
+        "from": "middleware",
+        "to": "script",
+        "label": "useGraph",
+        "dash": "dashed"
+      },
+      {
+        "from": "script",
+        "to": "check",
+        "label": "astro build",
+        "dash": "dashed"
+      }
+    ],
+    "mainPath": [
+      "props",
+      "valid",
+      "jsonld",
+      "script"
+    ]
+  }
+}

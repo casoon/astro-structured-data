@@ -1,7 +1,35 @@
 import { defineToolbarApp } from 'astro/toolbar';
 
+/** Element with plain-text content — schema values are page data and must never be parsed as HTML. */
+function textEl<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text: string): HTMLElementTagNameMap[K] {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  el.textContent = text;
+  return el;
+}
+
+// Types the toolbar has content checks for; anything else is shown as "Not checked", never "Valid".
+const CHECKED_TYPES = new Set([
+  'Article', 'BlogPosting', 'NewsArticle', 'FAQPage', 'Product', 'CollectionPage', 'BreadcrumbList',
+  'LocalBusiness', 'Event', 'Organization', 'WebSite', 'ProfilePage', 'JobPosting', 'SoftwareApplication',
+  'Recipe', 'VideoObject',
+]);
+
+/** The type to check and preview: for an `@type` array the first one the toolbar knows. */
+function primaryType(value: unknown): string | undefined {
+  const types = (Array.isArray(value) ? value : [value]).filter((t): t is string => typeof t === 'string');
+  return types.find((t) => CHECKED_TYPES.has(t)) ?? types[0];
+}
+
+function labeledRow(label: string, value: string): HTMLDivElement {
+  const row = document.createElement('div');
+  row.className = 'asd-google-business-row';
+  row.append(textEl('span', 'asd-google-business-label', `${label}:`), ` ${value}`);
+  return row;
+}
+
 function renderGooglePreview(data: any): HTMLDivElement | null {
-  const type = data['@type'];
+  const type = primaryType(data['@type']);
   if (!type) return null;
 
   const container = document.createElement('div');
@@ -73,13 +101,14 @@ function renderGooglePreview(data: any): HTMLDivElement | null {
 
     const snippet = document.createElement('p');
     snippet.className = 'asd-google-snippet';
-    snippet.innerHTML = `<span class="asd-google-date">${formattedDate}</span>${description}`;
+    snippet.append(textEl('span', 'asd-google-date', formattedDate), description);
     container.appendChild(snippet);
 
   } else if (type === 'FAQPage') {
     const snippet = document.createElement('p');
     snippet.className = 'asd-google-snippet';
-    snippet.innerText = description || 'Frequently Asked Questions (FAQ) about this topic.';
+    // Google retired FAQ rich results on 2026-05-07; FAQPage stays valid schema.org markup.
+    snippet.innerText = 'Google no longer shows FAQ rich results (retired May 2026). Content check only:';
     container.appendChild(snippet);
 
     const mainEntity = data.mainEntity;
@@ -97,11 +126,9 @@ function renderGooglePreview(data: any): HTMLDivElement | null {
 
           const questionDiv = document.createElement('div');
           questionDiv.className = 'asd-google-faq-question';
-          questionDiv.innerHTML = `<span>${questionText}</span><span class="asd-google-faq-arrow"></span>`;
+          questionDiv.append(textEl('span', '', questionText), textEl('span', 'asd-google-faq-arrow', ''));
 
-          const answerDiv = document.createElement('div');
-          answerDiv.className = 'asd-google-faq-answer';
-          answerDiv.innerHTML = answerText;
+          const answerDiv = textEl('div', 'asd-google-faq-answer', answerText);
 
           questionDiv.onclick = () => {
             const isActive = faqItem.classList.toggle('active');
@@ -265,7 +292,7 @@ function renderGooglePreview(data: any): HTMLDivElement | null {
 
     const dateBox = document.createElement('div');
     dateBox.className = 'asd-google-event-datebox';
-    dateBox.innerHTML = `<span class="asd-google-event-month">${monthStr}</span><span class="asd-google-event-day">${dayStr}</span>`;
+    dateBox.append(textEl('span', 'asd-google-event-month', monthStr), textEl('span', 'asd-google-event-day', dayStr));
     eventContainer.appendChild(dateBox);
 
     const details = document.createElement('div');
@@ -397,27 +424,18 @@ function renderGooglePreview(data: any): HTMLDivElement | null {
     bizCard.appendChild(bName);
 
     if (data.telephone) {
-      const bRow = document.createElement('div');
-      bRow.className = 'asd-google-business-row';
-      bRow.innerHTML = `<span class="asd-google-business-label">Phone:</span> ${data.telephone}`;
-      bizCard.appendChild(bRow);
+      bizCard.appendChild(labeledRow('Phone', String(data.telephone)));
     }
 
     if (data.address) {
       const addr = data.address;
       const addrStr = typeof addr === 'string' ? addr : `${addr.streetAddress || ''}, ${addr.postalCode || ''} ${addr.addressLocality || ''}`;
-      const bRow = document.createElement('div');
-      bRow.className = 'asd-google-business-row';
-      bRow.innerHTML = `<span class="asd-google-business-label">Address:</span> ${addrStr}`;
-      bizCard.appendChild(bRow);
+      bizCard.appendChild(labeledRow('Address', addrStr));
     }
 
     if (data.openingHours) {
-      const bRow = document.createElement('div');
-      bRow.className = 'asd-google-business-row';
-      const hoursList = Array.isArray(data.openingHours) ? data.openingHours.join(', ') : data.openingHours;
-      bRow.innerHTML = `<span class="asd-google-business-label">Hours:</span> ${hoursList}`;
-      bizCard.appendChild(bRow);
+      const hoursList = Array.isArray(data.openingHours) ? data.openingHours.join(', ') : String(data.openingHours);
+      bizCard.appendChild(labeledRow('Hours', hoursList));
     }
 
     container.appendChild(bizCard);
@@ -743,6 +761,11 @@ export default defineToolbarApp({
         display: flex;
         align-items: center;
         gap: 6px;
+      }
+      .asd-status-neutral {
+        color: #94a3b8;
+        font-size: 0.875rem;
+        font-weight: 500;
       }
       .asd-status-warning {
         color: #fbbf24;
@@ -1136,7 +1159,7 @@ export default defineToolbarApp({
 
         const typeBadge = document.createElement('span');
         typeBadge.className = 'asd-type-badge';
-        typeBadge.innerText = data['@type'] || 'Unknown';
+        typeBadge.innerText = [].concat(data['@type'] ?? 'Unknown').join(', ');
         cardHeader.appendChild(typeBadge);
 
         // Warnings and Validations
@@ -1146,12 +1169,13 @@ export default defineToolbarApp({
         }
 
         // Type specific checks
-        const schemaType = data['@type'];
+        const schemaType = primaryType(data['@type']);
         if (schemaType === 'Article' || schemaType === 'BlogPosting' || schemaType === 'NewsArticle') {
-          if (!data.headline) warnings.push("Missing 'headline' (Google requires this for Articles)");
-          if (!data.author) warnings.push("Missing 'author' (Google requires this for Articles)");
-          if (!data.image) warnings.push("Missing 'image' (Google requires this for Articles)");
-          if (!data.datePublished) warnings.push("Missing 'datePublished' (Google requires this for Articles)");
+          // Google defines no required Article properties, only recommended ones.
+          if (!data.headline) warnings.push("Missing 'headline' (recommended by Google for Articles)");
+          if (!data.author) warnings.push("Missing 'author' (recommended by Google for Articles)");
+          if (!data.image) warnings.push("Missing 'image' (recommended by Google for Articles)");
+          if (!data.datePublished) warnings.push("Missing 'datePublished' (recommended by Google for Articles)");
         } else if (schemaType === 'FAQPage') {
           if (!data.mainEntity || !Array.isArray(data.mainEntity) || data.mainEntity.length === 0) {
             warnings.push("FAQPage must have a non-empty 'mainEntity' list of Questions");
@@ -1233,7 +1257,9 @@ export default defineToolbarApp({
           if (!data.description) warnings.push("Missing job 'description'");
           if (!data.datePosted) warnings.push("Missing job 'datePosted'");
           if (!data.hiringOrganization) warnings.push("Missing job 'hiringOrganization'");
-          if (!data.jobLocation) warnings.push("Missing job 'jobLocation'");
+          if (!data.jobLocation && data.jobLocationType !== 'TELECOMMUTE') {
+            warnings.push("Missing job 'jobLocation' (or jobLocationType 'TELECOMMUTE' for remote jobs)");
+          }
         } else if (schemaType === 'SoftwareApplication') {
           if (!data.name) warnings.push("Missing software 'name'");
           if (!data.operatingSystem) warnings.push("Missing software 'operatingSystem'");
@@ -1255,7 +1281,10 @@ export default defineToolbarApp({
         }
 
         const statusIndicator = document.createElement('div');
-        if (warnings.length > 0) {
+        if (!schemaType || !CHECKED_TYPES.has(schemaType)) {
+          statusIndicator.className = 'asd-status-neutral';
+          statusIndicator.textContent = 'Not checked';
+        } else if (warnings.length > 0) {
           statusIndicator.className = 'asd-status-warning';
           statusIndicator.innerHTML = `⚠️ ${warnings.length} warning${warnings.length > 1 ? 's' : ''}`;
         } else {
@@ -1344,16 +1373,26 @@ export default defineToolbarApp({
       };
 
       scripts.forEach((script, index) => {
+        let data: any;
         try {
-          const data = JSON.parse(script.innerHTML);
+          data = JSON.parse(script.textContent ?? '');
+        } catch {
+          data = undefined;
+        }
+        if (data !== undefined) {
+          // Rendering errors are bugs of the panel, not invalid JSON — let them surface as such.
           if (data['@graph'] && Array.isArray(data['@graph'])) {
             data['@graph'].forEach((item: any, idx: number) => {
               createCard(item, `Script #${index + 1} (Graph Item #${idx + 1})`, true);
             });
+          } else if (Array.isArray(data)) {
+            data.forEach((item: any, idx: number) => {
+              createCard(item, `Script #${index + 1} (Item #${idx + 1})`);
+            });
           } else {
             createCard(data, `Script #${index + 1}`);
           }
-        } catch (err) {
+        } else {
           const errorCard = document.createElement('div');
           errorCard.className = 'asd-card';
           errorCard.style.borderColor = '#ef4444';
@@ -1365,8 +1404,10 @@ export default defineToolbarApp({
             <div style="color:#ef4444; font-size:0.875rem; margin-top:8px;">
               Failed to parse script tag content. Make sure it contains valid JSON.
             </div>
-            <pre style="background:#090d16; padding:8px; border-radius:4px; font-size:0.75rem; overflow-x:auto; margin-top:8px; color:#f87171;">${script.innerHTML}</pre>
           `;
+          const rawSource = textEl('pre', '', script.textContent ?? '');
+          rawSource.style.cssText = 'background:#090d16; padding:8px; border-radius:4px; font-size:0.75rem; overflow-x:auto; margin-top:8px; color:#f87171;';
+          errorCard.appendChild(rawSource);
           listContainer.appendChild(errorCard);
         }
       });

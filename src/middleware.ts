@@ -3,7 +3,7 @@ import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { getRegisteredSchemas, resetSchemas } from './utils/graph.js';
 import { injectMetaTags } from './utils/head.js';
 import { collectSitemapHints, GRAPH_PLACEHOLDER, renderGraphScript } from './utils/json-ld.js';
-import { findPrimaryItem, generateMetaTags, pageUrl } from './utils/meta.js';
+import { findPageItems, findPrimaryItem, generateMetaTags, pageUrl } from './utils/meta.js';
 
 /**
  * Completes every HTML page once it has fully rendered: inserts the `@graph` block (graph
@@ -41,7 +41,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         locale: config.locale,
         twitterSite: config.twitterSite,
         twitterCreator: config.twitterCreator,
-      });
+      }, findPageItems(items));
       html = injectMetaTags(html, seo, page);
     }
   }

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { Brand, MerchantReturnPolicy, Offer, OfferShippingDetails } from 'schema-dts';
 
 // ---------------------------------------------------------------------------
 // Building blocks
@@ -22,7 +21,7 @@ const isoDateString = z.union([z.iso.date(), z.iso.datetime({ offset: true, loca
 
 /** ISO 8601 date/date-time string or Date; always output as an ISO string. */
 const dateOrStringSchema = z
-  .union([isoDateString, z.date()])
+  .union([isoDateString, z.date()], { error: 'Must be an ISO 8601 date (YYYY-MM-DD) or date-time, or a Date' })
   .transform((val) => (typeof val === 'string' ? val : val.toISOString()));
 
 const isoDuration = z.iso.duration({ error: 'Must be an ISO 8601 duration like "PT1H30M"' });
@@ -55,9 +54,140 @@ const openingHoursSpec = z.string().regex(
   'Must use the schema.org format like "Mo-Fr 09:00-18:00"'
 );
 
-const isPlainObject = (value: unknown) => typeof value === 'object' && value !== null && !Array.isArray(value);
-/** Free-form schema.org object passed through to the output as-is. */
-const schemaObject = <T>() => z.custom<T>(isPlainObject, { error: 'Must be an object' });
+// ---------------------------------------------------------------------------
+// schema.org objects passed through to the output (offers, brand, shipping, returns)
+//
+// The known properties are validated; further schema.org properties are allowed and passed
+// through unchecked, since these objects mirror schema.org types rather than component props.
+// ---------------------------------------------------------------------------
+
+/** A schema.org enumeration member, written as "InStock" or "https://schema.org/InStock". */
+const schemaEnum = (members: readonly string[]) => z.string().refine(
+  (value) => members.includes(value.replace(/^https?:\/\/schema\.org\//, '')),
+  { error: `Must be one of ${members.join(', ')} (optionally as https://schema.org/… URL)` }
+);
+const countryCode = z.string().regex(/^[A-Z]{2}$/, 'Must be an ISO 3166-1 alpha-2 country code like "DE"');
+const typeTag = (type: string) => z.literal(type).optional();
+
+/** Outputs the object with its `@type` (the given one, or `type` when left out), like Google's examples. */
+const withType = <T extends z.ZodType<Record<string, unknown>>>(schema: T, type: string) =>
+  schema.transform((value) => ({ '@type': type, ...value }));
+
+const monetaryAmount = withType(z.looseObject({
+  '@type': typeTag('MonetaryAmount'),
+  value: priceValue.optional(),
+  minValue: priceValue.optional(),
+  maxValue: priceValue.optional(),
+  currency,
+}).refine((amount) => amount.value !== undefined || amount.maxValue !== undefined, {
+  message: 'Requires "value" or "maxValue"',
+  path: ['value'],
+}), 'MonetaryAmount');
+
+const quantitativeDays = withType(z.looseObject({
+  '@type': typeTag('QuantitativeValue'),
+  minValue: z.number().int().nonnegative().optional(),
+  maxValue: z.number().int().nonnegative().optional(),
+  unitCode: z.string().optional(),
+}).refine((v) => v.minValue === undefined || v.maxValue === undefined || v.minValue <= v.maxValue, {
+  message: 'minValue must not exceed maxValue',
+  path: ['minValue'],
+}), 'QuantitativeValue');
+
+const shippingDetailsSchema = withType(z.looseObject({
+  '@type': typeTag('OfferShippingDetails'),
+  shippingRate: monetaryAmount.optional(),
+  shippingDestination: oneOrMore(withType(z.looseObject({
+    '@type': typeTag('DefinedRegion'),
+    addressCountry: oneOrMore(countryCode),
+    addressRegion: oneOrMore(text).optional(),
+  }), 'DefinedRegion')).optional(),
+  deliveryTime: withType(z.looseObject({
+    '@type': typeTag('ShippingDeliveryTime'),
+    handlingTime: quantitativeDays.optional(),
+    transitTime: quantitativeDays.optional(),
+  }), 'ShippingDeliveryTime').optional(),
+  doesNotShip: z.boolean().optional(),
+}), 'OfferShippingDetails');
+
+const returnPolicySchema = withType(z.looseObject({
+  '@type': typeTag('MerchantReturnPolicy'),
+  applicableCountry: oneOrMore(countryCode).optional(),
+  returnPolicyCategory: schemaEnum([
+    'MerchantReturnFiniteReturnWindow', 'MerchantReturnNotPermitted', 'MerchantReturnUnlimitedWindow', 'MerchantReturnUnspecified',
+  ]).optional(),
+  merchantReturnDays: z.number().int().nonnegative().optional(),
+  returnMethod: oneOrMore(schemaEnum(['ReturnByMail', 'ReturnInStore', 'ReturnAtKiosk'])).optional(),
+  returnFees: schemaEnum([
+    'FreeReturn', 'OriginalShippingFees', 'RestockingFees', 'ReturnFeesCustomerResponsibility', 'ReturnShippingFees',
+  ]).optional(),
+  returnShippingFeesAmount: monetaryAmount.optional(),
+  merchantReturnLink: httpUrl.optional(),
+}).superRefine((policy, ctx) => {
+  if (/MerchantReturnFiniteReturnWindow$/.test(policy.returnPolicyCategory ?? '') && policy.merchantReturnDays === undefined) {
+    ctx.addIssue({ code: 'custom', path: ['merchantReturnDays'], message: 'Required for MerchantReturnFiniteReturnWindow' });
+  }
+}), 'MerchantReturnPolicy');
+
+const imageObject = withType(z.looseObject({
+  '@type': typeTag('ImageObject'),
+  url: link,
+}), 'ImageObject');
+
+const brandObject = withType(z.looseObject({
+  '@type': typeTag('Brand'),
+  name: text,
+  logo: z.union([link, imageObject]).optional(),
+  url: httpUrl.optional(),
+}), 'Brand');
+
+const itemAvailability = schemaEnum([
+  'BackOrder', 'Discontinued', 'InStock', 'InStoreOnly', 'LimitedAvailability', 'MadeToOrder', 'OnlineOnly',
+  'OutOfStock', 'PreOrder', 'PreSale', 'Reserved', 'SoldOut',
+]);
+
+const offerCommon = {
+  availability: itemAvailability.optional(),
+  itemCondition: schemaEnum(['NewCondition', 'UsedCondition', 'RefurbishedCondition', 'DamagedCondition']).optional(),
+  url: link.optional(),
+  priceValidUntil: isoDateString.optional(),
+  shippingDetails: oneOrMore(shippingDetailsSchema).optional(),
+  hasMerchantReturnPolicy: oneOrMore(returnPolicySchema).optional(),
+};
+
+const priceSpecification = withType(z.looseObject({
+  '@type': z.enum(['PriceSpecification', 'UnitPriceSpecification']).optional(),
+  price: priceValue,
+  priceCurrency: currency,
+  priceType: schemaEnum(['ListPrice', 'StrikethroughPrice', 'SalePrice', 'MinimumAdvertisedPrice', 'MSRP', 'InvoicePrice', 'SRP']).optional(),
+}), 'UnitPriceSpecification');
+
+const singleOffer = withType(z.looseObject({
+  '@type': typeTag('Offer'),
+  price: priceValue.optional(),
+  priceCurrency: currency.optional(),
+  priceSpecification: oneOrMore(priceSpecification).optional(),
+  ...offerCommon,
+}).superRefine((offer, ctx) => {
+  if (offer.priceSpecification === undefined) {
+    if (offer.price === undefined) ctx.addIssue({ code: 'custom', path: ['price'], message: 'Required unless priceSpecification is set' });
+    if (offer.priceCurrency === undefined) ctx.addIssue({ code: 'custom', path: ['priceCurrency'], message: 'Required unless priceSpecification is set' });
+  }
+}), 'Offer');
+
+const aggregateOffer = z.looseObject({
+  '@type': z.literal('AggregateOffer'),
+  lowPrice: priceValue,
+  highPrice: priceValue.optional(),
+  priceCurrency: currency,
+  offerCount: positiveInt.optional(),
+  ...offerCommon,
+}).refine((o) => o.highPrice === undefined || Number(o.lowPrice) <= Number(o.highPrice), {
+  message: 'lowPrice must not exceed highPrice',
+  path: ['lowPrice'],
+});
+
+const offerObject = z.union([aggregateOffer, singleOffer]);
 
 /**
  * Marks a prop as recommended. `output` is the schema.org property (dot path) the prop
@@ -65,6 +195,11 @@ const schemaObject = <T>() => z.custom<T>(isPlainObject, { error: 'Must be an ob
  */
 function recommended<T extends z.ZodType>(schema: T, output: string): T {
   return schema.meta({ recommended: output });
+}
+
+/** Marks an alternative prop that also produces a recommended schema.org property (e.g. `offers`). */
+function producesRecommended<T extends z.ZodType>(schema: T, output: string): T {
+  return schema.meta({ produces: output });
 }
 
 // ---------------------------------------------------------------------------
@@ -176,7 +311,6 @@ export const faqZodSchema = z.object({
 });
 
 // 3. Product
-const offerObject = schemaObject<Omit<Offer, '@context'>>();
 export const productZodSchema = z.object({
   name: text,
   description: text,
@@ -186,8 +320,8 @@ export const productZodSchema = z.object({
   priceCurrency: recommended(currency.optional(), 'offers'),
   availability: availability.optional(),
   // Advanced offer structures
-  offers: oneOrMore(offerObject).optional(),
-  priceRange: z.strictObject({
+  offers: producesRecommended(oneOrMore(offerObject).optional(), 'offers'),
+  priceRange: producesRecommended(z.strictObject({
     lowPrice: priceValue,
     highPrice: priceValue,
     priceCurrency: currency,
@@ -195,9 +329,9 @@ export const productZodSchema = z.object({
   }).refine((range) => Number(range.lowPrice) <= Number(range.highPrice), {
     message: 'lowPrice must not exceed highPrice',
     path: ['lowPrice'],
-  }).optional(),
+  }).optional(), 'offers'),
   // Identifiers & Brand
-  brand: recommended(z.union([text, schemaObject<Omit<Brand, '@context'>>()]).optional(), 'brand'),
+  brand: recommended(z.union([text, brandObject]).optional(), 'brand'),
   sku: recommended(text.optional(), 'sku'),
   gtin: z.string().regex(/^(\d{8}|\d{12,14})$/, 'Must be a GTIN-8, -12, -13 or -14').optional(),
   // Ratings & Reviews
@@ -217,8 +351,8 @@ export const productZodSchema = z.object({
     })
   ).min(1).optional(),
   // Shipping & Return Policy
-  shippingDetails: schemaObject<Record<string, unknown>>().optional(),
-  returnPolicy: schemaObject<Record<string, unknown>>().optional(),
+  shippingDetails: shippingDetailsSchema.optional(),
+  returnPolicy: returnPolicySchema.optional(),
 }).superRefine((data, ctx) => {
   atMostOne(data, ctx, ['offers', 'priceRange', 'price']);
   requireTogether(data, ctx, ['price', 'priceCurrency']);
@@ -547,9 +681,9 @@ export const structuredDataOptionsSchema = z.strictObject({
     name: text,
     logo: z.strictObject({ url: link }).optional(),
   }).optional(),
-  defaultBrand: z.union([text, schemaObject<Omit<Brand, '@context' | '@type'>>()]).optional(),
-  defaultShippingDetails: schemaObject<Omit<OfferShippingDetails, '@context' | '@type'>>().optional(),
-  defaultReturnPolicy: schemaObject<Omit<MerchantReturnPolicy, '@context' | '@type'>>().optional(),
+  defaultBrand: z.union([text, brandObject]).optional(),
+  defaultShippingDetails: shippingDetailsSchema.optional(),
+  defaultReturnPolicy: returnPolicySchema.optional(),
 });
 
 export type StructuredDataOptions = z.input<typeof structuredDataOptionsSchema>;
@@ -587,9 +721,9 @@ const schemaMap = {
 
 export type SchemaType = keyof typeof schemaMap;
 
-function recommendedEntries(schema: z.ZodObject): Array<{ prop: string; output: string }> {
+function recommendedEntries(schema: z.ZodObject, key: 'recommended' | 'produces' = 'recommended'): Array<{ prop: string; output: string }> {
   return Object.entries(schema.shape).flatMap(([prop, field]) => {
-    const output = z.globalRegistry.get(field as z.ZodType)?.recommended;
+    const output = z.globalRegistry.get(field as z.ZodType)?.[key];
     return typeof output === 'string' ? [{ prop, output }] : [];
   });
 }
@@ -612,15 +746,47 @@ function hasPath(item: Record<string, any>, path: string): boolean {
 
 /** Recommended schema.org properties missing on a JSON-LD item (empty for types without any). */
 export function missingRecommended(item: Record<string, any>): string[] {
-  return (RECOMMENDED_FIELDS[item['@type']] ?? []).filter((path) => !hasPath(item, path));
+  const types: unknown[] = Array.isArray(item['@type']) ? item['@type'] : [item['@type']];
+  const fields = new Set(types.flatMap((type) => (typeof type === 'string' && RECOMMENDED_FIELDS[type]) || []));
+  return [...fields].filter((path) => !hasPath(item, path));
 }
 
+/** Props the components fill from integration options when they are not passed. */
+function propsFromOptions(type: SchemaType, options: StructuredDataOptions): Record<string, unknown> {
+  switch (type) {
+    case 'Article':
+    case 'BlogPosting':
+    case 'NewsArticle':
+      return { publisherName: options.defaultArticlePublisher?.name, publisherLogo: options.defaultArticlePublisher?.logo?.url };
+    case 'Product':
+      return { brand: options.defaultBrand };
+    case 'LocalBusiness':
+      return { ...options.defaultLocalBusiness };
+    default:
+      return {};
+  }
+}
+
+/**
+ * Recommended props missing from `data`. A schema.org property counts as covered when any
+ * prop producing it is set (e.g. `offers` instead of `price` + `priceCurrency`) or when the
+ * given integration `options` provide a default for it.
+ */
 export function validateRecommended(
   type: SchemaType,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
+  options: StructuredDataOptions = {}
 ): RecommendedWarning[] {
-  return recommendedEntries(schemaMap[type])
-    .filter(({ prop }) => data[prop] == null)
+  const schema = schemaMap[type];
+  const defaults = propsFromOptions(type, options);
+  const isSet = (prop: string) => (data[prop] ?? defaults[prop]) != null;
+  const covered = new Set(
+    [...recommendedEntries(schema), ...recommendedEntries(schema, 'produces')]
+      .filter(({ prop }) => isSet(prop))
+      .map(({ output }) => output)
+  );
+  return recommendedEntries(schema)
+    .filter(({ output }) => !covered.has(output))
     .map(({ prop }) => ({
       field: prop,
       message: `${type} should include "${prop}" for better search engine presentation`,

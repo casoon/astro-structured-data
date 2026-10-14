@@ -65,7 +65,7 @@ export const collections = { docs: docsCollection() };
 | --- | --- | --- |
 | `name`, `description`, `repo` | – | Header, meta tags, GitHub links, JSON-LD |
 | `version` | – | Header badge, "Docs for vX" |
-| `license` | `MIT` | Footer, JSON-LD |
+| `license` | `MIT` | SPDX id for footer and JSON-LD; `false` for proprietary code names no licence |
 | `branch` | `main` | "Edit this page" links |
 | `accent` | CASOON petrol | `{ light, dark }` project colour; needs 4.5:1 on `#f6f6f5` and `#101010` |
 | `packages` | `[]` | Registry and API-doc links in the footer |
@@ -74,6 +74,7 @@ export const collections = { docs: docsCollection() };
 | `showcase` | `./src/showcase.ts` | Module exporting `examples: ShowcaseExample[]`, or `false` |
 | `demo` | `false` | Header label of a live demo page; the project supplies `src/pages/demo.astro` |
 | `mdxComponents` | – | Module exporting `components` for docs MDX, next to the theme's; see „Docs frontmatter" |
+| `lang` | `en` | `en` or `de`: `<html lang>` and the theme's own UI strings (`lib/i18n.ts`); props passed by the project win |
 
 ### Routes
 

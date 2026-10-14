@@ -25,4 +25,6 @@ structuredData({ /* options */ })
 | `defaultReturnPolicy` | `MerchantReturnPolicy` | – | Default return policy for `ProductSchema` |
 
 Unknown keys and invalid values (a `locale` that is not like `de_DE`, a handle without `@`, a
-relative `siteUrl`) fail the build.
+relative `siteUrl`) fail the build. `defaultBrand`, `defaultShippingDetails` and
+`defaultReturnPolicy` are checked like the matching `ProductSchema` props (see
+[Validation](../../guides/validation/)).

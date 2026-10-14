@@ -3,6 +3,7 @@ import {
   Badge,
   Badges,
   BuildOutput,
+  Button,
   CodeBlock,
   Facts,
   Features,
@@ -12,6 +13,10 @@ import {
   Terminal,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
+import { url } from '@casoon/pages-theme/url';
+// Animated SVG built with castwright from captures/build.terminal.yaml (real builds, see capture.sh).
+import buildSvg from '../../captures/build.svg?url';
+import Diagram from '../components/Diagram.astro';
 import { examples } from '../showcase';
 
 const byslug = (slug: string) => {
@@ -19,7 +24,6 @@ const byslug = (slug: string) => {
   if (!example) throw new Error(`Missing showcase example "${slug}"`);
   return example;
 };
-const blogPost = byslug('blog-post');
 const invalidEvent = byslug('invalid-event');
 
 const configCode = `import { defineConfig } from 'astro/config';
@@ -29,12 +33,24 @@ export default defineConfig({
   site: 'https://example.com',
   integrations: [structuredData({ generateMeta: true })],
 });`;
+
+const pageCode = `---
+import { ArticleSchema } from '@casoon/astro-structured-data/components';
+const { post } = Astro.props;
+---
+<ArticleSchema
+  title={post.data.title}
+  description={post.data.description}
+  datePublished={post.data.date}
+  authorName={post.data.author}
+  imageUrl={post.data.cover}
+/>`;
 ---
 
 <Base>
   <Hero
-    title="JSON-LD for Astro, typed and validated."
-    lead="astro-structured-data renders schema.org JSON-LD from Astro components. Props are checked against Zod schemas at build time: invalid data stops the build instead of reaching Google."
+    title="Structured data for Astro, from the content you already have."
+    lead="Search engines read schema.org JSON-LD to understand a page and to show it as a rich result: an article with its date and image, a product with price and stock, an event with its date and venue. astro-structured-data turns your page data into that JSON-LD and the matching meta tags, and stops the build when the data would not be valid."
   >
     <Install
       commands={[
@@ -45,47 +61,107 @@ export default defineConfig({
     />
     <Badges>
       <Badge>MIT</Badge>
-      <Badge>npm 2.0.1</Badge>
+      <Badge>npm 2.1.0</Badge>
       <Badge>Astro 5 · 6 · 7</Badge>
-      <Badge>Node ≥ 18</Badge>
+      <Badge tone="accent">0 kB client JS</Badge>
     </Badges>
-    <Terminal slot="output" title="examples/blog-post.astro → JSON-LD" dots>
-      <Fragment set:html={blogPost.output.html} />
-    </Terminal>
+    <img
+      slot="output"
+      class="terminal-demo"
+      src={buildSvg}
+      width="561.6"
+      height="530"
+      alt="Terminal: a blog post page uses ArticleSchema with title 'Hello, Astro', description, datePublished 2026-10-01, author Ada Lovelace, an image and the publisher. astro build builds the page. The generated head contains canonical, description, author, og:title, og:description, og:url, og:image, og:site_name, og:type article, article:published_time, article:modified_time and the twitter tags with summary_large_image. The JSON-LD is a BlogPosting with headline, dates, mainEntityOfPage, author, publisher and image. With datePublished changed to 01.10.2026 the build stops: '<ArticleSchema> on /blog/hello-astro/ received invalid props: Must be an ISO 8601 date (YYYY-MM-DD) or date-time, or a Date, at datePublished'."
+    />
   </Hero>
+
+  <Features
+    heading="Why it exists"
+    items={[
+      {
+        title: 'Rich results need structured data',
+        body: 'Prices, ratings, event dates, recipe times or job details only appear in search results when the page describes them as schema.org data. That data has to match what Google and other search engines expect, field by field.',
+      },
+      {
+        title: 'Hand-written JSON-LD fails silently',
+        body: 'A date in the wrong format, a currency symbol instead of a code or a missing required field produces no error. The markup is simply not used, and you find out weeks later in Search Console, if at all.',
+      },
+      {
+        title: 'Your pages already have the data',
+        body: 'Titles, dates, prices and addresses sit in frontmatter, content collections or your CMS. Pass them as props instead of maintaining a second copy as JSON.',
+      },
+      {
+        title: 'Checked where you can fix it',
+        body: 'Every component validates its props at build time. Wrong data stops the build with the component, the page and the field, so it never reaches production.',
+      },
+    ]}
+  />
+
+  <section class="how" aria-labelledby="output-heading">
+    <h2 id="output-heading">What ends up in your page</h2>
+    <div class="text">
+      <p>
+        Each component writes a <code>&lt;script type="application/ld+json"&gt;</code> block with
+        the schema.org object, or, with <code>useGraph</code>, all schemas of a page go into
+        one <code>@graph</code> block. With <code>generateMeta</code>, the same data also produces the
+        canonical link and the Open Graph and Twitter tags, so search results and link previews
+        show the same title, description and image. Tags your layout sets itself are kept.
+      </p>
+      <p>
+        After <code>astro build</code> the integration checks every JSON-LD block and lists the
+        recommended fields that are still missing. In <code>astro dev</code>, a Dev Toolbar panel
+        shows each schema of the page with a rich result preview. Nothing is added to the
+        JavaScript your visitors download.
+      </p>
+    </div>
+    <Diagram name="how-it-works" format="svg" narrow={{ width: 360, height: 1000 }} />
+    <div class="links">
+      <Button href={url('showcase/')} variant="secondary">Input and output of every example</Button>
+      <Button href={url('docs/guides/meta-tags/')} variant="secondary">Meta tags in detail</Button>
+    </div>
+  </section>
+
+  <Features
+    heading="For which pages"
+    items={[
+      {
+        title: 'Blogs and magazines',
+        body: 'ArticleSchema for posts with author, publisher, dates and reading time; BreadcrumbSchema or AutoBreadcrumbSchema for the path; WebSiteSchema and OrganizationSchema once in the layout.',
+      },
+      {
+        title: 'Shops',
+        body: 'ProductSchema with price, availability, brand, ratings and reviews, full offers with shipping and return policies, and shop-wide defaults for brand, shipping and returns. CollectionPageSchema for category pages.',
+      },
+      {
+        title: 'Local businesses',
+        body: 'LocalBusinessSchema with address, coordinates and opening hours, defined once in the configuration and reused on every page.',
+      },
+      {
+        title: 'Events and jobs',
+        body: 'EventSchema for venues, online streams or both; JobPostingSchema for on-site and fully remote positions with salary and application details.',
+      },
+      {
+        title: 'Recipes, videos, software',
+        body: 'RecipeSchema with steps, times and nutrition, VideoSchema with duration and embed URL, SoftwareAppSchema with platform, price and rating.',
+      },
+      {
+        title: 'Anything else',
+        body: 'FAQSchema, ProfilePageSchema and WebPageSchema cover the rest of a typical site; the generic Schema component outputs any other schema.org type you need.',
+      },
+    ]}
+  />
 
   <Facts
     items={[
       { value: '18', label: 'Astro components, one per schema type plus generic and graph' },
-      { value: '16', label: 'Zod schemas exported for content collections and forms' },
-      { value: '232', label: 'tests, including real static, dev and SSR builds' },
+      { value: '16', label: 'Zod schemas for content collections and forms' },
+      { value: '277', label: 'tests, including real static, dev and SSR builds' },
       { value: '0 kB', label: 'client JavaScript added to your pages' },
     ]}
   />
 
-  <Features
-    items={[
-      {
-        title: 'Validated at build time',
-        body: 'Every component parses its props with its Zod schema: ISO 8601 dates, ISO 4217 currencies, absolute or root-relative URLs, cross-field rules. Unknown props are errors, so typos cannot drop data silently.',
-      },
-      {
-        title: 'No invented values',
-        body: 'Components never fill in placeholders. A name, a hiring organisation or a salary unit comes from a prop or a configured default, otherwise the build fails.',
-      },
-      {
-        title: 'Meta tags from the same data',
-        body: 'With generateMeta, a middleware derives canonical, Open Graph and Twitter tags from the primary schema of the page. Tags your layout already sets are kept.',
-      },
-      {
-        title: 'One @graph per page',
-        body: 'With useGraph, all schemas of a page are merged into a single @graph block, wherever the components sit and even when they await data.',
-      },
-    ]}
-  />
-
   <BuildOutput
-    heading="Rejected at build time"
+    heading="Wrong data stops the build"
     caption="Real output: the error the component throws for examples/invalid-event.astro while this site was built."
     file="examples/invalid-event.astro"
   >
@@ -95,13 +171,52 @@ export default defineConfig({
   </BuildOutput>
 
   <Quickstart
-    lead="Register the integration, then place components on your pages. The full walkthrough and every component are in the documentation."
+    lead="Register the integration once, then put the components on your pages and pass the data you already have. The documentation covers every component and option."
     steps={[
-      'Install the package and add the integration to <code>astro.config.mjs</code>.',
-      'Set <code>site</code> in the Astro config, or pass <code>siteUrl</code> to the integration.',
-      'Import components from <code>@casoon/astro-structured-data/components</code> and pass your data as props.',
+      'Install the package and add the integration to <code>astro.config.mjs</code>; set <code>site</code> there or pass <code>siteUrl</code>.',
+      'Import a component from <code>@casoon/astro-structured-data/components</code> in a page or layout and pass your data as props.',
+      'Run <code>astro build</code>: wrong data stops the build, missing recommended fields are listed.',
     ]}
   >
     <CodeBlock code={configCode} lang="js" title="astro.config.mjs" label="Config" />
+    <CodeBlock code={pageCode} lang="astro" title="src/layouts/Post.astro" label="Page" />
   </Quickstart>
 </Base>
+
+<style>
+  /* Never scale the SVG beyond a readable terminal size. */
+  .terminal-demo {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+    margin: 0 auto;
+  }
+  .how {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+  h2 {
+    margin: 0 0 14px;
+    color: var(--heading);
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .text {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    gap: 0 48px;
+  }
+  .text p {
+    margin: 0 0 16px;
+    font-size: 15.5px;
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+</style>

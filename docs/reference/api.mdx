@@ -35,14 +35,21 @@ order: 3
   name="validateRecommended"
   since="since 1.3.0"
   lang="ts"
-  signature={`function validateRecommended(type: SchemaType, data: Record<string, unknown>): RecommendedWarning[]`}
+  signature={`function validateRecommended(
+  type: SchemaType,
+  data: Record<string, unknown>,
+  options?: StructuredDataOptions
+): RecommendedWarning[]`}
   params={[
     { name: 'type', type: 'SchemaType', desc: 'schema.org @type name, e.g. "Organization" or "BlogPosting".' },
     { name: 'data', type: 'Record<string, unknown>', desc: 'The props or schema object to check.' },
+    { name: 'options', type: 'StructuredDataOptions', desc: 'Optional (since 2.1.0): the integration options, so configured defaults such as defaultBrand count as present.' },
   ]}
 >
-  Returns one `{ field, message }` entry per missing recommended field. The build-time warning
-  uses the same declaration.
+  Returns one `{ field, message }` entry per missing recommended field. A field counts as
+  present when any prop producing the same schema.org property is set: `offers` or
+  `priceRange` cover `price` and `priceCurrency`. The build-time warning uses the same
+  declaration.
 </ApiEntry>
 
 ## calculateReadingTime

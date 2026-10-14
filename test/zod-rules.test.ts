@@ -93,3 +93,9 @@ test('integration options are strict', () => {
   expect(structuredDataOptionsSchema.safeParse({ locale: 'german' }).success).toBe(false);
   expect(structuredDataOptionsSchema.safeParse({ defaultArticlePublisher: { name: 'P', logo: { url: '/l.png' }, extra: 1 } }).success).toBe(false);
 });
+
+test('an invalid date names the expected format', () => {
+  const result = articleZodSchema.safeParse({ title: 'T', description: 'D', datePublished: '01.10.2026', authorName: 'A' });
+  expect(result.success).toBe(false);
+  expect(result.error?.issues[0].message).toMatch(/ISO 8601 date/);
+});

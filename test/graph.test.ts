@@ -1,6 +1,6 @@
-import { test } from 'vitest';
+import { expect, test } from 'vitest';
 import assert from 'node:assert/strict';
-import { registerSchema } from '../src/utils/graph.ts';
+import { getRegisteredSchemas, registerSchema } from '../src/utils/graph.ts';
 
 test('registers a schema and scopes the store to the page path', () => {
   const locals: Record<string, any> = {};
@@ -48,4 +48,12 @@ test('resets the store when the page path changes (no cross-page leak)', () => {
 test('is a no-op when locals is missing', () => {
   assert.doesNotThrow(() => registerSchema(null as any, { '@type': 'Event' }, '/a'));
   assert.doesNotThrow(() => registerSchema(undefined as any, { '@type': 'Event' }, '/a'));
+});
+
+test('deduplicates identical items with an @type array', () => {
+  const locals: any = {};
+  const item = { '@type': ['BlogPosting', 'LearningResource'], headline: 'H' };
+  registerSchema(locals, item, '/p/');
+  registerSchema(locals, { ...item, '@type': [...item['@type']] }, '/p/');
+  expect(getRegisteredSchemas(locals, '/p/')).toHaveLength(1);
 });

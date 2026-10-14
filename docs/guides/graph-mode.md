@@ -30,4 +30,8 @@ after it, and in components that await data. Schemas are collected per page path
 leaks from one page into the next during a static build.
 
 A page with schemas but without `<SchemaGraph />`, or with more than one, fails the build
-instead of silently losing data. Without `useGraph`, `<SchemaGraph />` renders nothing.
+so no schema goes missing. Without `useGraph`, `<SchemaGraph />` renders nothing.
+
+The block carries the schema.org `@context`. A different `@context` set via `<Schema>`, for
+example own term mappings, stays on its node as an embedded context, so the data means the same
+with and without graph mode.

@@ -13,10 +13,9 @@ export function registerSchema(locals: any, schema: Record<string, any>, pageKey
     resetSchemas(locals, pageKey);
   }
 
-  // Prevent duplicate entries of identical items
-  const isDuplicate = locals.structuredDataGraph.some(
-    (item: any) => item['@type'] === schema['@type'] && JSON.stringify(item) === JSON.stringify(schema)
-  );
+  // Prevent duplicate entries of identical items (also with an `@type` array)
+  const serialized = JSON.stringify(schema);
+  const isDuplicate = locals.structuredDataGraph.some((item: any) => JSON.stringify(item) === serialized);
 
   if (!isDuplicate) {
     locals.structuredDataGraph.push(schema);

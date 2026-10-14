@@ -19,6 +19,17 @@ with a message naming the component, the page and the offending fields.
 - **Cross-field rules**, e.g. `price` and `priceCurrency` only together, `ratingValue` and
   `reviewCount` only together, image dimensions only with an image, an end date not before
   its start date, at most one of `offers`, `priceRange` and `price`.
+- **schema.org objects** passed to `ProductSchema` (`offers`, `brand`, `shippingDetails`,
+  `returnPolicy`) and the options `defaultBrand`, `defaultShippingDetails` and
+  `defaultReturnPolicy` are checked for their known properties: prices, ISO 4217 currencies,
+  ISO 3166 country codes (`DE`), schema.org enumeration values (`InStock` or
+  `https://schema.org/InStock`), delivery day ranges, and `merchantReturnDays` for a
+  `MerchantReturnFiniteReturnWindow`. An `Offer` needs `price` and `priceCurrency` or a
+  `priceSpecification` with both; a shipping rate needs `value` or `maxValue`. Nested
+  schema.org types such as `MonetaryAmount` or `DefinedRegion` are added to the output when
+  you leave them out. Shipping details or a return policy set on an individual offer win over
+  the component props and configured defaults. Further schema.org properties on these objects
+  are allowed and passed through unchecked.
 - **Location follows attendance mode** for events: `Offline` needs a venue name and address,
   `Online` needs `onlineUrl` and allows no venue (output as `VirtualLocation`), `Mixed` needs
   both.
@@ -40,8 +51,8 @@ JSON-LD output is escaped so that content cannot break out of the `<script>` blo
 
 ## After the build
 
-The integration scans every generated HTML file for JSON-LD blocks. A block that is not valid
-JSON fails the build. With `warnOnMissingRecommended` (on by default) it also logs one warning
+The integration reads every JSON-LD block in the generated HTML. A block that is not valid
+JSON fails the build. Arrays and `@graph` blocks are checked item by item. With `warnOnMissingRecommended` (on by default) it also logs one warning
 per missing recommended field and type, nested properties as dot paths:
 
 ```

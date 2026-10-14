@@ -1,53 +1,298 @@
 # @casoon/astro-structured-data
 
-Astro integration for automatic structured data (JSON-LD) generation. Supports Articles, FAQs, Products, Recipes, Videos, Breadcrumbs, Local Businesses, Events, Organizations, and more — with TypeScript-typed components and matching Zod schemas for validating your content.
+Structured data for Astro, from the content you already have.
+
+Search engines read [schema.org](https://schema.org) JSON-LD to understand a page and to show it as a rich result: an article with its date and image, a product with price and stock, an event with its date and venue, a job with salary and location. This integration turns your page data into that JSON-LD and the matching meta tags, and stops the build when the data would not be valid.
 
 [![npm version](https://img.shields.io/npm/v/@casoon/astro-structured-data.svg)](https://www.npmjs.com/package/@casoon/astro-structured-data)
 [![Astro](https://img.shields.io/badge/astro-5%20%7C%206%20%7C%207-orange.svg)](https://astro.build/)
-[![GitHub repository](https://img.shields.io/badge/github-repo-black.svg?logo=github)](https://github.com/casoon/astro-structured-data)
-[![Website](https://img.shields.io/badge/website-live-brightgreen.svg)](https://astro-structured-data.casoon.de/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[Landing Page](https://astro-structured-data.casoon.de/) | [GitHub Repository](https://github.com/casoon/astro-structured-data) | [npm Package](https://www.npmjs.com/package/@casoon/astro-structured-data)
+**Website and documentation:** [casoon.github.io/astro-structured-data](https://casoon.github.io/astro-structured-data/) · [npm](https://www.npmjs.com/package/@casoon/astro-structured-data) · [Product page](https://astro-structured-data.casoon.de/)
 
-**Website and documentation:** [casoon.github.io/astro-structured-data](https://casoon.github.io/astro-structured-data/)
+<p align="center">
+  <img src="site/captures/build.svg" width="562" alt="Terminal: a blog post page uses ArticleSchema with title, description, datePublished, author, image and publisher. astro build builds the page; its head now contains the canonical link, description, author, the Open Graph and Twitter tags, and a BlogPosting JSON-LD block. With datePublished changed to 01.10.2026 the build stops with: ArticleSchema on /blog/hello-astro/ received invalid props, Must be an ISO 8601 date, at datePublished.">
+</p>
+<p align="center"><sub>Recorded from real builds of the sample project in <a href="site/captures/"><code>site/captures/</code></a>.</sub></p>
 
-## Installation
+## Why
+
+- **Rich results need structured data.** Prices, ratings, event dates, recipe times or job details only appear in search results when the page describes them as schema.org data, in the form Google and other search engines expect.
+- **Hand-written JSON-LD fails silently.** A date in the wrong format, a currency symbol instead of a code or a missing required field produces no error. The markup is simply not used, and you find out weeks later in Search Console, if at all.
+- **Your pages already have the data.** Titles, dates, prices and addresses sit in frontmatter, content collections or your CMS. Pass them as props instead of maintaining a second copy as JSON.
+- **Checked where you can fix it.** Every component validates its props at build time. Wrong data stops the build with the component, the page and the field, so it never reaches production.
+
+## What you get
+
+For this component on a blog post:
+
+```astro
+<ArticleSchema
+  title="Hello, Astro"
+  description="Our first post."
+  datePublished="2026-10-01"
+  authorName="Ada Lovelace"
+  imageUrl="/img/hello.jpg"
+  publisherName="Example Blog"
+/>
+```
+
+the build writes the JSON-LD into the page:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Hello, Astro",
+  "description": "Our first post.",
+  "datePublished": "2026-10-01",
+  "dateModified": "2026-10-01",
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://example.com/blog/hello-astro/" },
+  "author": { "@type": "Person", "name": "Ada Lovelace" },
+  "isAccessibleForFree": true,
+  "publisher": { "@type": "Organization", "name": "Example Blog" },
+  "image": { "@type": "ImageObject", "url": "/img/hello.jpg" }
+}
+```
+
+and, with `generateMeta: true`, the matching tags into `<head>`:
+
+```html
+<link rel="canonical" href="https://example.com/blog/hello-astro/">
+<meta name="description" content="Our first post.">
+<meta name="author" content="Ada Lovelace">
+<meta property="og:title" content="Hello, Astro">
+<meta property="og:description" content="Our first post.">
+<meta property="og:url" content="https://example.com/blog/hello-astro/">
+<meta property="og:image" content="https://example.com/img/hello.jpg">
+<meta property="og:site_name" content="Example Blog">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-10-01">
+<meta property="article:modified_time" content="2026-10-01">
+<meta name="twitter:title" content="Hello, Astro">
+<meta name="twitter:description" content="Our first post.">
+<meta name="twitter:image" content="https://example.com/img/hello.jpg">
+<meta name="twitter:card" content="summary_large_image">
+```
+
+Beyond that:
+
+- **One `@graph` per page** if you prefer: with `useGraph: true`, all schemas of a page are merged into a single block, wherever the components sit.
+- **A build report:** after `astro build`, every JSON-LD block is checked, and missing recommended fields are listed per type.
+- **A Dev Toolbar panel** in `astro dev` that previews each schema of the page as a rich result and lists what is missing.
+- **Zod schemas** for your content collections and forms, the same ones the components use.
+- **Sitemap hints** (`changefreq`, `priority`) on the JSON-LD script for post-build sitemap generators.
+- **No client JavaScript.** Everything happens at build time (or on the server in SSR).
+
+## Quick start
 
 ```bash
 npm install @casoon/astro-structured-data
 ```
 
-## Setup
-
-Add the integration to your `astro.config.mjs`:
-
 ```js
+// astro.config.mjs
 import { defineConfig } from 'astro/config';
 import structuredData from '@casoon/astro-structured-data';
 
 export default defineConfig({
-  site: 'https://example.com', // used automatically by the integration
+  site: 'https://example.com', // or pass siteUrl to the integration
   integrations: [
     structuredData({
       generateMeta: true,
-      siteName: 'My Awesome Website',
-      locale: 'de_DE',
-      twitterSite: '@mywebsite',
+      siteName: 'Example Blog',
+      locale: 'en_US',
     }),
   ],
 });
 ```
 
-If you don't set `site` in your Astro config, pass `siteUrl` explicitly:
+Then put a component on a page or layout and pass the data you already have:
+
+```astro
+---
+// src/layouts/Post.astro
+import { ArticleSchema } from '@casoon/astro-structured-data/components';
+const { post } = Astro.props;
+---
+<ArticleSchema
+  title={post.data.title}
+  description={post.data.description}
+  datePublished={post.data.date}
+  authorName={post.data.author}
+  imageUrl={post.data.cover}
+/>
+```
+
+Run `astro build`. Wrong data stops the build, missing recommended fields are listed.
+
+## Examples by kind of site
+
+### Blog or magazine
+
+The site and the publisher once in the base layout, the article and its breadcrumb trail on each post. The reading time can be computed from the post itself.
 
 ```js
-structuredData({ 
-  siteUrl: 'https://example.com',
+// astro.config.mjs
+structuredData({
   generateMeta: true,
+  defaultArticlePublisher: { name: 'Example Blog', logo: { url: 'https://example.com/logo.png' } },
 })
 ```
 
-The integration registers a middleware that completes every HTML page once it has fully rendered: it inserts the `@graph` block (graph mode) and the meta tags (`generateMeta`) and runs the page-level checks. Because it needs the complete page, HTML responses are buffered instead of streamed. Nothing needs to be set up for this.
+```astro
+---
+// src/layouts/Base.astro
+import { OrganizationSchema, WebSiteSchema } from '@casoon/astro-structured-data/components';
+---
+<WebSiteSchema name="Example Blog" />
+<OrganizationSchema sameAs={['https://mastodon.social/@example']} />
+```
+
+```astro
+---
+// src/layouts/Post.astro
+import { ArticleSchema, AutoBreadcrumbSchema } from '@casoon/astro-structured-data/components';
+import { calculateReadingTime } from '@casoon/astro-structured-data/utils';
+const { post } = Astro.props;
+const { wordCount, readingTimeMinutes } = calculateReadingTime(post.body);
+---
+<ArticleSchema
+  title={post.data.title}
+  description={post.data.description}
+  datePublished={post.data.date}
+  authorName={post.data.author}
+  imageUrl={post.data.cover}
+  keywords={post.data.tags}
+  wordCount={wordCount}
+  readingTimeMinutes={readingTimeMinutes}
+/>
+<AutoBreadcrumbSchema labels={{ blog: 'Blog' }} />
+```
+
+`OrganizationSchema` and `ArticleSchema` take the publisher from `defaultArticlePublisher`; `AutoBreadcrumbSchema` builds the trail from the URL path.
+
+### Shop
+
+Brand, shipping and returns usually apply to the whole shop: set them once, and every `ProductSchema` adds them to its offer.
+
+```js
+// astro.config.mjs
+structuredData({
+  generateMeta: true,
+  defaultBrand: 'Gadget Co',
+  defaultShippingDetails: {
+    shippingRate: { value: 4.95, currency: 'EUR' },
+    shippingDestination: { addressCountry: 'DE' },
+    deliveryTime: {
+      handlingTime: { minValue: 0, maxValue: 1, unitCode: 'DAY' },
+      transitTime: { minValue: 1, maxValue: 3, unitCode: 'DAY' },
+    },
+  },
+  defaultReturnPolicy: {
+    applicableCountry: 'DE',
+    returnPolicyCategory: 'MerchantReturnFiniteReturnWindow',
+    merchantReturnDays: 30,
+    returnMethod: 'ReturnByMail',
+    returnFees: 'FreeReturn',
+  },
+})
+```
+
+```astro
+<ProductSchema
+  name="Super Gadget"
+  description="The best gadget ever"
+  imageUrl="/images/gadget.jpg"
+  price={29.99}
+  priceCurrency="EUR"
+  availability="InStock"
+  sku="SG-001"
+  ratingValue={4.5}
+  reviewCount={128}
+/>
+```
+
+For several offers, sale prices or per-offer shipping, pass `offers` instead of `price`; for a price range across variants, `priceRange`. Category pages use `CollectionPageSchema`.
+
+### Local business
+
+The business data lives in the configuration and is reused wherever `<LocalBusinessSchema />` appears, typically in the base layout.
+
+```js
+// astro.config.mjs
+structuredData({
+  defaultLocalBusiness: {
+    name: 'My Shop',
+    telephone: '+49 30 1234567',
+    address: { streetAddress: 'Hauptstraße 42', addressLocality: 'Berlin', postalCode: '10119', addressCountry: 'DE' },
+    geo: { latitude: 52.53, longitude: 13.41 },
+    openingHours: ['Mo-Fr 09:00-18:00', 'Sa 10:00-16:00'],
+  },
+})
+```
+
+```astro
+<LocalBusinessSchema />
+```
+
+Props on a page override the defaults, e.g. a different `telephone` for a branch.
+
+### Events
+
+Venue, online stream or both, chosen with `attendanceMode`. An online event outputs its stream URL as a `VirtualLocation`:
+
+```astro
+<EventSchema
+  name="Astro Live Webinar"
+  description="Structured data in Astro, live with Q&A."
+  startDate="2026-10-20T17:00:00+02:00"
+  endDate="2026-10-20T18:30:00+02:00"
+  attendanceMode="Online"
+  onlineUrl="https://example.com/live"
+  organizer={{ name: 'Example GmbH', url: 'https://example.com' }}
+  price={0}
+  priceCurrency="EUR"
+/>
+```
+
+### Job postings
+
+On-site jobs take a `jobLocation` address; fully remote positions say where applicants may live:
+
+```astro
+<JobPostingSchema
+  title="Remote Frontend Engineer"
+  description="<p>Fully remote position open worldwide.</p>"
+  hiringOrganizationName="ACME GmbH"
+  datePosted="2026-09-01"
+  validThrough="2026-12-31"
+  jobLocationType="TELECOMMUTE"
+  applicantLocationRequirements="DE"
+  employmentType="FULL_TIME"
+  baseSalary={{ value: 72000, currency: 'EUR', unit: 'YEAR' }}
+/>
+```
+
+### Content collections
+
+Validate frontmatter with the schemas the components use, so wrong data is reported where it is written:
+
+```ts
+// src/content.config.ts
+import { defineCollection } from 'astro:content';
+import { glob } from 'astro/loaders';
+import { eventZodSchema } from '@casoon/astro-structured-data/zod';
+
+const events = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/events' }),
+  schema: eventZodSchema,
+});
+
+export const collections = { events };
+```
+
+Every example in the [showcase](https://casoon.github.io/astro-structured-data/showcase/) shows the component next to the JSON-LD it produced while the site was built.
 
 ## Configuration
 
@@ -55,23 +300,25 @@ The integration registers a middleware that completes every HTML page once it ha
 |---|---|---|---|
 | `siteUrl` | `string` | — | Absolute http(s) base URL — falls back to Astro's `site` config; one of the two is required |
 | `useGraph` | `boolean` | `false` | Combine all schemas of a page into one `@graph` block (requires `<SchemaGraph />` in the layout) |
-| `generateMeta` | `boolean` | `false` | Generate standard HTML head meta tags (og:*, twitter:*, canonical, etc.) from schemas |
-| `siteName` | `string` | — | Global site name used for `og:site_name` |
-| `locale` | `string` | — | Global locale used for `og:locale` (e.g. `de_DE`) |
-| `twitterSite` | `string` | — | Twitter site handle used for `twitter:site` (e.g. `@my_site`) |
-| `twitterCreator` | `string` | — | Fallback Twitter creator handle used for `twitter:creator` (e.g. `@author`) |
-| `warnOnMissingRecommended` | `boolean` | `true` | Log warnings during build when recommended schema.org fields are absent |
-| `defaultLocalBusiness` | `LocalBusinessSchema` props | — | Site-wide local business defaults merged into `LocalBusinessSchema` |
-| `defaultArticlePublisher` | `{ name: string; logo?: { url: string } }` | — | Default publisher for `ArticleSchema`, `WebPageSchema`, `OrganizationSchema` and the hiring organization of `JobPostingSchema` |
-| `defaultBrand` | `Brand \| string` | — | Default brand for `ProductSchema` |
-| `defaultShippingDetails` | `OfferShippingDetails` | — | Default shipping details for `ProductSchema` |
-| `defaultReturnPolicy` | `MerchantReturnPolicy` | — | Default return policy for `ProductSchema` |
+| `generateMeta` | `boolean` | `false` | Generate head meta tags (canonical, `og:*`, `twitter:*`, …) from the schemas |
+| `siteName` | `string` | — | Site name for `og:site_name` |
+| `locale` | `string` | — | Locale for `og:locale` (e.g. `de_DE`) |
+| `twitterSite` | `string` | — | Twitter handle for `twitter:site` (e.g. `@my_site`) |
+| `twitterCreator` | `string` | — | Fallback handle for `twitter:creator` (e.g. `@author`) |
+| `warnOnMissingRecommended` | `boolean` | `true` | List missing recommended schema.org fields after the build |
+| `defaultLocalBusiness` | `LocalBusinessSchema` props | — | Business data used by `LocalBusinessSchema` |
+| `defaultArticlePublisher` | `{ name: string; logo?: { url: string } }` | — | Publisher for `ArticleSchema`, `WebPageSchema`, `OrganizationSchema` and the hiring organization of `JobPostingSchema` |
+| `defaultBrand` | `Brand \| string` | — | Brand for `ProductSchema` |
+| `defaultShippingDetails` | `OfferShippingDetails` | — | Shipping details for `ProductSchema` offers |
+| `defaultReturnPolicy` | `MerchantReturnPolicy` | — | Return policy for `ProductSchema` offers |
 
-Options are validated when the integration is created: unknown keys (typos) and invalid values fail the build.
+Options are validated when the integration is created; unknown keys and invalid values fail the build.
+
+The integration adds a middleware that completes every HTML page once it has rendered: it inserts the `@graph` block (graph mode) and the meta tags (`generateMeta`). Because it needs the complete page, HTML responses are buffered instead of streamed.
 
 ## Validation
 
-Invalid structured data is never rendered. Every component validates its props against its Zod schema at render time; any violation throws and fails the build (or the request, in SSR) with a message naming the component, the page and the offending fields:
+Every component validates its props against its Zod schema when the page renders. Invalid data throws and fails the build (or the request, in SSR) with the component, the page and the offending fields:
 
 ```
 [astro-structured-data] <EventSchema> on /events/meetup/ received invalid props:
@@ -79,77 +326,57 @@ Invalid structured data is never rendered. Every component validates its props a
   → at priceCurrency
 ```
 
-- **Unknown props are rejected**, so typos cannot silently drop data. Attributes that belong to Astro itself — `slot` (e.g. `<ArticleSchema slot="head" />`) and `data-astro-*` — are not props of the component and are ignored.
-- **Formats:** dates are ISO 8601 (`2026-06-01`, `2026-06-01T18:00:00+02:00`) or `Date` objects; durations are ISO 8601 (`PT1H30M`); currencies are ISO 4217 (`EUR`); URLs are absolute `http(s)` URLs or root-relative paths (`/img.jpg`); text fields must not be empty.
-- **Cross-field rules**, e.g. `price` and `priceCurrency` only together, `ratingValue` and `reviewCount` only together, `imageWidth`/`imageHeight`/… only with an image, an end date not before its start date, at most one of `offers` / `priceRange` / `price`.
-- **No invented values:** components never fill in placeholder data. Where schema.org needs a value (e.g. an organization name), it comes from a prop or a configured default — otherwise the build fails.
-- **Page-level checks:** all schemas on a page must agree on their sitemap hints, and in graph mode a page with schemas must render `<SchemaGraph />` exactly once.
+- **Unknown props are errors**, so a typo cannot drop data. Astro's own attributes (`slot`, `data-astro-*`) are ignored.
+- **Formats:** dates are ISO 8601 (`2026-06-01`, `2026-06-01T18:00:00+02:00`) or `Date` objects; durations ISO 8601 (`PT1H30M`); currencies ISO 4217 (`EUR`); country codes ISO 3166 (`DE`); URLs absolute `http(s)` or root-relative (`/img.jpg`); text must not be empty.
+- **Rules across fields**, e.g. `price` only with `priceCurrency`, `ratingValue` only with `reviewCount`, image dimensions only with an image, an end date not before its start date, an online event with a stream URL.
+- **schema.org objects** such as offers, brand, shipping details and return policies are checked for their known properties, including schema.org enumeration values (`InStock` or `https://schema.org/InStock`). Nested types such as `MonetaryAmount` are added to the output when you leave them out; further schema.org properties pass through.
+- **No invented values:** where schema.org needs a value, such as an organization name, it comes from a prop or a configured default.
+- **Page level:** all schemas of a page agree on their sitemap hints; in graph mode the page renders `<SchemaGraph />` exactly once.
 
-The exported Zod schemas ignore unknown top-level keys, so they can be used directly in Content Collections whose frontmatter has additional fields; the components themselves are strict. The generic [`<Schema>`](#schema) component is the exception: it only requires an `@type` and outputs your object as given.
+The exported Zod schemas ignore unknown top-level keys, so they work for frontmatter with additional fields; the components themselves are strict. The generic [`<Schema>`](#schema) component outputs its object as given.
 
-## Compatibility
+## Meta tags
 
-| Package version | Astro | Node.js |
-|---|---|---|
-| **2.0.x** | 5.x · 6.x · 7.x | ≥ 18 |
-| 1.5.x | 5.x · 6.x · **7.x** | ≥ 18 |
-| 1.4.x | 5.x · 6.x | ≥ 18 |
+With `generateMeta: true`, the middleware derives `<meta>` and `<link>` elements from the schemas of the page and inserts them at the end of `<head>`. It runs after the page has rendered, so it sees every schema, wherever the components sit.
 
-Astro 7 introduces a Rust-based compiler and upgrades to Vite 8. Both changes are purely additive — no integration API was altered — so this package is fully compatible without any changes on your end.
+- **Content tags** (title, description, image, `og:type`) come from the most page-specific schema: Article types, Product, Recipe, VideoObject, Event, JobPosting, SoftwareApplication, ProfilePage, FAQPage, WebPage — before site-wide LocalBusiness and WebSite schemas.
+- **Page tags** (`robots`, `hreflang` alternates, canonical URL) come from `WebPageSchema` and its variants, so a `noindex` page with an article on it stays `noindex`.
+- **Your tags win:** tags the layout already sets (same `name`/`property`, canonical, `hreflang`) are kept. A canonical link you set yourself is also used for `og:url`; an `og:image` you set yourself comes without the schema image's details.
+- **Canonical URL:** built from `siteUrl` and the page path, or taken from a `WebPageSchema` `url` or an article's `mainEntityOfPage`.
 
-## Upgrading from 1.x
+Generated tags:
 
-2.0 validates all data strictly and fails the build instead of rendering invalid structured data. Most upgrades come down to fixing the data the build reports:
+* **Canonical:** `<link rel="canonical" href="...">`
+* **Description, robots, author** and a non-standard `reading-time`
+* **Alternates:** `<link rel="alternate" hreflang="..." href="...">` from `alternates` or `workTranslation`
+* **Open Graph:** `og:title`, `og:description`, `og:image` with width, height, type and alt, `og:url`, `og:type`, `og:site_name`, `og:locale`; for articles `article:published_time`, `article:modified_time`, `article:author` (profile URLs), `article:section`, `article:tag`; for videos `og:video` and `video:duration`
+* **Twitter:** `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`
 
-1. **Run a build.** Every invalid prop is reported with component, page and field (see [Validation](#validation)). Unknown props and unknown integration options are errors now, too.
-2. **Provide values that used to be invented:** `LocalBusinessSchema` and `OrganizationSchema` need a `name`, `JobPostingSchema` a `hiringOrganizationName` (each can also come from the configured defaults). `baseSalary` needs a `unit`. `employmentType`, `operatingSystem` and `applicationCategory` are no longer defaulted — set them explicitly where you relied on `'FULL_TIME'`, `'Web'` or `'DeveloperApplication'`.
-3. **Graph mode:** keep exactly one `<SchemaGraph />` in the base layout. Its position no longer affects which schemas are included.
-4. **Online events:** use `attendanceMode="Online"` with `onlineUrl` instead of a placeholder address.
-5. **Options:** `defaultArticlePublisher` is `{ name, logo?: { url } }` and `defaultLocalBusiness` takes the `LocalBusinessSchema` props.
-6. **Meta tags** now come from the middleware and are inserted into `<head>`; tags your layout already defines are kept. If you worked around meta tags ending up in `<body>`, you can drop that workaround.
+Relative image URLs are resolved against `siteUrl`.
+
+### Sitemap hints
+
+Every component, and the generic `<Schema>`, accepts `changefreq` and `priority` (e.g. `<ArticleSchema … changefreq="weekly" priority={0.8} />`). They are written as data attributes on the JSON-LD `<script>` (the `@graph` script in graph mode), not into the JSON-LD. A page has one sitemap entry, so all schemas of a page must agree. Post-build sitemap generators such as `@casoon/astro-site-files` read them from the HTML; without one they have no effect.
 
 ## Dev Toolbar
 
-The integration registers an Astro Dev Toolbar panel (visible only in `astro dev`) that shows every `<script type="application/ld+json">` block found on the current page.
+In `astro dev`, the integration adds a **Structured Data** panel to the Astro Dev Toolbar. For every JSON-LD block on the current page it shows:
 
-For each schema it shows:
+- **A rich result preview** in Google's style: article with thumbnail and date, product with rating, price and stock, breadcrumb trail, event with date box and venue, job card with location, employment type and salary, local business with phone, address and hours, software app with rating, OS and category.
+- **Checks per type** for required and recommended fields.
+- **Copy JSON-LD**, a link to the schema.org validator, and the raw JSON.
 
-- **Rich Result Preview** — a Google-style mockup rendered directly in the toolbar:
-  - *Article / BlogPosting / NewsArticle* — thumbnail, author, date snippet
-  - *FAQPage* — interactive accordion (click to expand answers)
-  - *Product* — star rating, price, in-stock badge
-  - *BreadcrumbList* — breadcrumb trail in Google style
-  - *Event* — calendar date box, location, time
-  - *JobPosting* — job card with location, employment type, salary badges
-  - *LocalBusiness* — phone, address, opening hours
-  - *SoftwareApplication* — star rating, OS, category
-- **Validation warnings** — required and recommended field checks per type
-- **📋 Copy JSON-LD** — copies the full JSON-LD to the clipboard
-- **🔍 Test on Schema.org** — opens `validator.schema.org` in a new tab
-- **Show JSON-LD Raw** — toggle the raw JSON for inspection
+FAQPage markup is listed with its questions; Google no longer shows FAQ rich results (since May 2026).
 
-## Automated SEO & Sitemap Integration
+## Build report
 
-When `generateMeta: true` is enabled, the integration derives `<meta>` and `<link>` elements from the page's primary schema and inserts them into `<head>`. This runs as middleware after the page has fully rendered, so it sees every schema on the page regardless of where the components are placed (layout head, page body, …) — including components that await data before rendering their schema.
+After every build the integration reads every JSON-LD block in the output HTML. A block that is not valid JSON fails the build. With `warnOnMissingRecommended` (on by default) it lists each missing recommended field once per type, nested properties as dot paths:
 
-- **Primary schema:** the most page-specific schema wins — Article/BlogPosting/NewsArticle, Product, Recipe, VideoObject, Event, JobPosting, SoftwareApplication, ProfilePage, FAQPage, WebPage types — before site-wide LocalBusiness and WebSite schemas.
-- **Your tags win:** tags the page already defines (same `name`/`property`, canonical, or `hreflang`) are kept and not duplicated.
-- **Canonical / `og:url`:** built from `siteUrl` and the page path, or taken from a `WebPageSchema` `url` / an article's `mainEntityOfPage`. The `url` of an event, business or product is never used as the page's canonical.
-- A page with a primary schema but no `</head>` fails the build.
+```
+[structured-data] Organization is missing recommended field "sameAs" — add it for richer search results.
+```
 
-Generated tags:
-* **Canonical**: `<link rel="canonical" href="...">`
-* **Description**: `<meta name="description" content="...">`
-* **Robots**: `<meta name="robots" content="...">` (derived from `item.robots` or `item.noindex` / `item.nofollow`)
-* **Author**: `<meta name="author" content="...">` (derived from schema `item.author`)
-* **Reading Time**: `<meta name="reading-time" content="...">` (non-standard; derived from `item.readingTime` or parsed from ISO duration `item.timeRequired`)
-* **Alternates (hreflang)**: `<link rel="alternate" hreflang="..." href="...">` (extracted from `item.alternates` or schema translations)
-* **OpenGraph**: `og:title`, `og:description`, `og:image`, `og:image:width/height/type/alt`, `og:url`, `og:type`, `og:site_name`, `og:locale`, `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag` (relative images are automatically resolved to absolute URLs using your config's `siteUrl`)
-* **Twitter Cards**: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`
-
-### Sitemap Metadata Support
-Every schema component (and the generic `<Schema>`) accepts sitemap crawl properties (e.g. `<ArticleSchema ... changefreq="weekly" priority={0.8} />`).
-These properties are encoded as data-attributes on the JSON-LD `<script>` tag (the `@graph` script in graph mode) and are not part of the JSON-LD itself. A page has one sitemap entry, so all schemas on a page must agree on these values — conflicting or invalid values (`changefreq` outside the sitemap protocol values, `priority` outside 0–1) fail the build. Post-build sitemap generators like `@casoon/astro-site-files` can read these tags directly from the HTML to dynamically build/patch the sitemap entries, meaning you don't need to duplicate sitemap logic in your configs. This feature is completely decoupled and will fall back gracefully to the sitemap defaults if `@casoon/astro-site-files` is not installed or configured.
+Turn the list off with `structuredData({ warnOnMissingRecommended: false })`.
 
 ## Components
 
@@ -253,7 +480,7 @@ Docs: [schema.org/Product](https://schema.org/Product) · [Google: Product](http
 | `price` | `string \| number` | No | Price (simple offer) |
 | `priceCurrency` | `string` | No | ISO 4217 currency code, e.g. `'EUR'` |
 | `availability` | `'InStock' \| 'OutOfStock' \| 'PreOrder' \| 'OnlineOnly'` | No | Offer availability (requires `price`) |
-| `offers` | `Offer \| Offer[]` | No | Full offer object(s) for advanced use cases |
+| `offers` | `Offer \| AggregateOffer \| (…)[]` | No | Full offer object(s) for advanced use cases; an `Offer` needs `price` + `priceCurrency` (or `priceSpecification`) |
 | `priceRange` | `PriceRange` | No | Price range for variable pricing |
 | `brand` | `string \| Brand` | No | Brand name or object (falls back to `defaultBrand`) |
 | `sku` | `string` | No | Stock keeping unit |
@@ -261,8 +488,8 @@ Docs: [schema.org/Product](https://schema.org/Product) · [Google: Product](http
 | `ratingValue` | `number` | No | Aggregate rating (0–5), only together with `reviewCount` |
 | `reviewCount` | `number` | No | Number of reviews, only together with `ratingValue` |
 | `reviews` | `ReviewItem[]` | No | Individual review objects |
-| `shippingDetails` | `object` | No | Shipping details (falls back to `defaultShippingDetails`) |
-| `returnPolicy` | `object` | No | Return policy (falls back to `defaultReturnPolicy`) |
+| `shippingDetails` | `OfferShippingDetails` | No | Shipping details (falls back to `defaultShippingDetails`) |
+| `returnPolicy` | `MerchantReturnPolicy` | No | Return policy (falls back to `defaultReturnPolicy`); `MerchantReturnFiniteReturnWindow` needs `merchantReturnDays` |
 
 ---
 
@@ -326,7 +553,7 @@ Docs: [schema.org/BreadcrumbList](https://schema.org/BreadcrumbList) · [Google:
 
 Docs: [schema.org/BreadcrumbList](https://schema.org/BreadcrumbList) · [Google: Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb)
 
-Generates breadcrumbs automatically from the current URL path. Segments are converted from kebab-case to title case by default.
+Generates breadcrumbs automatically from the current URL path. Segments are converted from kebab-case to title case by default. Percent-encoded segments are decoded for names, `labels` and `ignoreSegments` (`/%C3%BCber-uns/` → `labels={{ 'über-uns': 'Über uns' }}`); the URLs keep the path as it is.
 
 ```astro
 <AutoBreadcrumbSchema />
@@ -717,7 +944,7 @@ import { Schema } from '@casoon/astro-structured-data/components';
 
 ### SchemaGraph
 
-Renders all schemas of the page as a single `@graph` block when `useGraph: true` is set (renders nothing otherwise). Place it once in your base layout where the block should appear, e.g. at the end of `<body>`. It only marks the position: the `@graph` is filled in by the integration's middleware after the whole page has rendered, so schema components can be placed anywhere — before or after it, and in components that await data. A page with schemas but without `<SchemaGraph />`, or with more than one, fails the build instead of silently losing data.
+Renders all schemas of the page as a single `@graph` block when `useGraph: true` is set (renders nothing otherwise). Place it once in your base layout where the block should appear, e.g. at the end of `<body>`. It only marks the position: the `@graph` is filled in by the integration's middleware after the whole page has rendered, so schema components can be placed anywhere — before or after it, and in components that await data. A page with schemas but without `<SchemaGraph />`, or with more than one, fails the build. The block carries the schema.org `@context`; an own `@context` set via `<Schema>` stays on its node.
 
 ```astro
 ---
@@ -770,6 +997,12 @@ const warnings: RecommendedWarning[] = validateRecommended('Organization', {
 // → [{ field: 'sameAs', message: 'Organization should include "sameAs" ...' }, ...]
 ```
 
+A recommended property counts as present when any prop producing it is set — `offers` or `priceRange` cover `price`/`priceCurrency`. Pass your integration options as third argument to count configured defaults (`defaultBrand`, `defaultArticlePublisher`, `defaultLocalBusiness`):
+
+```ts
+validateRecommended('Product', { name: 'Widget', offers }, { defaultBrand: 'ACME' });
+```
+
 The `type` argument uses schema.org `@type` names: `'Article'`, `'BlogPosting'`, `'NewsArticle'`, `'FAQPage'`, `'Product'`, `'LocalBusiness'`, `'Event'`, `'Organization'`, `'WebPage'`, `'WebSite'`, `'ProfilePage'`, `'JobPosting'`, `'SoftwareApplication'`, `'CollectionPage'`, `'BreadcrumbList'`, `'Recipe'`, `'VideoObject'`.
 
 Fields marked as recommended are a subset of optional props that Google's Rich Results guidelines list as strongly beneficial — omitting them won't break validation but may reduce search result richness. Each recommended prop is declared once in the Zod schema together with the schema.org property it produces; `validateRecommended` (props) and the build-time check (rendered JSON-LD) are both derived from that declaration.
@@ -815,19 +1048,16 @@ const { wordCount, readingTimeMinutes } = calculateReadingTime(post.body);
 
 Returns `{ wordCount: number; readingTimeMinutes: number; timeRequired: string }`.
 
-## Build-time checks
+## Compatibility
 
-After every build the integration scans all output HTML for `<script type="application/ld+json">` blocks. A block that is not valid JSON fails the build. With `warnOnMissingRecommended: true` (the default) it also logs one warning per missing recommended field per type (nested properties as dot paths, e.g. `mainEntity.sameAs`):
+| Package version | Astro | Node.js |
+|---|---|---|
+| **2.1.x** | 5.x · 6.x · 7.x | ≥ 18 |
+| 2.0.x | 5.x · 6.x · 7.x | ≥ 18 |
+| 1.5.x | 5.x · 6.x · 7.x | ≥ 18 |
+| 1.4.x | 5.x · 6.x | ≥ 18 |
 
-```
-[structured-data] Organization is missing recommended field "sameAs" — add it for richer search results.
-```
-
-To disable:
-
-```js
-structuredData({ warnOnMissingRecommended: false })
-```
+Coming from 1.x: see the [upgrade guide](https://casoon.github.io/astro-structured-data/docs/guides/upgrading/). All changes are listed in the [changelog](CHANGELOG.md).
 
 ## Development
 

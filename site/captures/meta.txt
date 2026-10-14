@@ -1,0 +1,15 @@
+canonical              https://example.com/blog/hello-astro/
+description            Our first post.
+author                 Ada Lovelace
+og:title               Hello, Astro
+og:description         Our first post.
+og:url                 https://example.com/blog/hello-astro/
+og:image               https://example.com/img/hello.jpg
+og:site_name           Example Blog
+og:type                article
+article:published_time 2026-10-01
+article:modified_time  2026-10-01
+twitter:title          Hello, Astro
+twitter:description    Our first post.
+twitter:image          https://example.com/img/hello.jpg
+twitter:card           summary_large_image

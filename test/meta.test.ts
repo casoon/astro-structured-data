@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import assert from 'node:assert/strict';
-import { findPrimaryItem, generateMetaTags } from '../src/utils/meta.ts';
+import { findPageItems, findPrimaryItem, generateMetaTags } from '../src/utils/meta.ts';
 
 const context = { siteUrl: 'https://example.com', canonicalUrl: 'https://example.com/events/meetup/' };
 
@@ -69,4 +69,59 @@ test('falls back to LocalBusiness when it is the only primary type', () => {
 
 test('returns undefined when no primary type is present', () => {
   assert.equal(findPrimaryItem([{ '@type': 'BreadcrumbList' }, { '@type': 'Organization' }]), undefined);
+});
+
+test('handles @type arrays when picking and describing the primary schema', () => {
+  const article = { '@type': ['BlogPosting', 'LearningResource'], headline: 'H' };
+  assert.equal(findPrimaryItem([{ '@type': 'WebSite' }, article]), article);
+  expect(generateMetaTags(article, context).openGraph['og:type']).toBe('article');
+});
+
+test('findPageItems returns the schemas describing the page, including @type arrays', () => {
+  const page = { '@type': ['WebPage', 'ItemPage'] };
+  const faq = { '@type': 'FAQPage' };
+  assert.deepEqual(findPageItems([faq, { '@type': 'Article' }, page]), [faq, page]);
+  assert.deepEqual(findPageItems([{ '@type': 'Article' }]), []);
+});
+
+test('page settings count from every page schema, not just the first', () => {
+  const article = { '@type': 'Article', headline: 'H' };
+  const faq = { '@type': 'FAQPage', mainEntity: [] };
+  const page = {
+    '@type': 'WebPage', url: 'https://example.com/canonical/', robots: 'noindex',
+    alternates: [{ href: 'https://example.com/de/', hreflang: 'de' }],
+  };
+  const seo = generateMetaTags(article, context, [faq, page]);
+  expect(seo.robots).toBe('noindex');
+  expect(seo.alternates).toEqual([{ href: 'https://example.com/de/', hreflang: 'de' }]);
+  expect(seo.canonical).toBe('https://example.com/canonical/');
+});
+
+test('keeps every robots directive set on the page', () => {
+  const seo = generateMetaTags({ '@type': 'Article', headline: 'H', robots: 'nofollow' }, context, [{ '@type': 'WebPage', robots: 'noindex' }]);
+  expect(seo.robots).toBe('nofollow, noindex');
+});
+
+test('resolves root-relative image URLs against the origin of a site with a sub-path', () => {
+  const site = { siteUrl: 'https://example.com/base/', canonicalUrl: 'https://example.com/base/p/' };
+  expect(generateMetaTags({ '@type': 'Article', headline: 'H', image: '/image.jpg' }, site).openGraph['og:image'])
+    .toBe('https://example.com/image.jpg');
+  expect(generateMetaTags({ '@type': 'Article', headline: 'H', image: 'image.jpg' }, site).openGraph['og:image'])
+    .toBe('https://example.com/base/image.jpg');
+});
+
+test('article:author lists author profile URLs, never names', () => {
+  const withUrl = generateMetaTags({ '@type': 'Article', headline: 'H', author: { '@type': 'Person', name: 'Ada', url: '/authors/ada/' } }, context);
+  expect(withUrl.openGraph['article:author']).toEqual(['https://example.com/authors/ada/']);
+  expect(withUrl.author).toBe('Ada');
+  const nameOnly = generateMetaTags({ '@type': 'Article', headline: 'H', author: { '@type': 'Person', name: 'Ada' } }, context);
+  expect(nameOnly.openGraph).not.toHaveProperty('article:author');
+});
+
+test('video:duration and reading time understand days and weeks', () => {
+  const video = { '@type': 'VideoObject', name: 'V', duration: 'P1DT1H' };
+  expect(generateMetaTags(video, context).openGraph['video:duration']).toBe('90000');
+  expect(generateMetaTags({ ...video, duration: 'PT1M30S' }, context).openGraph['video:duration']).toBe('90');
+  expect(generateMetaTags({ ...video, duration: 'P1M' }, context).openGraph).not.toHaveProperty('video:duration');
+  expect(generateMetaTags({ '@type': 'Article', headline: 'H', timeRequired: 'P1DT30M' }, context).readingTime).toBe('1470 min');
 });

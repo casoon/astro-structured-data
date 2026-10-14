@@ -5,5 +5,6 @@
     "**/*"
   ],
   // vendor/ is the synced theme; it is checked where it is developed (gh-pages-template).
-  "exclude": ["dist", "vendor"]
+  // captures/fixture/ is a separate sample project that only builds through its own config.
+  "exclude": ["dist", "vendor", "captures/fixture"]
 }

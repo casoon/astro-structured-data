@@ -52,12 +52,12 @@ const returnObj = finalReturn ? {
   }
 } : {};
 
-// Helper to inject shipping/return info into an Offer
+// Adds shipping/return info to an Offer; what the offer sets itself wins over these defaults.
 const decorateOffer = (offer: any) => ({
   '@type': 'Offer',
-  ...offer,
   ...shippingObj,
-  ...returnObj
+  ...returnObj,
+  ...offer
 });
 
 // 2. Resolve Offers Structure (the schema allows at most one of offers / priceRange / price)

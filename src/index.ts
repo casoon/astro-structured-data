@@ -3,11 +3,19 @@ import { z } from 'zod';
 import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import { tokenize } from './utils/html.js';
 import { missingRecommended, structuredDataOptionsSchema, type StructuredDataOptions } from './zod.js';
 
 export type { StructuredDataOptions };
 
-const JSONLD_RE = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
+/** Contents of the real JSON-LD blocks — not those in comments or inside other scripts. */
+function* jsonLdBlocks(html: string): Generator<string> {
+  for (const tag of tokenize(html)) {
+    if (tag.kind === 'start' && tag.name === 'script' && tag.attrs.type?.trim().toLowerCase() === 'application/ld+json') {
+      yield tag.content ?? '';
+    }
+  }
+}
 
 export default function structuredData(options: StructuredDataOptions = {}): AstroIntegration {
   const parsed = structuredDataOptionsSchema.safeParse(options);
@@ -26,7 +34,8 @@ export default function structuredData(options: StructuredDataOptions = {}): Ast
             'Add `site: "https://example.com"` to your Astro config or pass `siteUrl` to the integration.'
           );
         }
-        const resolvedOptions = { ...options, siteUrl };
+        // The parsed options: schema.org objects in the defaults carry their nested @types.
+        const resolvedOptions = { ...parsed.data, siteUrl };
 
         const virtualModuleId = 'virtual:astro-structured-data/config';
         const resolvedVirtualModuleId = '\0' + virtualModuleId;
@@ -84,16 +93,18 @@ export default function structuredData(options: StructuredDataOptions = {}): Ast
         for (const file of htmlFiles) {
           const html = await readFile(join(outputDir, file), 'utf-8');
 
-          for (const match of html.matchAll(JSONLD_RE)) {
+          for (const block of jsonLdBlocks(html)) {
             let data: any;
             try {
-              data = JSON.parse(match[1]);
+              data = JSON.parse(block);
             } catch (error) {
               throw new Error(`[astro-structured-data] Invalid JSON-LD in ${file}: ${(error as Error).message}`);
             }
             if (options.warnOnMissingRecommended === false) continue;
 
-            const items: any[] = Array.isArray(data['@graph']) ? data['@graph'] : [data];
+            // A block holds one item, an array of items, or a @graph (also inside such an array).
+            const items: any[] = (Array.isArray(data) ? data : [data])
+              .flatMap((entry: any) => (Array.isArray(entry?.['@graph']) ? entry['@graph'] : [entry]));
 
             for (const item of items) {
               for (const field of missingRecommended(item)) {

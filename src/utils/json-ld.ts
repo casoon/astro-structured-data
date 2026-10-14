@@ -69,12 +69,16 @@ export function sitemapAttributes(hints: SitemapHints): Record<string, string> {
  */
 export const GRAPH_PLACEHOLDER = '<script type="application/ld+json" data-structured-data-graph></script>';
 
+const SCHEMA_ORG_CONTEXT_RE = /^https?:\/\/schema\.org\/?$/;
+
 /** The single `@graph` script of a page (graph mode). */
 export function renderGraphScript(items: Record<string, any>[]): string {
   const graph = items.map((item) => {
-    // The root object carries the global @context.
-    const { '@context': _, ...rest } = stripNonSchemaKeys(item);
-    return rest;
+    const { '@context': context, ...rest } = stripNonSchemaKeys(item);
+    // The root object carries the schema.org context. Any other context (own term mappings)
+    // stays on its node as an embedded context, so the data means the same as outside the graph.
+    const isSchemaOrg = context === undefined || (typeof context === 'string' && SCHEMA_ORG_CONTEXT_RE.test(context));
+    return isSchemaOrg ? rest : { '@context': context, ...rest };
   });
   // Values are validated by collectSitemapHints (enum / number), so they need no escaping.
   const attrs = Object.entries(sitemapAttributes(collectSitemapHints(items)))

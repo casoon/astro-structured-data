@@ -1,0 +1,25 @@
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Hello, Astro",
+  "description": "Our first post.",
+  "datePublished": "2026-10-01",
+  "dateModified": "2026-10-01",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.com/blog/hello-astro/"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Ada Lovelace"
+  },
+  "isAccessibleForFree": true,
+  "publisher": {
+    "@type": "Organization",
+    "name": "Example Blog"
+  },
+  "image": {
+    "@type": "ImageObject",
+    "url": "/img/hello.jpg"
+  }
+}

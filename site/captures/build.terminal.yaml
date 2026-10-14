@@ -1,0 +1,34 @@
+# Plays the captured builds in build-ok.txt, meta.txt, json-ld.txt and build-error.txt (see
+# capture.sh): the sample page in fixture/, built once as it is and once with a German date.
+version: 1
+terminal:
+  title: astro-structured-data
+  cols: 64
+  rows: 27
+  theme: catppuccin-mocha
+steps:
+  - run: cat src/pages/blog/hello-astro.astro
+  - show: fixture/src/pages/blog/hello-astro.astro
+  - wait: 2500
+  - clear: true
+  - run: astro build
+  - show: build-ok.txt
+    lang: text
+  - run: node head.mjs --meta dist/blog/hello-astro/index.html
+  - show: meta.txt
+    lang: text
+  - wait: 4000
+  - clear: true
+  - run: node head.mjs --json-ld dist/blog/hello-astro/index.html
+  - show: json-ld.txt
+    lang: json
+  - wait: 4000
+  - clear: true
+  - run: grep datePublished src/pages/blog/hello-astro.astro
+  - show: broken-line.txt
+    lang: text
+  - run: astro build
+  - wait: 400
+  - show: build-error.txt
+    lang: text
+  - wait: 4500
