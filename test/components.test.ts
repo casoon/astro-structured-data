@@ -210,6 +210,30 @@ describe('no fabricated or dropped data', () => {
     expect(scripts[0].data.publisher).toEqual({ '@type': 'Organization', name: 'Pub', logo: { '@type': 'ImageObject', url: '/logo.png' } });
   });
 
+  test('publisher @id: explicit props, and the default id only for the default publisher', async () => {
+    config.current.defaultArticlePublisher = { name: 'Pub', id: 'https://example.com/#org' };
+    const ref = { '@id': 'https://example.com/#org' };
+
+    expect((await render(C.ArticleSchema, article)).scripts[0].data.publisher).toMatchObject({ name: 'Pub', ...ref });
+    expect((await render(C.WebPageSchema, { title: 'Page' })).scripts[0].data.publisher).toMatchObject({ name: 'Pub', ...ref });
+    expect((await render(C.OrganizationSchema, {})).scripts[0].data).toMatchObject({ name: 'Pub', ...ref });
+    const { hiringOrganizationName: _, ...withoutOrg } = job;
+    expect((await render(C.JobPostingSchema, withoutOrg)).scripts[0].data.hiringOrganization).toMatchObject({ name: 'Pub', ...ref });
+
+    expect((await render(C.ArticleSchema, { ...article, publisherName: 'Other' })).scripts[0].data.publisher).not.toHaveProperty('@id');
+    expect((await render(C.WebPageSchema, { title: 'Page', publisher: { name: 'Other' } })).scripts[0].data.publisher).not.toHaveProperty('@id');
+    expect((await render(C.OrganizationSchema, { name: 'Other' })).scripts[0].data).not.toHaveProperty('@id');
+    expect((await render(C.JobPostingSchema, job)).scripts[0].data.hiringOrganization).not.toHaveProperty('@id');
+
+    expect((await render(C.ArticleSchema, { ...article, publisherName: 'Other', publisherId: '#other' })).scripts[0].data.publisher['@id']).toBe('#other');
+    expect((await render(C.WebPageSchema, { title: 'Page', publisher: { name: 'Other', id: '#other' } })).scripts[0].data.publisher['@id']).toBe('#other');
+    expect((await render(C.OrganizationSchema, { name: 'Other', id: '#other' })).scripts[0].data['@id']).toBe('#other');
+  });
+
+  test('Article rejects a publisher id without a publisher name', async () => {
+    await expect(render(C.ArticleSchema, { ...article, publisherId: '#org' })).rejects.toThrow(/publisherId/);
+  });
+
   test('Article rejects a publisher logo without a publisher name', async () => {
     await expect(render(C.ArticleSchema, { ...article, publisherLogo: '/logo.png' })).rejects.toThrow(/publisherLogo/);
   });

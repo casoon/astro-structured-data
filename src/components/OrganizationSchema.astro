@@ -13,6 +13,7 @@ const {
   changefreq,
   priority,
   name,
+  id,
   url,
   logoUrl,
   sameAs,
@@ -27,10 +28,13 @@ if (!resolvedName) {
   fail('OrganizationSchema', page, 'Missing organization name: set the "name" prop or defaultArticlePublisher.name');
 }
 const resolvedLogo = logoUrl ?? globalConfig.defaultArticlePublisher?.logo?.url;
+// The default @id only belongs to the default publisher, not to an organization named via props.
+const resolvedId = id ?? (name ? undefined : globalConfig.defaultArticlePublisher?.id);
 
 const orgSchema = {
   '@type': 'Organization',
   name: resolvedName,
+  ...(resolvedId && { '@id': resolvedId }),
   url: url ?? globalConfig.siteUrl,
   ...(resolvedLogo && {
     logo: {

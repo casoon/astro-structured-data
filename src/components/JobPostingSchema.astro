@@ -34,6 +34,7 @@ if (!organizationName) {
   fail('JobPostingSchema', page, 'Missing hiring organization: set "hiringOrganizationName" or defaultArticlePublisher.name');
 }
 const organizationLogo = hiringOrganizationLogo ?? globalConfig.defaultArticlePublisher?.logo?.url;
+const organizationId = hiringOrganizationName ? undefined : globalConfig.defaultArticlePublisher?.id;
 
 const jobSchema: JobPosting = {
   '@type': 'JobPosting',
@@ -45,6 +46,7 @@ const jobSchema: JobPosting = {
   hiringOrganization: {
     '@type': 'Organization',
     name: organizationName,
+    ...(organizationId && { '@id': organizationId }),
     url: hiringOrganizationUrl ?? globalConfig.siteUrl,
     ...(organizationLogo && { logo: organizationLogo }),
   },

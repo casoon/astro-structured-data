@@ -184,7 +184,7 @@ hints](../../guides/meta-tags/#robots-and-alternates).
 | `imageFormat` | `string` (MIME type, e.g. `image/jpeg`) | No | – | Output as `encodingFormat`. |
 | `imageCaption` | `string` | No | – | Output as `caption`; also `og:image:alt`. |
 | `author` | `{ name: string; url?: string; id?: string; type?: 'Person' \| 'Organization' }` | No (recommended) | `type`: `'Person'` | Author of the page. `url` may be absolute or root-relative; `id` becomes `@id`. |
-| `publisher` | `{ name: string; url?: string; logo?: string }` | No | `defaultArticlePublisher` for name and logo, `siteUrl` for `url` | Publisher, output as an `Organization`. `url` must be absolute; `logo` may be root-relative. |
+| `publisher` | `{ name: string; url?: string; logo?: string; id?: string }` | No | `defaultArticlePublisher` for name, logo and id, `siteUrl` for `url` | Publisher, output as an `Organization`. `url` must be absolute; `logo` may be root-relative; `id` is output as `@id`. The configured id is only used without the `publisher` prop. |
 | `robots` | `string` (e.g. `'noindex, nofollow'`) | No | – | Robots directives for `<meta name="robots">`. Not part of the JSON-LD. |
 | `alternates` | `{ href: string; hreflang: string }[]` | No | – | Language versions for `<link rel="alternate" hreflang>`. Not part of the JSON-LD. |
 | `changefreq` | `'always' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly' \| 'yearly' \| 'never'` | No | – | Sitemap hint, see [Sitemap hints](../../guides/meta-tags/#sitemap-hints). |

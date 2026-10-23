@@ -19,7 +19,7 @@ structuredData({ /* options */ })
 | `twitterCreator` | `string` | – | Fallback handle for `twitter:creator` |
 | `warnOnMissingRecommended` | `boolean` | `true` | Log build warnings when recommended schema.org fields are absent |
 | `defaultLocalBusiness` | `LocalBusinessSchema` props | – | Site-wide defaults merged into `LocalBusinessSchema` |
-| `defaultArticlePublisher` | `{ name: string; logo?: { url: string } }` | – | Default publisher for `ArticleSchema`, `WebPageSchema`, `OrganizationSchema` and the hiring organisation of `JobPostingSchema` |
+| `defaultArticlePublisher` | `{ name: string; logo?: { url: string }; id?: string }` | – | Default publisher for `ArticleSchema`, `WebPageSchema`, `OrganizationSchema` and the hiring organisation of `JobPostingSchema`; `id` is emitted as `@id` wherever this default is used |
 | `defaultBrand` | `Brand \| string` | – | Default brand for `ProductSchema` |
 | `defaultShippingDetails` | `OfferShippingDetails` | – | Default shipping details for `ProductSchema` |
 | `defaultReturnPolicy` | `MerchantReturnPolicy` | – | Default return policy for `ProductSchema` |

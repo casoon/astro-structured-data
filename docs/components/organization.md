@@ -73,7 +73,9 @@ The logo URL is output as given; a root-relative path stays relative in the JSON
 
 ## Using the configured publisher
 
-With the publisher configured once, the component needs no name or logo:
+With the publisher configured once, the component needs no name or logo. Add `id` to the
+option and `ArticleSchema`, `WebPageSchema` and `JobPostingSchema` carry the same `@id` on
+their publisher (or hiring organization), linking all of them to this item:
 
 ```js
 // astro.config.mjs
@@ -108,6 +110,7 @@ structuredData({
 | Prop | Type | Required | Default/fallback | Description |
 | --- | --- | --- | --- | --- |
 | `name` | `string` | Yes, unless configured | `defaultArticlePublisher.name` | Name of the organization. |
+| `id` | `string` | No | `defaultArticlePublisher.id`, unless `name` is set | Output as `@id`, e.g. `https://example.com/#organization`, so other items can reference this organization. |
 | `url` | `string` (absolute http(s) URL) | No | `siteUrl` | Website of the organization. |
 | `logoUrl` | `string` (absolute URL or `/path`) | No | `defaultArticlePublisher.logo.url`; omitted if neither is set | Logo, output as an `ImageObject`. |
 | `sameAs` | `string[]` (absolute http(s) URLs) | No (recommended) | – | Profiles of the same organization elsewhere (social networks, Wikipedia, GitHub). |

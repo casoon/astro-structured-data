@@ -70,11 +70,14 @@ if (author) {
 const publisherName = publisher?.name ?? globalConfig.defaultArticlePublisher?.name;
 const publisherUrl = publisher?.url ?? globalConfig.siteUrl;
 const publisherLogo = publisher?.logo ?? globalConfig.defaultArticlePublisher?.logo?.url;
+// The default @id only belongs to the default publisher, not to one passed via props.
+const publisherId = publisher ? publisher.id : globalConfig.defaultArticlePublisher?.id;
 
 if (publisherName) {
   webpageSchema.publisher = {
     '@type': 'Organization',
     name: publisherName,
+    ...(publisherId ? { '@id': publisherId } : {}),
     url: publisherUrl,
     ...(publisherLogo ? { logo: { '@type': 'ImageObject', url: publisherLogo } } : {}),
   };

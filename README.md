@@ -307,7 +307,7 @@ Every example in the [showcase](https://casoon.github.io/astro-structured-data/s
 | `twitterCreator` | `string` | — | Fallback handle for `twitter:creator` (e.g. `@author`) |
 | `warnOnMissingRecommended` | `boolean` | `true` | List missing recommended schema.org fields after the build |
 | `defaultLocalBusiness` | `LocalBusinessSchema` props | — | Business data used by `LocalBusinessSchema` |
-| `defaultArticlePublisher` | `{ name: string; logo?: { url: string } }` | — | Publisher for `ArticleSchema`, `WebPageSchema`, `OrganizationSchema` and the hiring organization of `JobPostingSchema` |
+| `defaultArticlePublisher` | `{ name: string; logo?: { url: string }; id?: string }` | — | Publisher for `ArticleSchema`, `WebPageSchema`, `OrganizationSchema` and the hiring organization of `JobPostingSchema`; `id` is emitted as `@id` wherever this default is used |
 | `defaultBrand` | `Brand \| string` | — | Brand for `ProductSchema` |
 | `defaultShippingDetails` | `OfferShippingDetails` | — | Shipping details for `ProductSchema` offers |
 | `defaultReturnPolicy` | `MerchantReturnPolicy` | — | Return policy for `ProductSchema` offers |
@@ -421,6 +421,7 @@ Docs: [schema.org/Article](https://schema.org/Article) · [Google: Article](http
 | `imageCaption` | `string` | No | Image caption |
 | `publisherName` | `string` | No | Publisher name (falls back to `defaultArticlePublisher`) |
 | `publisherLogo` | `string` | No | Publisher logo URL (falls back to `defaultArticlePublisher`) |
+| `publisherId` | `string` | No | Publisher `@id` for linked data (falls back to `defaultArticlePublisher.id` unless `publisherName` is set) |
 | `schemaType` | `'Article' \| 'BlogPosting' \| 'NewsArticle'` | No | Default: `'BlogPosting'` |
 | `inLanguage` | `string` | No | Content language, e.g. `'de'` |
 | `articleSection` | `string` | No | Section or category name |
@@ -641,6 +642,7 @@ Docs: [schema.org/Organization](https://schema.org/Organization) · [Google: Org
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `name` | `string` | Yes* | Organization name (*unless `defaultArticlePublisher.name` is set) |
+| `id` | `string` | No | `@id` for linked data, e.g. `'https://example.com/#organization'` (falls back to `defaultArticlePublisher.id` unless `name` is set) |
 | `url` | `string` | No | Organization URL (falls back to `siteUrl`) |
 | `logoUrl` | `string` | No | Logo URL (falls back to `defaultArticlePublisher.logo`; omitted if neither is set) |
 | `sameAs` | `string[]` | No | Social profile / same-entity URLs |
@@ -699,7 +701,7 @@ Generic page schema — use for landing pages, legal pages, or any page that doe
 | `imageFormat` | `string` | No | Image MIME type |
 | `imageCaption` | `string` | No | Image caption |
 | `author` | `{ name: string; url?: string; id?: string; type?: 'Person' \| 'Organization' }` | No | Page author |
-| `publisher` | `{ name: string; url?: string; logo?: string }` | No | Publisher (falls back to `defaultArticlePublisher`) |
+| `publisher` | `{ name: string; url?: string; logo?: string; id?: string }` | No | Publisher (falls back to `defaultArticlePublisher`, including its `id`) |
 | `robots` | `string` | No | Robots directive, e.g. `'noindex'` (meta tag only, not part of the JSON-LD) |
 | `alternates` | `{ href: string; hreflang: string }[]` | No | Alternate language versions (hreflang links only, not part of the JSON-LD) |
 

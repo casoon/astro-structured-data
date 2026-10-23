@@ -269,6 +269,7 @@ lists its parts with `hasPart` instead; each entry becomes an object of the same
 | `imageCaption` | `string` | No | – | Output as `caption`; needs `imageUrl` |
 | `publisherName` | `string` | No (recommended) | `defaultArticlePublisher.name` | Publishing organisation |
 | `publisherLogo` | `string` (URL or `/path`) | No (recommended) | `defaultArticlePublisher.logo.url` | Publisher logo, output as `ImageObject` |
+| `publisherId` | `string` | No | `defaultArticlePublisher.id`, unless `publisherName` is set | Output as the publisher's `@id`, to link to the `Organization` described elsewhere |
 | `schemaType` | `'Article' \| 'BlogPosting' \| 'NewsArticle'` | No | `'BlogPosting'` | `@type` of the article (and of `isPartOf` / `hasPart` entries) |
 | `inLanguage` | `string` (BCP 47) | No | – | Content language, e.g. `'en'`, `'de-DE'` |
 | `articleSection` | `string` | No | – | Section or category |
@@ -297,14 +298,16 @@ Violations fail the build (see [Validation](../../guides/validation/)):
   `isPartOfUrl`.
 - `authorUrl` and `authorId` are not supported when `authorName` is an array.
 - A publisher logo needs a publisher name: `publisherLogo` (or `defaultArticlePublisher.logo`)
-  without `publisherName` or `defaultArticlePublisher.name` fails the build.
+  without `publisherName` or `defaultArticlePublisher.name` fails the build. The same applies to
+  `publisherId`.
 - Without `publisherName` and without `defaultArticlePublisher` the output has no
   `publisher`; nothing is invented.
 
 Props win over the integration defaults: `publisherName` replaces
 `defaultArticlePublisher.name`, `publisherLogo` replaces `defaultArticlePublisher.logo.url`.
 The two fall back independently, so a page can set only `publisherName` and still get the
-configured logo.
+configured logo. `defaultArticlePublisher.id` is the exception: it belongs to the configured
+publisher and is dropped as soon as `publisherName` names another one.
 
 Recommended fields (`dateModified`, `image`, `publisher`, `publisher.logo`) are reported after
 the build when missing, unless `warnOnMissingRecommended` is off. See

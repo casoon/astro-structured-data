@@ -27,6 +27,7 @@ const {
   imageCaption,
   publisherName,
   publisherLogo,
+  publisherId,
   schemaType = 'BlogPosting',
   inLanguage,
   articleSection,
@@ -43,8 +44,13 @@ const {
 const globalConfig = getGlobalConfig();
 const resolvedPublisherName = publisherName ?? globalConfig.defaultArticlePublisher?.name;
 const resolvedPublisherLogo = publisherLogo ?? globalConfig.defaultArticlePublisher?.logo?.url;
+// The default @id only belongs to the default publisher, not to one named via props.
+const resolvedPublisherId = publisherId ?? (publisherName ? undefined : globalConfig.defaultArticlePublisher?.id);
 if (resolvedPublisherLogo && !resolvedPublisherName) {
   fail('ArticleSchema', page, '"publisherLogo" needs a publisher name (publisherName prop or defaultArticlePublisher.name)');
+}
+if (publisherId && !resolvedPublisherName) {
+  fail('ArticleSchema', page, '"publisherId" needs a publisher name (publisherName prop or defaultArticlePublisher.name)');
 }
 
 const buildAuthor = (name: string) => ({
@@ -74,6 +80,7 @@ if (resolvedPublisherName) {
   articleSchema.publisher = {
     '@type': 'Organization',
     name: resolvedPublisherName,
+    ...(resolvedPublisherId ? { '@id': resolvedPublisherId } : {}),
     ...(resolvedPublisherLogo
       ? { logo: { '@type': 'ImageObject', url: resolvedPublisherLogo } }
       : {}),

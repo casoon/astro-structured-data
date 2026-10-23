@@ -271,6 +271,7 @@ export const articleZodSchema = z.object({
   imageCaption: text.optional(),
   publisherName: recommended(text.optional(), 'publisher'),
   publisherLogo: recommended(link.optional(), 'publisher.logo'),
+  publisherId: text.optional(),
   schemaType: z.enum(['Article', 'BlogPosting', 'NewsArticle']).optional(),
   inLanguage: languageTag.optional(),
   articleSection: text.optional(),
@@ -431,6 +432,7 @@ export const eventZodSchema = z.object({
 // 6. Organization (name falls back to `defaultArticlePublisher.name`)
 export const organizationZodSchema = z.object({
   name: text.optional(),
+  id: text.optional(),
   url: httpUrl.optional(),
   logoUrl: link.optional(),
   sameAs: recommended(z.array(httpUrl).min(1).optional(), 'sameAs'),
@@ -463,6 +465,7 @@ export const webPageZodSchema = z.object({
     name: text,
     url: httpUrl.optional(),
     logo: link.optional(),
+    id: text.optional(),
   }).optional(),
   robots: z.string().regex(
     /^[a-z-]+(:[\w-]+)?(\s*,\s*[a-z-]+(:[\w-]+)?)*$/i,
@@ -680,6 +683,7 @@ export const structuredDataOptionsSchema = z.strictObject({
   defaultArticlePublisher: z.strictObject({
     name: text,
     logo: z.strictObject({ url: link }).optional(),
+    id: text.optional(),
   }).optional(),
   defaultBrand: z.union([text, brandObject]).optional(),
   defaultShippingDetails: shippingDetailsSchema.optional(),
