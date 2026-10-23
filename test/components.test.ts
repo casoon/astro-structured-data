@@ -230,6 +230,32 @@ describe('no fabricated or dropped data', () => {
     expect((await render(C.OrganizationSchema, { name: 'Other', id: '#other' })).scripts[0].data['@id']).toBe('#other');
   });
 
+  test('WebPage @id matches the mainEntityOfPage of an Article on the same page', async () => {
+    const page = (await render(C.WebPageSchema, { title: 'Page' })).scripts[0].data;
+    const art = (await render(C.ArticleSchema, article)).scripts[0].data;
+    expect(page['@id']).toBe(page.url);
+    expect(page['@id']).toBe(art.mainEntityOfPage['@id']);
+  });
+
+  test('linkable entities take an @id', async () => {
+    const id = 'https://example.com/#x';
+    expect((await render(C.WebSiteSchema, { name: 'Site', id })).scripts[0].data['@id']).toBe(id);
+    expect((await render(C.ProfilePageSchema, { name: 'Ada', id })).scripts[0].data.mainEntity['@id']).toBe(id);
+    expect((await render(C.LocalBusinessSchema, { name: 'Shop', id })).scripts[0].data['@id']).toBe(id);
+    const ev = (await render(C.EventSchema, { ...event, organizer: { name: 'Org', id }, performer: { name: 'Ada', id } })).scripts[0].data;
+    expect([ev.organizer['@id'], ev.performer['@id']]).toEqual([id, id]);
+    expect((await render(C.VideoSchema, { ...video, publisher: { name: 'Pub', id } })).scripts[0].data.publisher['@id']).toBe(id);
+    expect((await render(C.JobPostingSchema, { ...job, hiringOrganizationId: id })).scripts[0].data.hiringOrganization['@id']).toBe(id);
+    expect((await render(C.RecipeSchema, { ...recipe, authorId: id })).scripts[0].data.author['@id']).toBe(id);
+    await expect(render(C.RecipeSchema, { ...recipe, authorName: ['Ada', 'Bob'], authorId: id })).rejects.toThrow(/authorId/);
+  });
+
+  test('defaultLocalBusiness.id only applies to the default business', async () => {
+    config.current.defaultLocalBusiness = { name: 'Default Shop', id: '#shop' };
+    expect((await render(C.LocalBusinessSchema, {})).scripts[0].data['@id']).toBe('#shop');
+    expect((await render(C.LocalBusinessSchema, { name: 'Other' })).scripts[0].data).not.toHaveProperty('@id');
+  });
+
   test('Article rejects a publisher id without a publisher name', async () => {
     await expect(render(C.ArticleSchema, { ...article, publisherId: '#org' })).rejects.toThrow(/publisherId/);
   });

@@ -10,6 +10,7 @@ const {
   changefreq,
   priority,
   name,
+  id,
   description,
   imageUrl,
   sameAs,
@@ -20,6 +21,7 @@ const profileSchema: ProfilePage = {
   '@type': 'ProfilePage',
   mainEntity: {
     '@type': 'Person',
+    ...(id && { '@id': id }),
     name,
     ...(imageUrl && { image: imageUrl }),
     ...(description && { description }),

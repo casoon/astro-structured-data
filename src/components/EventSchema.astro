@@ -85,6 +85,7 @@ const eventSchema: Event = {
   ...(organizer && {
     organizer: {
       '@type': 'Organization',
+      ...(organizer.id && { '@id': organizer.id }),
       name: organizer.name,
       ...(organizer.url && { url: organizer.url }),
     }
@@ -92,6 +93,7 @@ const eventSchema: Event = {
   ...(performer && {
     performer: {
       '@type': 'Person',
+      ...(performer.id && { '@id': performer.id }),
       name: performer.name,
       ...(performer.url && { url: performer.url }),
     }

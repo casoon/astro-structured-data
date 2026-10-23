@@ -517,6 +517,7 @@ All props fall back to `defaultLocalBusiness` from the integration config. A `na
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `name` | `string` | Yes* | Business name (*unless `defaultLocalBusiness.name` is set) |
+| `id` | `string` | No | `@id` for linked data (falls back to `defaultLocalBusiness.id` unless `name` is set) |
 | `url` | `string` | No | Business website URL |
 | `description` | `string` | No | Short business description |
 | `imageUrl` | `string` | No | Business image URL |
@@ -622,8 +623,8 @@ The location follows the `attendanceMode`, as Google requires: `'Offline'` needs
 | `price` | `number \| string` | No | Ticket price |
 | `priceCurrency` | `string` | No | ISO 4217 currency code |
 | `availability` | `'InStock' \| 'OutOfStock' \| 'PreOrder' \| 'OnlineOnly'` | No | Ticket availability |
-| `organizer` | `{ name: string; url?: string }` | No | Organizing entity (recommended by Google) |
-| `performer` | `{ name: string; url?: string }` | No | Performer or speaker at the event |
+| `organizer` | `{ name: string; url?: string; id?: string }` | No | Organizing entity (recommended by Google); `id` is output as `@id` |
+| `performer` | `{ name: string; url?: string; id?: string }` | No | Performer or speaker at the event; `id` is output as `@id` |
 
 ---
 
@@ -667,6 +668,7 @@ Docs: [schema.org/WebSite](https://schema.org/WebSite) · [Google: Sitelinks Sea
 |---|---|---|---|
 | `name` | `string` | Yes | Site name |
 | `url` | `string` | No | Site URL (falls back to `siteUrl`) |
+| `id` | `string` | No | `@id` for linked data, e.g. `'https://example.com/#website'` |
 | `searchQueryInput` | `string` | No | URL query param name to enable Sitelinks Searchbox, e.g. `'q'` |
 
 ---
@@ -690,7 +692,7 @@ Generic page schema — use for landing pages, legal pages, or any page that doe
 |---|---|---|---|
 | `title` | `string` | Yes | Page title |
 | `description` | `string` | No | Page description |
-| `url` | `string` | No | Canonical URL (falls back to current page URL) |
+| `url` | `string` | No | Canonical URL (falls back to current page URL); also the page's `@id`, which `ArticleSchema` references as `mainEntityOfPage` |
 | `inLanguage` | `string` | No | Content language, e.g. `'de'` |
 | `datePublished` | `string \| Date` | No | Publication date |
 | `dateModified` | `string \| Date` | No | Last modified date |
@@ -723,6 +725,7 @@ Docs: [schema.org/ProfilePage](https://schema.org/ProfilePage) · [Google: Profi
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `name` | `string` | Yes | Person name |
+| `id` | `string` | No | `@id` of the person, the target for `authorId` / `author.id` in other schemas |
 | `description` | `string` | No | Short bio |
 | `imageUrl` | `string` | No | Profile image URL |
 | `sameAs` | `string[]` | No | Social profile URLs |
@@ -802,6 +805,7 @@ For remote positions, use `jobLocationType` instead of (or in addition to) `jobL
 | `hiringOrganizationName` | `string` | Yes* | Hiring company name (*unless `defaultArticlePublisher.name` is set) |
 | `hiringOrganizationUrl` | `string` | No | Hiring company URL |
 | `hiringOrganizationLogo` | `string` | No | Hiring company logo URL |
+| `hiringOrganizationId` | `string` | No | Hiring company `@id` (falls back to `defaultArticlePublisher.id` unless `hiringOrganizationName` is set) |
 | `jobLocation` | `{ streetAddress, addressLocality, addressRegion?, postalCode, addressCountry }` | No* | Job location — required unless `jobLocationType` is `'TELECOMMUTE'` |
 | `baseSalary` | `{ value: number \| string; currency: string; unit: 'HOUR' \| 'DAY' \| 'WEEK' \| 'MONTH' \| 'YEAR' }` | No | Salary details |
 | `identifier` | `{ name: string; value: string }` | No | Employer-specific job ID (e.g. `{ name: 'Acme', value: 'JR-12345' }`) |
@@ -881,6 +885,7 @@ Docs: [schema.org/Recipe](https://schema.org/Recipe) · [Google: Recipe](https:/
 | `imageUrl` | `string \| string[]` | Yes | Image URL(s) |
 | `authorName` | `string \| string[]` | Yes | Author name(s) |
 | `authorType` | `'Person' \| 'Organization'` | No | Default: `'Person'` |
+| `authorId` | `string` | No | Author `@id` for linked data (single author only) |
 | `prepTime` | `string` | No | ISO duration, e.g. `'PT15M'` |
 | `cookTime` | `string` | No | ISO duration, e.g. `'PT10M'` |
 | `totalTime` | `string` | No | ISO duration |
@@ -923,7 +928,7 @@ Docs: [schema.org/VideoObject](https://schema.org/VideoObject) · [Google: Video
 | `embedUrl` | `string` | No* | URL to the embeddable video player — at least one of `contentUrl` or `embedUrl` required for indexing |
 | `interactionCount` | `number \| string` | No | Total view counts |
 | `expires` | `string \| Date` | No | Expiration date |
-| `publisher` | `{ name: string; logoUrl?: string }` | No | Publishing organization (recommended by Google) |
+| `publisher` | `{ name: string; logoUrl?: string; id?: string }` | No | Publishing organization (recommended by Google); `id` is output as `@id` |
 
 ---
 

@@ -14,6 +14,8 @@ const props = parseProps('LocalBusinessSchema', localBusinessZodSchema, Astro.pr
 const defaults = getGlobalConfig().defaultLocalBusiness ?? {};
 
 const name = props.name ?? defaults.name;
+// The default @id only belongs to the default business, not to one named via props.
+const id = props.id ?? (props.name ? undefined : defaults.id);
 const url = props.url ?? defaults.url;
 const description = props.description ?? defaults.description;
 const imageUrl = props.imageUrl ?? defaults.imageUrl;
@@ -31,6 +33,7 @@ if (!name) {
 
 const localBusinessSchema = {
   '@type': 'LocalBusiness',
+  ...(id && { '@id': id }),
   name,
   ...(url && { url }),
   ...(description && { description }),

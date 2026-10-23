@@ -12,6 +12,15 @@ reconstructed from the commit history.
   `WebPageSchema`, `id` on `OrganizationSchema` and `defaultArticlePublisher.id`. The default
   id is emitted wherever the default publisher is used (including the hiring organization of
   `JobPostingSchema`), so all items point to the same organization.
+- `@id` for the other entities that other items link to: `id` on `WebSiteSchema`,
+  `LocalBusinessSchema` (and `defaultLocalBusiness.id`) and the person of `ProfilePageSchema`,
+  `organizer.id` / `performer.id` on `EventSchema`, `publisher.id` on `VideoSchema`,
+  `hiringOrganizationId` on `JobPostingSchema` and `authorId` on `RecipeSchema`.
+
+### Changed
+
+- `WebPageSchema` outputs its URL as `@id`, the same value `ArticleSchema` uses for
+  `mainEntityOfPage`, so in graph mode both refer to one node.
 
 ## [2.1.0] - 2026-10-14
 

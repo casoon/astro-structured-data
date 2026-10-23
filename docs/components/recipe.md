@@ -225,6 +225,7 @@ gets ` calories` appended (`220` → `"220 calories"`).
 | `imageUrl` | `string \| string[]` (URL or `/path`) | Yes | – | Image(s) of the finished dish, output as an array |
 | `authorName` | `string \| string[]` | Yes | – | One author name or several |
 | `authorType` | `'Person' \| 'Organization'` | No | `'Person'` | `@type` of every author |
+| `authorId` | `string` | No | – | Output as the author's `@id`; single author only |
 | `datePublished` | `string \| Date` | No | – | Publication date, ISO 8601 |
 | `prepTime` | `string` (ISO 8601 duration) | No (recommended) | – | Preparation time, e.g. `'PT15M'` |
 | `cookTime` | `string` (ISO 8601 duration) | No (recommended) | – | Cooking time, e.g. `'PT1H30M'` |

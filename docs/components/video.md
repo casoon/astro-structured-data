@@ -131,7 +131,7 @@ if you want absolute URLs in the JSON-LD.
 | `embedUrl` | `string` (URL or `/path`) | One of `contentUrl` / `embedUrl` (recommended) | – | URL of the player, e.g. `https://www.youtube.com/embed/…` |
 | `interactionCount` | `number \| string` | No (recommended) | – | View count; a whole number, as a string digits only |
 | `expires` | `string \| Date` | No | – | Date after which the video is no longer available; not before `uploadDate` |
-| `publisher` | `{ name: string; logoUrl?: string }` | No (recommended) | – | Publishing organisation; `logoUrl` URL or `/path` |
+| `publisher` | `{ name: string; logoUrl?: string; id?: string }` | No (recommended) | – | Publishing organisation; `logoUrl` URL or `/path`; `id` output as `@id` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 "URL or `/path`" means an absolute `http(s)` URL or a root-relative path. `publisher` allows

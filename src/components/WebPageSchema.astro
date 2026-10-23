@@ -32,10 +32,13 @@ const {
 
 const globalConfig = getGlobalConfig();
 
+const resolvedUrl = url ?? pageUrl(page, globalConfig.siteUrl);
 const webpageSchema: Record<string, any> = {
   '@type': 'WebPage',
+  // Same value ArticleSchema uses for mainEntityOfPage, so both point to one node.
+  '@id': resolvedUrl,
   name: title,
-  url: url ?? pageUrl(page, globalConfig.siteUrl),
+  url: resolvedUrl,
   isAccessibleForFree,
 };
 

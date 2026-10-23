@@ -148,6 +148,7 @@ the default address.
 | Prop | Type | Required | Default / fallback | Description |
 | --- | --- | --- | --- | --- |
 | `name` | `string` | Yes, unless configured | `defaultLocalBusiness.name` | Business name |
+| `id` | `string` | No | `defaultLocalBusiness.id`, unless `name` is set | Output as `@id`, so other items can reference the business |
 | `url` | `string` (absolute URL) | No (recommended) | `defaultLocalBusiness.url` | Business website |
 | `description` | `string` | No | `defaultLocalBusiness.description` | Short description |
 | `imageUrl` | `string` (URL or `/path`) | No (recommended) | `defaultLocalBusiness.imageUrl` | Photo of the business, output as `image` |

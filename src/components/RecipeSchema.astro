@@ -13,6 +13,7 @@ const {
   imageUrl,
   authorName,
   authorType = 'Person',
+  authorId,
   prepTime,
   cookTime,
   totalTime,
@@ -30,6 +31,7 @@ const {
 const buildAuthor = (aName: string) => ({
   '@type': authorType,
   name: aName,
+  ...(authorId ? { '@id': authorId } : {}),
 });
 
 const formattedInstructions = instructions.map((step) => {

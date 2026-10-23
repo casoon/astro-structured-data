@@ -45,6 +45,7 @@ if (expires) videoSchema.expires = expires;
 if (publisher) {
   videoSchema.publisher = {
     '@type': 'Organization',
+    ...(publisher.id && { '@id': publisher.id }),
     name: publisher.name,
     ...(publisher.logoUrl && {
       logo: { '@type': 'ImageObject', url: publisher.logoUrl },

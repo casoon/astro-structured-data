@@ -60,6 +60,7 @@ Without `searchQueryInput`, only `@type`, `name` and `url` are output.
 | --- | --- | --- | --- | --- |
 | `name` | `string` | Yes | – | Name of the site. |
 | `url` | `string` (absolute http(s) URL) | No | `siteUrl` | URL of the site. Also the base of the search URL template. |
+| `id` | `string` | No | – | Output as `@id`, e.g. `https://example.com/#website`, so other items can reference the site. |
 | `searchQueryInput` | `string` | No | – | Name of the query parameter of the site search, e.g. `q`. Adds the `SearchAction`. |
 | `changefreq` | `'always' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly' \| 'yearly' \| 'never'` | No | – | Sitemap hint, see [Sitemap hints](../../guides/meta-tags/#sitemap-hints). |
 | `priority` | `number` (0–1) | No | – | Sitemap hint. |

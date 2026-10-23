@@ -250,8 +250,8 @@ This example also shows a rescheduled event whose tickets are sold on another si
 | `price` | `number \| string` | No (recommended) | – | Ticket price; `0` for free events; a string must be numeric like `'249.00'` |
 | `priceCurrency` | `string` (ISO 4217) | No (recommended) | – | Currency, e.g. `'EUR'` |
 | `availability` | `'InStock' \| 'OutOfStock' \| 'PreOrder' \| 'OnlineOnly'` | No | `'InStock'` | Ticket availability; needs `price` |
-| `organizer` | `{ name: string; url?: string }` | No (recommended) | – | Organizer, output as `Organization`; `url` absolute |
-| `performer` | `{ name: string; url?: string }` | No | – | Performer or speaker, output as `Person`; `url` absolute |
+| `organizer` | `{ name: string; url?: string; id?: string }` | No (recommended) | – | Organizer, output as `Organization`; `url` absolute; `id` output as `@id` |
+| `performer` | `{ name: string; url?: string; id?: string }` | No | – | Performer or speaker, output as `Person`; `url` absolute; `id` output as `@id` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 "URL or `/path`" means an absolute `http(s)` URL or a root-relative path. In

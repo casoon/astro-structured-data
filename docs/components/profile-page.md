@@ -73,6 +73,7 @@ further properties. URLs are output as given.
 | Prop | Type | Required | Default/fallback | Description |
 | --- | --- | --- | --- | --- |
 | `name` | `string` | Yes | – | Name of the person. |
+| `id` | `string` | No | – | Output as the person's `@id`, the target for `authorId` / `author.id` in other schemas. |
 | `description` | `string` | No (recommended) | – | Short bio, output as `mainEntity.description`. |
 | `imageUrl` | `string` (absolute URL or `/path`) | No (recommended) | – | Photo of the person, output as `mainEntity.image`. |
 | `sameAs` | `string[]` (absolute http(s) URLs) | No (recommended) | – | Profiles of the person elsewhere, output as `mainEntity.sameAs`. |

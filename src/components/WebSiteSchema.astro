@@ -8,11 +8,12 @@ import { parseProps } from '../utils/validate';
 
 type Props = WebSiteProps;
 
-const { changefreq, priority, name, url, searchQueryInput } = parseProps('WebSiteSchema', webSiteZodSchema, Astro.props, Astro.url.pathname);
+const { changefreq, priority, name, url, id, searchQueryInput } = parseProps('WebSiteSchema', webSiteZodSchema, Astro.props, Astro.url.pathname);
 const siteUrl: string = url ?? getGlobalConfig().siteUrl;
 
 const websiteSchema: WebSite = {
   '@type': 'WebSite',
+  ...(id && { '@id': id }),
   name,
   url: siteUrl,
   ...(searchQueryInput && {

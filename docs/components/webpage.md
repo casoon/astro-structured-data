@@ -53,6 +53,7 @@ structuredData({
 {
   "@context": "https://schema.org",
   "@type": "WebPage",
+  "@id": "https://example.com/about/",
   "name": "About us",
   "url": "https://example.com/about/",
   "isAccessibleForFree": true,
@@ -85,7 +86,7 @@ structuredData({
 }
 ```
 
-`url` is the page URL built from `siteUrl` and the path. `publisher` comes from
+`url` is the page URL built from `siteUrl` and the path, and doubles as `@id`. `publisher` comes from
 `defaultArticlePublisher`; without that option and without the `publisher` prop it is left
 out. Image and author URLs are output as given.
 
@@ -173,7 +174,7 @@ hints](../../guides/meta-tags/#robots-and-alternates).
 | --- | --- | --- | --- | --- |
 | `title` | `string` | Yes | – | Page title, output as `name`. |
 | `description` | `string` | No (recommended) | – | Page description. |
-| `url` | `string` (absolute http(s) URL) | No | page URL from `siteUrl` and the current path | URL of the page. With `generateMeta`, also the canonical URL. |
+| `url` | `string` (absolute http(s) URL) | No | page URL from `siteUrl` and the current path | URL of the page, also output as its `@id` (the node `ArticleSchema` references as `mainEntityOfPage`). With `generateMeta`, also the canonical URL. |
 | `inLanguage` | `string` (BCP 47 tag, e.g. `en`, `de-DE`) | No | – | Language of the content. |
 | `datePublished` | `string \| Date` (ISO 8601) | No (recommended) | – | Publication date. |
 | `dateModified` | `string \| Date` (ISO 8601) | No (recommended) | `datePublished` | Last modification date. |

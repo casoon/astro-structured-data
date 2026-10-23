@@ -365,6 +365,7 @@ export const productZodSchema = z.object({
 // component requires a name after merging).
 export const localBusinessZodSchema = z.object({
   name: text.optional(),
+  id: text.optional(),
   url: recommended(httpUrl.optional(), 'url'),
   description: text.optional(),
   imageUrl: recommended(link.optional(), 'image'),
@@ -400,10 +401,12 @@ export const eventZodSchema = z.object({
   organizer: recommended(z.strictObject({
     name: text,
     url: httpUrl.optional(),
+    id: text.optional(),
   }).optional(), 'organizer'),
   performer: z.strictObject({
     name: text,
     url: httpUrl.optional(),
+    id: text.optional(),
   }).optional(),
 }).superRefine((data, ctx) => {
   // Offline events need a Place, Online events a VirtualLocation, Mixed events both.
@@ -484,12 +487,14 @@ export const webPageZodSchema = z.object({
 export const webSiteZodSchema = z.object({
   name: text,
   url: httpUrl.optional(),
+  id: text.optional(),
   searchQueryInput: z.string().regex(/^[A-Za-z0-9_-]+$/, 'Must be a query parameter name like "q"').optional(),
 });
 
 // 9. ProfilePage
 export const profilePageZodSchema = z.object({
   name: text,
+  id: text.optional(),
   description: recommended(text.optional(), 'mainEntity.description'),
   imageUrl: recommended(link.optional(), 'mainEntity.image'),
   sameAs: recommended(z.array(httpUrl).min(1).optional(), 'mainEntity.sameAs'),
@@ -507,6 +512,7 @@ export const jobPostingZodSchema = z.object({
   hiringOrganizationName: text.optional(),
   hiringOrganizationUrl: httpUrl.optional(),
   hiringOrganizationLogo: link.optional(),
+  hiringOrganizationId: text.optional(),
   jobLocation: postalAddress.optional(),
   baseSalary: recommended(z.strictObject({
     value: z.union([
@@ -597,6 +603,7 @@ export const recipeZodSchema = z.object({
   imageUrl: oneOrMore(link),
   authorName: oneOrMore(text),
   authorType: authorType.optional(),
+  authorId: text.optional(),
   prepTime: recommended(isoDuration.optional(), 'prepTime'),
   cookTime: recommended(isoDuration.optional(), 'cookTime'),
   totalTime: isoDuration.optional(),
@@ -621,6 +628,9 @@ export const recipeZodSchema = z.object({
   datePublished: dateOrStringSchema.optional(),
 }).superRefine((data, ctx) => {
   requireTogether(data, ctx, ['ratingValue', 'reviewCount']);
+  if (Array.isArray(data.authorName) && data.authorId !== undefined) {
+    ctx.addIssue({ code: 'custom', path: ['authorId'], message: 'Not supported with multiple authors' });
+  }
 });
 
 // 16. Video
@@ -640,6 +650,7 @@ export const videoZodSchema = z.object({
   publisher: recommended(z.strictObject({
     name: text,
     logoUrl: link.optional(),
+    id: text.optional(),
   }).optional(), 'publisher'),
 }).superRefine((data, ctx) => {
   if (!data.contentUrl && !data.embedUrl) {

@@ -184,6 +184,7 @@ and `applicantLocationRequirements` together.
 | `hiringOrganizationName` | `string` | Yes, unless configured | `defaultArticlePublisher.name` | Hiring company |
 | `hiringOrganizationUrl` | `string` (absolute URL) | No | `siteUrl` | Hiring company website |
 | `hiringOrganizationLogo` | `string` (URL or `/path`) | No | `defaultArticlePublisher.logo.url` | Hiring company logo |
+| `hiringOrganizationId` | `string` | No | `defaultArticlePublisher.id`, unless `hiringOrganizationName` is set | Hiring company `@id` |
 | `jobLocation` | `PostalAddress` | Unless remote | – | `{ streetAddress, addressLocality, addressRegion?, postalCode, addressCountry }`, output as `Place` |
 | `baseSalary` | `{ value: number \| string; currency: string; unit: 'HOUR' \| 'DAY' \| 'WEEK' \| 'MONTH' \| 'YEAR' }` | No (recommended) | – | Salary; `value` positive, a string must be numeric like `'50000'`; `currency` ISO 4217 |
 | `identifier` | `{ name: string; value: string }` | No (recommended) | – | Employer's reference for the posting, output as `PropertyValue` |
