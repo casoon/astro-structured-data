@@ -250,6 +250,87 @@ describe('no fabricated or dropped data', () => {
     await expect(render(C.RecipeSchema, { ...recipe, authorName: ['Ada', 'Bob'], authorId: id })).rejects.toThrow(/authorId/);
   });
 
+  test('Article takes an @id and typed isPartOf / hasPart references', async () => {
+    const data = (await render(C.ArticleSchema, {
+      ...article,
+      id: '#part-2',
+      isPartOf: { type: 'CreativeWorkSeries', id: '/blog/astro-seo/#series', headline: 'Astro SEO' },
+      seriesPosition: 2,
+    })).scripts[0].data;
+    expect(data['@id']).toBe('#part-2');
+    expect(data.isPartOf).toEqual({ '@type': 'CreativeWorkSeries', '@id': '/blog/astro-seo/#series', headline: 'Astro SEO' });
+    expect(data.position).toBe(2);
+
+    const series = (await render(C.ArticleSchema, {
+      ...article,
+      hasPart: [{ id: '#part-1', position: 1 }, { type: 'WebPage', url: '/blog/astro-seo/part-2/', headline: 'Part 2' }],
+    })).scripts[0].data;
+    expect(series.hasPart).toEqual([
+      { '@type': 'BlogPosting', '@id': '#part-1', position: 1 },
+      { '@type': 'WebPage', url: '/blog/astro-seo/part-2/', headline: 'Part 2' },
+    ]);
+    expect((await render(C.ArticleSchema, article)).scripts[0].data).not.toHaveProperty('@id');
+  });
+
+  test('Article isPartOf / hasPart rules', async () => {
+    await expect(render(C.ArticleSchema, { ...article, isPartOf: { headline: 'Series' } })).rejects.toThrow(/"id" or "url"/);
+    await expect(render(C.ArticleSchema, { ...article, hasPart: [{ headline: 'Part' }] })).rejects.toThrow(/"id" or "url"/);
+    await expect(render(C.ArticleSchema, { ...article, isPartOf: { id: '#s' }, isPartOfHeadline: 'S', isPartOfUrl: '/s/' })).rejects.toThrow(/Use only one of/);
+    await expect(render(C.ArticleSchema, { ...article, seriesPosition: 1 })).rejects.toThrow(/seriesPosition/);
+  });
+
+  test('main entities take an @id', async () => {
+    const id = '#entity';
+    const cases: [any, any][] = [
+      [C.ProductSchema, product], [C.EventSchema, event], [C.RecipeSchema, recipe], [C.VideoSchema, video],
+      [C.JobPostingSchema, job], [C.SoftwareAppSchema, { name: 'App' }],
+      [C.CollectionPageSchema, { name: 'List', description: 'Items', products: [{ name: 'Gadget', url: '/gadget/' }] }],
+      [C.BreadcrumbSchema, { items: [{ name: 'Home', url: '/' }] }],
+      [C.FAQSchema, { questions: [{ question: 'Q?', answer: 'A.' }] }],
+    ];
+    for (const [component, props] of cases) {
+      expect((await render(component, { ...props, id })).scripts[0].data['@id']).toBe(id);
+      expect((await render(component, props)).scripts[0].data).not.toHaveProperty('@id');
+    }
+  });
+
+  test('Product relations', async () => {
+    const data = (await render(C.ProductSchema, {
+      ...product,
+      id: '/shirt/red/#product',
+      isVariantOf: { id: '/shirt/#group' },
+      hasVariant: [{ id: '/shirt/blue/#product' }],
+      isRelatedTo: { url: '/hat/', type: 'Product' },
+      isAccessoryOrSparePartFor: [{ id: '/shirt/#group' }, { id: '/pants/#group' }],
+    })).scripts[0].data;
+    expect(data.isVariantOf).toEqual({ '@type': 'ProductGroup', '@id': '/shirt/#group' });
+    expect(data.hasVariant).toEqual([{ '@type': 'Product', '@id': '/shirt/blue/#product' }]);
+    expect(data.isRelatedTo).toEqual({ '@type': 'Product', url: '/hat/' });
+    expect(data.isAccessoryOrSparePartFor).toHaveLength(2);
+    await expect(render(C.ProductSchema, { ...product, isVariantOf: { name: 'Shirt' } })).rejects.toThrow(/"id" or "url"/);
+  });
+
+  test('organization, event and page relations', async () => {
+    const org = (await render(C.OrganizationSchema, {
+      name: 'Branch', parentOrganization: { id: '#hq' }, subOrganization: [{ id: '#a' }, { type: 'LocalBusiness', id: '#b' }],
+    })).scripts[0].data;
+    expect(org.parentOrganization).toEqual({ '@type': 'Organization', '@id': '#hq' });
+    expect(org.subOrganization[1]).toEqual({ '@type': 'LocalBusiness', '@id': '#b' });
+    expect((await render(C.LocalBusinessSchema, { name: 'Shop', parentOrganization: { id: '#hq' } })).scripts[0].data.parentOrganization['@id']).toBe('#hq');
+
+    const ev = (await render(C.EventSchema, { ...event, superEvent: { id: '#festival' }, subEvent: [{ id: '#talk' }] })).scripts[0].data;
+    expect(ev.superEvent).toEqual({ '@type': 'Event', '@id': '#festival' });
+    expect(ev.subEvent).toEqual([{ '@type': 'Event', '@id': '#talk' }]);
+
+    const pageData = (await render(C.WebPageSchema, { title: 'Page', isPartOf: { id: '/#website', name: 'Site' } })).scripts[0].data;
+    expect(pageData.isPartOf).toEqual({ '@type': 'WebSite', '@id': '/#website', name: 'Site' });
+    for (const [component, props] of [[C.RecipeSchema, recipe], [C.VideoSchema, video], [C.SoftwareAppSchema, { name: 'App' }]] as const) {
+      const d = (await render(component, { ...props, isPartOf: { type: 'CreativeWorkSeries', id: '#series' }, hasPart: [{ id: '#p', position: 1 }] })).scripts[0].data;
+      expect(d.isPartOf).toEqual({ '@type': 'CreativeWorkSeries', '@id': '#series' });
+      expect(d.hasPart).toEqual([{ '@type': 'CreativeWork', '@id': '#p', position: 1 }]);
+    }
+  });
+
   test('defaultLocalBusiness.id only applies to the default business', async () => {
     config.current.defaultLocalBusiness = { name: 'Default Shop', id: '#shop' };
     expect((await render(C.LocalBusinessSchema, {})).scripts[0].data['@id']).toBe('#shop');

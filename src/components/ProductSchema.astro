@@ -5,12 +5,20 @@ import Schema from './Schema.astro';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { productZodSchema, type ProductProps } from '../zod';
 import { parseProps } from '../utils/validate';
+import { buildReference, buildReferences } from '../utils/reference';
 import { pageUrl } from '../utils/meta';
 
 type Props = ProductProps;
 
 const page = Astro.url.pathname;
 const {
+  id,
+  isVariantOf,
+  hasVariant,
+  isRelatedTo,
+  isSimilarTo,
+  isAccessoryOrSparePartFor,
+  isConsumableFor,
   changefreq,
   priority,
   name,
@@ -129,6 +137,7 @@ if (reviews) {
 // 5. Build Final Product Schema
 const productSchema: Product = {
   '@type': 'Product',
+  ...(id && { '@id': id }),
   name,
   description,
   image: Array.isArray(imageUrl) ? imageUrl : [imageUrl],
@@ -145,5 +154,13 @@ const productSchema: Product = {
   }),
   ...(resolvedReviews && { review: resolvedReviews })
 };
+Object.assign(productSchema, {
+  ...(isVariantOf && { isVariantOf: buildReference(isVariantOf, 'ProductGroup') }),
+  ...(hasVariant && { hasVariant: hasVariant.map((part) => buildReference(part, 'Product')) }),
+  ...(isRelatedTo && { isRelatedTo: buildReferences(isRelatedTo, 'Product') }),
+  ...(isSimilarTo && { isSimilarTo: buildReferences(isSimilarTo, 'Product') }),
+  ...(isAccessoryOrSparePartFor && { isAccessoryOrSparePartFor: buildReferences(isAccessoryOrSparePartFor, 'Product') }),
+  ...(isConsumableFor && { isConsumableFor: buildReferences(isConsumableFor, 'Product') }),
+});
 ---
 <Schema item={productSchema} changefreq={changefreq} priority={priority} />

@@ -6,10 +6,11 @@ import { parseProps } from '../utils/validate';
 
 type Props = BreadcrumbProps;
 
-const { changefreq, priority, items } = parseProps('BreadcrumbSchema', breadcrumbZodSchema, Astro.props, Astro.url.pathname);
+const { id, changefreq, priority, items } = parseProps('BreadcrumbSchema', breadcrumbZodSchema, Astro.props, Astro.url.pathname);
 
 const breadcrumbSchema: BreadcrumbList = {
   '@type': 'BreadcrumbList',
+  ...(id && { '@id': id }),
   itemListElement: items.map((item, index) => ({
     '@type': 'ListItem',
     position: index + 1,

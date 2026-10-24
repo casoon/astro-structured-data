@@ -406,6 +406,7 @@ Docs: [schema.org/Article](https://schema.org/Article) · [Google: Article](http
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | Article `@id`, so other nodes can reference it |
 | `title` | `string` | Yes | Article headline |
 | `description` | `string` | Yes | Article description |
 | `datePublished` | `string \| Date` | Yes | Publication date |
@@ -431,8 +432,9 @@ Docs: [schema.org/Article](https://schema.org/Article) · [Google: Article](http
 | `isAccessibleForFree` | `boolean` | No | Default: `true` |
 | `isPartOfHeadline` | `string` | No | Parent series headline (for `isPartOf`) |
 | `isPartOfUrl` | `string` | No | Parent series URL |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or array | No | Typed parent reference (needs `id` or `url`); instead of `isPartOfHeadline` / `isPartOfUrl` |
 | `seriesPosition` | `number` | No | Position within the series |
-| `hasPart` | `{ headline: string; url: string; position?: number }[]` | No | Child articles in a series |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | Child articles in a series (each needs `id` or `url`) |
 
 ---
 
@@ -451,6 +453,7 @@ Docs: [schema.org/FAQPage](https://schema.org/FAQPage) · [Google: FAQ](https://
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | FAQ page `@id`, so other nodes can reference it |
 | `questions` | `{ question: string; answer: string }[]` | Yes | List of Q&A pairs |
 
 ---
@@ -475,6 +478,7 @@ Docs: [schema.org/Product](https://schema.org/Product) · [Google: Product](http
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | Product `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | Product name |
 | `description` | `string` | Yes | Product description |
 | `imageUrl` | `string \| string[]` | Yes | Product image URL(s) |
@@ -491,6 +495,12 @@ Docs: [schema.org/Product](https://schema.org/Product) · [Google: Product](http
 | `reviews` | `ReviewItem[]` | No | Individual review objects |
 | `shippingDetails` | `OfferShippingDetails` | No | Shipping details (falls back to `defaultShippingDetails`) |
 | `returnPolicy` | `MerchantReturnPolicy` | No | Return policy (falls back to `defaultReturnPolicy`); `MerchantReturnFiniteReturnWindow` needs `merchantReturnDays` |
+| `isVariantOf` | `{ type?, id?, name?, headline?, url? }` | No | Group by `id` or `url` (default `ProductGroup`) |
+| `hasVariant` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | Variants by `id` or `url` |
+| `isRelatedTo` | `{ type?, id?, name?, headline?, url? }` or array | No | Related products |
+| `isSimilarTo` | `{ type?, id?, name?, headline?, url? }` or array | No | Similar products |
+| `isAccessoryOrSparePartFor` | `{ type?, id?, name?, headline?, url? }` or array | No | Products this is an accessory or spare part for |
+| `isConsumableFor` | `{ type?, id?, name?, headline?, url? }` or array | No | Products this is a consumable for |
 
 ---
 
@@ -528,6 +538,8 @@ All props fall back to `defaultLocalBusiness` from the integration config. A `na
 | `geo` | `{ latitude: number; longitude: number }` | No | Geographic coordinates |
 | `openingHours` | `string[]` | No | Opening hours, e.g. `['Mo-Fr 09:00-18:00']` |
 | `sameAs` | `string[]` | No | Social profile / same-entity URLs (e.g. Google Business, Facebook) |
+| `parentOrganization` | `{ type?, id?, name?, headline?, url? }` | No | Parent by `id` or `url` (default `Organization`) |
+| `subOrganization` | `{ type?, id?, name?, headline?, url? }` or array | No | Sub-organizations |
 
 ---
 
@@ -547,6 +559,7 @@ Docs: [schema.org/BreadcrumbList](https://schema.org/BreadcrumbList) · [Google:
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | BreadcrumbList `@id`, so other nodes can reference it |
 | `items` | `{ name: string; url: string }[]` | Yes | Ordered breadcrumb items |
 
 ---
@@ -609,6 +622,7 @@ The location follows the `attendanceMode`, as Google requires: `'Offline'` needs
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | Event `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | Event name |
 | `startDate` | `string \| Date` | Yes | Start date/time |
 | `endDate` | `string \| Date` | No | End date/time |
@@ -625,6 +639,8 @@ The location follows the `attendanceMode`, as Google requires: `'Offline'` needs
 | `availability` | `'InStock' \| 'OutOfStock' \| 'PreOrder' \| 'OnlineOnly'` | No | Ticket availability |
 | `organizer` | `{ name: string; url?: string; id?: string }` | No | Organizing entity (recommended by Google); `id` is output as `@id` |
 | `performer` | `{ name: string; url?: string; id?: string }` | No | Performer or speaker at the event; `id` is output as `@id` |
+| `superEvent` | `{ type?, id?, name?, headline?, url? }` | No | Parent event by `id` or `url` |
+| `subEvent` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | Sub-events by `id` or `url` |
 
 ---
 
@@ -650,6 +666,8 @@ Docs: [schema.org/Organization](https://schema.org/Organization) · [Google: Org
 | `telephone` | `string` | No | Phone number |
 | `email` | `string` | No | Email address |
 | `address` | `{ streetAddress, addressLocality, addressRegion?, postalCode, addressCountry }` | No | Postal address |
+| `parentOrganization` | `{ type?, id?, name?, headline?, url? }` | No | Parent by `id` or `url` (default `Organization`) |
+| `subOrganization` | `{ type?, id?, name?, headline?, url? }` or array | No | Sub-organizations |
 
 ---
 
@@ -706,6 +724,8 @@ Generic page schema — use for landing pages, legal pages, or any page that doe
 | `publisher` | `{ name: string; url?: string; logo?: string; id?: string }` | No | Publisher (falls back to `defaultArticlePublisher`, including its `id`) |
 | `robots` | `string` | No | Robots directive, e.g. `'noindex'` (meta tag only, not part of the JSON-LD) |
 | `alternates` | `{ href: string; hreflang: string }[]` | No | Alternate language versions (hreflang links only, not part of the JSON-LD) |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or array | No | Parent by `id` or `url` (free `type`, default `WebSite` on WebPage, else `CreativeWork`) |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | Parts by `id` or `url` |
 
 ---
 
@@ -752,9 +772,12 @@ For product listing / archive pages.
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | CollectionPage `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | Page / collection name |
 | `description` | `string` | Yes | Collection description |
 | `products` | `{ name: string; url: string; imageUrl?: string; price?: number \| string; priceCurrency?: string }[]` | Yes | List of products |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or array | No | Parent by `id` or `url` (free `type`, default `WebSite` on WebPage, else `CreativeWork`) |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | Parts by `id` or `url` |
 
 ---
 
@@ -797,6 +820,7 @@ For remote positions, use `jobLocationType` instead of (or in addition to) `jobL
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | JobPosting `@id`, so other nodes can reference it |
 | `title` | `string` | Yes | Job title |
 | `description` | `string` | Yes | Job description (HTML accepted by Google) |
 | `datePosted` | `string \| Date` | Yes | ISO date the posting was published |
@@ -833,6 +857,7 @@ Docs: [schema.org/SoftwareApplication](https://schema.org/SoftwareApplication) �
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | SoftwareApplication `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | App name |
 | `description` | `string` | No | Short app description |
 | `url` | `string` | No | Link to the app or its landing page |
@@ -842,6 +867,8 @@ Docs: [schema.org/SoftwareApplication](https://schema.org/SoftwareApplication) �
 | `priceCurrency` | `string` | No | ISO 4217 currency code |
 | `ratingValue` | `number` | No | Aggregate rating (0–5), only together with `reviewCount` |
 | `reviewCount` | `number` | No | Number of reviews, only together with `ratingValue` |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or array | No | Parent by `id` or `url` (free `type`, default `WebSite` on WebPage, else `CreativeWork`) |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | Parts by `id` or `url` |
 
 ---
 
@@ -880,6 +907,7 @@ Docs: [schema.org/Recipe](https://schema.org/Recipe) · [Google: Recipe](https:/
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | Recipe `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | Recipe name |
 | `description` | `string` | Yes | Recipe description |
 | `imageUrl` | `string \| string[]` | Yes | Image URL(s) |
@@ -898,6 +926,8 @@ Docs: [schema.org/Recipe](https://schema.org/Recipe) · [Google: Recipe](https:/
 | `ratingValue` | `number` | No | Rating value (0-5), only together with `reviewCount` |
 | `reviewCount` | `number` | No | Number of ratings, only together with `ratingValue` |
 | `datePublished` | `string \| Date` | No | Publication date |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or array | No | Parent by `id` or `url` (free `type`, default `WebSite` on WebPage, else `CreativeWork`) |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | Parts by `id` or `url` |
 
 ---
 
@@ -919,6 +949,7 @@ Docs: [schema.org/VideoObject](https://schema.org/VideoObject) · [Google: Video
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
+| `id` | `string` | No | VideoObject `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | Video title |
 | `description` | `string` | Yes | Video description |
 | `thumbnailUrl` | `string \| string[]` | Yes | Thumbnail image URL(s) |
@@ -929,6 +960,8 @@ Docs: [schema.org/VideoObject](https://schema.org/VideoObject) · [Google: Video
 | `interactionCount` | `number \| string` | No | Total view counts |
 | `expires` | `string \| Date` | No | Expiration date |
 | `publisher` | `{ name: string; logoUrl?: string; id?: string }` | No | Publishing organization (recommended by Google); `id` is output as `@id` |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or array | No | Parent by `id` or `url` (free `type`, default `WebSite` on WebPage, else `CreativeWork`) |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | Parts by `id` or `url` |
 
 ---
 

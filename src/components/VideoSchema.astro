@@ -2,10 +2,14 @@
 import Schema from './Schema.astro';
 import { videoZodSchema, type VideoProps } from '../zod';
 import { parseProps } from '../utils/validate';
+import { buildReference, buildReferences } from '../utils/reference';
 
 type Props = VideoProps;
 
 const {
+  id,
+  isPartOf,
+  hasPart,
   changefreq,
   priority,
   name,
@@ -22,6 +26,7 @@ const {
 
 const videoSchema: Record<string, any> = {
   '@type': 'VideoObject',
+  ...(id && { '@id': id }),
   name,
   description,
   thumbnailUrl: Array.isArray(thumbnailUrl) ? thumbnailUrl : [thumbnailUrl],
@@ -52,5 +57,9 @@ if (publisher) {
     }),
   };
 }
+Object.assign(videoSchema, {
+  ...(isPartOf && { isPartOf: buildReferences(isPartOf, 'CreativeWork') }),
+  ...(hasPart && { hasPart: hasPart.map((part) => buildReference(part, 'CreativeWork')) }),
+});
 ---
 <Schema item={videoSchema} changefreq={changefreq} priority={priority} />

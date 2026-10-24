@@ -14,6 +14,7 @@ There are three ways to describe the price, and a page uses at most one of them:
 
 | Prop | Output | Use it for |
 | --- | --- | --- |
+| `id` | `string` | No | – | Output as the product's `@id`, so other nodes can reference it |
 | `price` + `priceCurrency` (+ `availability`) | one `Offer` | a product with a single price |
 | `offers` | `Offer` / `AggregateOffer` objects as given | several offers, sale prices, conditions, per-offer shipping |
 | `priceRange` | one `AggregateOffer` | a price range across variants |
@@ -150,6 +151,35 @@ On `/products/super-gadget/`, with `images: ['/images/gadget.jpg', '/images/gadg
   schema.org types (`MonetaryAmount`, `DefinedRegion`, `ShippingDeliveryTime`,
   `QuantitativeValue`) are added where the input leaves them out.
 - `imageUrl` is always output as an array. Root-relative URLs are written as given.
+
+## Variants and related products
+
+Give each product an `id` and link the variants through `isVariantOf` and `hasVariant`. The
+same pattern covers `isRelatedTo`, `isSimilarTo`, `isAccessoryOrSparePartFor` and
+`isConsumableFor`. A reference needs `id` or `url`; `type` is free text and defaults to
+`ProductGroup` for `isVariantOf` and to `Product` for the others.
+
+```astro
+<ProductSchema
+  id="/shirt/red/#product"
+  name="Shirt, red"
+  description="Cotton shirt in red."
+  imageUrl="/shirt-red.jpg"
+  isVariantOf={{ id: '/shirt/#group' }}
+  isRelatedTo={{ id: '/hat/red/#product' }}
+/>
+```
+
+```json
+{
+  "@type": "Product",
+  "@id": "/shirt/red/#product",
+  "isVariantOf": { "@type": "ProductGroup", "@id": "/shirt/#group" },
+  "isRelatedTo": { "@type": "Product", "@id": "/hat/red/#product" }
+}
+```
+
+The page of the group lists its variants with `hasVariant={[{ id: '/shirt/red/#product' }]}`.
 
 ## Several offers
 
@@ -440,6 +470,12 @@ string.
 | `reviews` | `Review[]` | No | – | Individual reviews (at least one entry), see below |
 | `shippingDetails` | `OfferShippingDetails` | No | `defaultShippingDetails` | Shipping details added to every offer |
 | `returnPolicy` | `MerchantReturnPolicy` | No | `defaultReturnPolicy` | Return policy added to every offer, output as `hasMerchantReturnPolicy` |
+| `isVariantOf` | `{ type?, id?, name?, headline?, url? }` | No | – | Reference by `id` or `url`; `type` is free text, default `'ProductGroup'` |
+| `hasVariant` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Reference by `id` or `url`; `type` is free text, default `'Product'` |
+| `isRelatedTo` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'Product'` |
+| `isSimilarTo` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'Product'` |
+| `isAccessoryOrSparePartFor` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'Product'` |
+| `isConsumableFor` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'Product'` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 "URL or `/path`" means an absolute `http(s)` URL or a root-relative path. The recommended

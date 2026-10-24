@@ -77,6 +77,7 @@ from the same source, so they cannot drift apart.
 
 | Prop | Type | Required | Default/fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the FAQ page's `@id`, so other nodes can reference it |
 | `questions` | `{ question: string; answer: string }[]` | Yes | – | The question and answer pairs, in display order. `question` becomes the Question's `name`, `answer` the Answer's `text`. |
 | `changefreq` | `'always' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly' \| 'yearly' \| 'never'` | No | – | Sitemap hint, see [Sitemap hints](../../guides/meta-tags/#sitemap-hints). |
 | `priority` | `number` (0–1) | No | – | Sitemap hint. |

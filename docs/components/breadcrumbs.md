@@ -71,6 +71,7 @@ root-relative paths stay relative. Pass absolute URLs if you want them absolute 
 
 | Prop | Type | Required | Default/fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the breadcrumb list's `@id`, so other nodes can reference it |
 | `items` | `{ name: string; url: string }[]` | Yes | – | The trail from the top level down to the current page. `url` is an absolute `http(s)` URL or a root-relative path. |
 | `changefreq` | `'always' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly' \| 'yearly' \| 'never'` | No | – | Sitemap hint, see [Sitemap hints](../../guides/meta-tags/#sitemap-hints). |
 | `priority` | `number` (0–1) | No | – | Sitemap hint. |

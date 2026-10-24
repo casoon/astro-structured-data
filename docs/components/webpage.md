@@ -114,6 +114,25 @@ With `generateMeta: true` the same component produces these tags:
 <meta name="twitter:card" content="summary_large_image">
 ```
 
+## Linking to the website
+
+`isPartOf` points the page to its website (or any other parent) by `id` or `url`; `hasPart`
+lists parts of the page. `type` is free text and defaults to `WebSite` for `isPartOf` and to
+`WebPage` for `hasPart`.
+
+```astro
+<WebPageSchema title="About us" isPartOf={{ id: 'https://example.com/#website' }} />
+```
+
+```json
+{
+  "@type": "WebPage",
+  "isPartOf": { "@type": "WebSite", "@id": "https://example.com/#website" }
+}
+```
+
+With `name`, the reference also gives the page's `og:site_name` when `generateMeta` is on.
+
 ## Language versions (hreflang)
 
 `alternates` lists the language versions of the page. It is not part of the JSON-LD; it only
@@ -188,6 +207,8 @@ hints](../../guides/meta-tags/#robots-and-alternates).
 | `publisher` | `{ name: string; url?: string; logo?: string; id?: string }` | No | `defaultArticlePublisher` for name, logo and id, `siteUrl` for `url` | Publisher, output as an `Organization`. `url` must be absolute; `logo` may be root-relative; `id` is output as `@id`. The configured id is only used without the `publisher` prop. |
 | `robots` | `string` (e.g. `'noindex, nofollow'`) | No | – | Robots directives for `<meta name="robots">`. Not part of the JSON-LD. |
 | `alternates` | `{ href: string; hreflang: string }[]` | No | – | Language versions for `<link rel="alternate" hreflang>`. Not part of the JSON-LD. |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'WebSite'` |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Reference by `id` or `url`; `type` is free text, default `'WebPage'` |
 | `changefreq` | `'always' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly' \| 'yearly' \| 'never'` | No | – | Sitemap hint, see [Sitemap hints](../../guides/meta-tags/#sitemap-hints). |
 | `priority` | `number` (0–1) | No | – | Sitemap hint. |
 

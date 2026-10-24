@@ -6,7 +6,19 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+### Added
+
+- **Linked data:** `id` outputs the `@id` of the main entity on `ArticleSchema`, `ProductSchema`,
+  `EventSchema`, `RecipeSchema`, `VideoSchema`, `SoftwareAppSchema`, `JobPostingSchema`,
+  `CollectionPageSchema`, `FAQSchema` and `BreadcrumbSchema`, so other nodes can link to it.
+  Details: [Graph mode](https://casoon.github.io/astro-structured-data/docs/guides/graph-mode/#linking-nodes).
+- **Linked data:** relations take a reference with `id` or `url` and a free `type`: `isPartOf` /
+  `hasPart` (articles, pages, recipes, videos, apps, collection pages), product variants and
+  related products, `parentOrganization` / `subOrganization`, `superEvent` / `subEvent`.
+  Details: [Graph mode](https://casoon.github.io/astro-structured-data/docs/guides/graph-mode/#linking-nodes).
+
 ### Changed
+
 
 - **Contributors:** the dev toolbar app is split into modules under `src/toolbar/`; its
   behavior is unchanged.

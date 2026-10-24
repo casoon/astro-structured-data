@@ -5,12 +5,16 @@ import Schema from './Schema.astro';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { eventZodSchema, type EventProps } from '../zod';
 import { parseProps } from '../utils/validate';
+import { buildReference } from '../utils/reference';
 import { pageUrl } from '../utils/meta';
 
 type Props = EventProps;
 
 const page = Astro.url.pathname;
 const {
+  id,
+  superEvent,
+  subEvent,
   changefreq,
   priority,
   name,
@@ -63,6 +67,7 @@ const virtualLocation = onlineUrl ? { '@type': 'VirtualLocation', url: onlineUrl
 
 const eventSchema: Event = {
   '@type': 'Event',
+  ...(id && { '@id': id }),
   name,
   startDate,
   ...(endDate && { endDate }),
@@ -99,5 +104,9 @@ const eventSchema: Event = {
     }
   }),
 } as Event;
+Object.assign(eventSchema, {
+  ...(superEvent && { superEvent: buildReference(superEvent, 'Event') }),
+  ...(subEvent && { subEvent: subEvent.map((part) => buildReference(part, 'Event')) }),
+});
 ---
 <Schema item={eventSchema} changefreq={changefreq} priority={priority} />

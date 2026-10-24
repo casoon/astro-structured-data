@@ -250,10 +250,42 @@ lists its parts with `hasPart` instead; each entry becomes an object of the same
 />
 ```
 
+### Linking by `@id`
+
+Give the article an `id` and point to the series with a typed `isPartOf` reference; the series
+page can then list the article with `hasPart` and the same `id`. `type` is free text and falls
+back to `schemaType`; every reference needs `id` or `url`. Use `headline`, not `name`, for a
+series: `name` on `isPartOf` becomes the page's `og:site_name`.
+
+```astro
+<ArticleSchema
+  id="/blog/astro-seo/part-2/#article"
+  title="Astro SEO, part 2: structured data"
+  description="The second part of the series covers JSON-LD."
+  datePublished="2026-05-04"
+  authorName="Jane Doe"
+  isPartOf={{ type: 'CreativeWorkSeries', id: '/blog/astro-seo/#series' }}
+  seriesPosition={2}
+/>
+```
+
+```json
+{
+  "@type": "BlogPosting",
+  "@id": "/blog/astro-seo/part-2/#article",
+  "isPartOf": {
+    "@type": "CreativeWorkSeries",
+    "@id": "/blog/astro-seo/#series"
+  },
+  "position": 2
+}
+```
+
 ## Props
 
 | Prop | Type | Required | Default / fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the article's `@id`, so other nodes can reference it |
 | `title` | `string` | Yes | – | Headline, output as `headline` |
 | `description` | `string` | Yes | – | Short summary |
 | `datePublished` | `string \| Date` | Yes | – | Publication date, ISO 8601 date or date-time |
@@ -279,8 +311,9 @@ lists its parts with `hasPart` instead; each entry becomes an object of the same
 | `isAccessibleForFree` | `boolean` | No | `true` | Set `false` for paywalled content |
 | `isPartOfHeadline` | `string` | No | – | Headline of the series; only together with `isPartOfUrl` |
 | `isPartOfUrl` | `string` (URL or `/path`) | No | – | URL of the series; only together with `isPartOfHeadline` |
-| `seriesPosition` | `number` (positive integer) | No | – | Position within the series, output as `position`; needs `isPartOfUrl` |
-| `hasPart` | `{ headline: string; url: string; position?: number }[]` | No | – | Parts of a series (at least one entry) |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Typed reference to the parent (`type` falls back to `schemaType`); needs `id` or `url`; not together with `isPartOfUrl` |
+| `seriesPosition` | `number` (positive integer) | No | – | Position within the series, output as `position`; needs `isPartOf` or `isPartOfUrl` |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Parts of a series (at least one entry, each with `id` or `url`) |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 "URL or `/path`" means an absolute `http(s)` URL or a root-relative path.
@@ -294,8 +327,10 @@ Violations fail the build (see [Validation](../../guides/validation/)):
   `dateModified` must not be before `datePublished`.
 - `imageWidth`, `imageHeight`, `imageFormat` and `imageCaption` are only allowed together
   with `imageUrl`.
-- `isPartOfHeadline` and `isPartOfUrl` are set together or not at all. `seriesPosition` needs
+- `isPartOfHeadline` and `isPartOfUrl` are set together or not at all. `isPartOf` replaces them
+  and is not allowed together with `isPartOfUrl`. `seriesPosition` needs `isPartOf` or
   `isPartOfUrl`.
+- `isPartOf` and every `hasPart` entry need `id` or `url`.
 - `authorUrl` and `authorId` are not supported when `authorName` is an array.
 - A publisher logo needs a publisher name: `publisherLogo` (or `defaultArticlePublisher.logo`)
   without `publisherName` or `defaultArticlePublisher.name` fails the build. The same applies to

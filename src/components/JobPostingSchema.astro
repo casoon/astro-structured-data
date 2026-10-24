@@ -10,6 +10,7 @@ type Props = JobPostingProps;
 
 const page = Astro.url.pathname;
 const {
+  id,
   changefreq,
   priority,
   title,
@@ -39,6 +40,7 @@ const organizationId = hiringOrganizationId ?? (hiringOrganizationName ? undefin
 
 const jobSchema: JobPosting = {
   '@type': 'JobPosting',
+  ...(id && { '@id': id }),
   title,
   description,
   datePosted,

@@ -5,6 +5,7 @@ import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { articleZodSchema, type ArticleProps } from '../zod';
 import { fail, parseProps } from '../utils/validate';
 import { pageUrl } from '../utils/meta';
+import { buildReference, buildReferences } from '../utils/reference';
 
 type Props = ArticleProps;
 
@@ -12,6 +13,7 @@ const page = Astro.url.pathname;
 const {
   changefreq,
   priority,
+  id,
   title,
   description,
   datePublished,
@@ -37,6 +39,7 @@ const {
   isAccessibleForFree = true,
   isPartOfHeadline,
   isPartOfUrl,
+  isPartOf,
   seriesPosition,
   hasPart,
 } = parseProps('ArticleSchema', articleZodSchema, Astro.props, page);
@@ -62,6 +65,7 @@ const buildAuthor = (name: string) => ({
 
 const articleSchema: Record<string, any> = {
   '@type': schemaType,
+  ...(id ? { '@id': id } : {}),
   headline: title,
   description,
   datePublished,
@@ -108,22 +112,13 @@ if (keywords) {
 if (wordCount) articleSchema.wordCount = wordCount;
 if (readingTimeMinutes) articleSchema.timeRequired = `PT${readingTimeMinutes}M`;
 
-if (isPartOfHeadline && isPartOfUrl) {
-  articleSchema.isPartOf = {
-    '@type': schemaType,
-    headline: isPartOfHeadline,
-    url: isPartOfUrl,
-  };
-  if (seriesPosition !== undefined) articleSchema.position = seriesPosition;
+if (isPartOf) {
+  articleSchema.isPartOf = buildReferences(isPartOf, schemaType);
+} else if (isPartOfHeadline && isPartOfUrl) {
+  articleSchema.isPartOf = buildReference({ headline: isPartOfHeadline, url: isPartOfUrl }, schemaType);
 }
+if (articleSchema.isPartOf && seriesPosition !== undefined) articleSchema.position = seriesPosition;
 
-if (hasPart) {
-  articleSchema.hasPart = hasPart.map((part) => ({
-    '@type': schemaType,
-    headline: part.headline,
-    url: part.url,
-    ...(part.position !== undefined ? { position: part.position } : {}),
-  }));
-}
+if (hasPart) articleSchema.hasPart = hasPart.map((part) => buildReference(part, schemaType));
 ---
 <Schema item={articleSchema} changefreq={changefreq} priority={priority} />

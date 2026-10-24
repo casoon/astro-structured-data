@@ -122,6 +122,7 @@ if you want absolute URLs in the JSON-LD.
 
 | Prop | Type | Required | Default / fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the video's `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | – | Video title |
 | `description` | `string` | Yes | – | Video description |
 | `thumbnailUrl` | `string \| string[]` (URL or `/path`) | Yes | – | Thumbnail image(s), output as an array |
@@ -132,6 +133,8 @@ if you want absolute URLs in the JSON-LD.
 | `interactionCount` | `number \| string` | No (recommended) | – | View count; a whole number, as a string digits only |
 | `expires` | `string \| Date` | No | – | Date after which the video is no longer available; not before `uploadDate` |
 | `publisher` | `{ name: string; logoUrl?: string; id?: string }` | No (recommended) | – | Publishing organisation; `logoUrl` URL or `/path`; `id` output as `@id` |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'CreativeWork'` |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Reference by `id` or `url`; `type` is free text, default `'CreativeWork'` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 "URL or `/path`" means an absolute `http(s)` URL or a root-relative path. `publisher` allows

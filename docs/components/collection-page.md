@@ -115,9 +115,12 @@ On `/shop/lamps/`, for three products of which the last has no image and no pric
 
 | Prop | Type | Required | Default / fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the page's `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | – | Name of the collection, e.g. the category |
 | `description` | `string` | Yes | – | Description of the collection |
 | `products` | `Product[]` | Yes | – | Listed products, at least one |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'CreativeWork'` |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Reference by `id` or `url`; `type` is free text, default `'CreativeWork'` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 Each entry in `products`:

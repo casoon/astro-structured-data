@@ -5,15 +5,17 @@ import Schema from './Schema.astro';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { collectionPageZodSchema, type CollectionPageProps } from '../zod';
 import { parseProps } from '../utils/validate';
+import { buildReference, buildReferences } from '../utils/reference';
 import { pageUrl } from '../utils/meta';
 
 type Props = CollectionPageProps;
 
 const page = Astro.url.pathname;
-const { changefreq, priority, name, description, products } = parseProps('CollectionPageSchema', collectionPageZodSchema, Astro.props, page);
+const { id, isPartOf, hasPart, changefreq, priority, name, description, products } = parseProps('CollectionPageSchema', collectionPageZodSchema, Astro.props, page);
 
 const collectionSchema: CollectionPage = {
   '@type': 'CollectionPage',
+  ...(id && { '@id': id }),
   name,
   description,
   url: pageUrl(page, getGlobalConfig().siteUrl),
@@ -40,5 +42,9 @@ const collectionSchema: CollectionPage = {
     }))
   }
 };
+Object.assign(collectionSchema, {
+  ...(isPartOf && { isPartOf: buildReferences(isPartOf, 'CreativeWork') }),
+  ...(hasPart && { hasPart: hasPart.map((part) => buildReference(part, 'CreativeWork')) }),
+});
 ---
 <Schema item={collectionSchema} changefreq={changefreq} priority={priority} />

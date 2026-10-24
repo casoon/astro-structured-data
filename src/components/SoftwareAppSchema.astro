@@ -3,10 +3,14 @@ import type { SoftwareApplication } from 'schema-dts';
 import Schema from './Schema.astro';
 import { softwareAppZodSchema, type SoftwareAppProps } from '../zod';
 import { parseProps } from '../utils/validate';
+import { buildReference, buildReferences } from '../utils/reference';
 
 type Props = SoftwareAppProps;
 
 const {
+  id,
+  isPartOf,
+  hasPart,
   changefreq,
   priority,
   name,
@@ -22,6 +26,7 @@ const {
 
 const appSchema: SoftwareApplication = {
   '@type': 'SoftwareApplication',
+  ...(id && { '@id': id }),
   name,
   ...(description && { description }),
   ...(url && { url }),
@@ -42,5 +47,9 @@ const appSchema: SoftwareApplication = {
     }
   })
 } as SoftwareApplication;
+Object.assign(appSchema, {
+  ...(isPartOf && { isPartOf: buildReferences(isPartOf, 'CreativeWork') }),
+  ...(hasPart && { hasPart: hasPart.map((part) => buildReference(part, 'CreativeWork')) }),
+});
 ---
 <Schema item={appSchema} changefreq={changefreq} priority={priority} />

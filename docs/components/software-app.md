@@ -66,6 +66,7 @@ import { SoftwareAppSchema } from '@casoon/astro-structured-data/components';
 
 | Prop | Type | Required | Default/fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the app's `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | – | Name of the application. |
 | `description` | `string` | No (recommended) | – | Short description. |
 | `url` | `string` (absolute http(s) URL) | No (recommended) | – | Page of the application or where to get it. |
@@ -75,6 +76,8 @@ import { SoftwareAppSchema } from '@casoon/astro-structured-data/components';
 | `priceCurrency` | `string` (ISO 4217, e.g. `EUR`) | No (recommended) | – | Currency of the price. Requires `price`. |
 | `ratingValue` | `number` (0–5) | No (recommended) | – | Average rating. Requires `reviewCount`. |
 | `reviewCount` | `number` (positive integer) | No (recommended) | – | Number of ratings. Requires `ratingValue`. |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'CreativeWork'` |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Reference by `id` or `url`; `type` is free text, default `'CreativeWork'` |
 | `changefreq` | `'always' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly' \| 'yearly' \| 'never'` | No | – | Sitemap hint, see [Sitemap hints](../../guides/meta-tags/#sitemap-hints). |
 | `priority` | `number` (0–1) | No | – | Sitemap hint. |
 

@@ -6,10 +6,11 @@ import { parseProps } from '../utils/validate';
 
 type Props = FAQProps;
 
-const { changefreq, priority, questions } = parseProps('FAQSchema', faqZodSchema, Astro.props, Astro.url.pathname);
+const { id, changefreq, priority, questions } = parseProps('FAQSchema', faqZodSchema, Astro.props, Astro.url.pathname);
 
 const faqSchema: FAQPage = {
   '@type': 'FAQPage',
+  ...(id && { '@id': id }),
   mainEntity: questions.map(qa => ({
     '@type': 'Question',
     name: qa.question,

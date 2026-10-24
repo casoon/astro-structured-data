@@ -35,3 +35,18 @@ so no schema goes missing. Without `useGraph`, `<SchemaGraph />` renders nothing
 The block carries the schema.org `@context`. A different `@context` set via `<Schema>`, for
 example own term mappings, stays on its node as an embedded context, so the data means the same
 with and without graph mode.
+
+## Linking nodes
+
+Nodes in the graph refer to each other by `@id`. Give the entities others point to an `id`
+(`WebSiteSchema`, `OrganizationSchema`, `LocalBusinessSchema`, ...) and the main entity of a
+page one too (`ArticleSchema`, `ProductSchema`, `EventSchema`, `RecipeSchema`, `VideoSchema`,
+`SoftwareAppSchema`, `JobPostingSchema`, `CollectionPageSchema`, `FAQSchema`,
+`BreadcrumbSchema`). The relations take a reference with `id` or `url` and a free `type`:
+
+| Component | Props |
+| --- | --- |
+| `ArticleSchema`, `RecipeSchema`, `VideoSchema`, `SoftwareAppSchema`, `CollectionPageSchema`, `WebPageSchema` | `isPartOf`, `hasPart` |
+| `ProductSchema` | `isVariantOf`, `hasVariant`, `isRelatedTo`, `isSimilarTo`, `isAccessoryOrSparePartFor`, `isConsumableFor` |
+| `OrganizationSchema`, `LocalBusinessSchema` | `parentOrganization`, `subOrganization` |
+| `EventSchema` | `superEvent`, `subEvent` |

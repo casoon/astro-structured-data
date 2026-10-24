@@ -117,6 +117,8 @@ structuredData({
 | `telephone` | `string` | No (recommended) | – | Phone number, e.g. `+49 30 1234567`. |
 | `email` | `string` (email address) | No (recommended) | – | Contact email address. |
 | `address` | `{ streetAddress, addressLocality, addressRegion?, postalCode, addressCountry }` (all `string`) | No (recommended) | – | Postal address, output as a `PostalAddress`. |
+| `parentOrganization` | `{ type?, id?, name?, headline?, url? }` | No | – | Reference by `id` or `url`; `type` is free text, default `'Organization'` |
+| `subOrganization` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'Organization'` |
 | `changefreq` | `'always' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly' \| 'yearly' \| 'never'` | No | – | Sitemap hint, see [Sitemap hints](../../guides/meta-tags/#sitemap-hints). |
 | `priority` | `number` (0–1) | No | – | Sitemap hint. |
 
@@ -132,5 +134,4 @@ structuredData({
   `addressRegion` is optional. Other keys are rejected.
 - Recommended fields: `sameAs`, `telephone`, `email`, `address`. Each missing one produces a
   warning after the build (see [Validation](../../guides/validation/)).
-
 An Organization never drives the page's meta tags.

@@ -159,6 +159,8 @@ the default address.
 | `geo` | `{ latitude: number; longitude: number }` | No (recommended) | `defaultLocalBusiness.geo` | Coordinates; latitude −90 to 90, longitude −180 to 180 |
 | `openingHours` | `string[]` | No (recommended) | `defaultLocalBusiness.openingHours` | Opening hours in schema.org format, at least one entry |
 | `sameAs` | `string[]` (absolute URLs) | No (recommended) | `defaultLocalBusiness.sameAs` | Profiles of the business elsewhere (Google Business Profile, social media), at least one entry |
+| `parentOrganization` | `{ type?, id?, name?, headline?, url? }` | No | – | Reference by `id` or `url`; `type` is free text, default `'Organization'` |
+| `subOrganization` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'Organization'` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 "URL or `/path`" means an absolute `http(s)` URL or a root-relative path. In `address`, all

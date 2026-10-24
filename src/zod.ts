@@ -254,8 +254,26 @@ export const sitemapShape = {
 };
 export type SitemapProps = z.input<z.ZodObject<typeof sitemapShape>>;
 
+// Reference to another node by `id` and/or `url` with a free `type` — for isPartOf, hasPart,
+// product variants, parent organizations and the like.
+const referenceShape = {
+  type: text.optional(),
+  id: text.optional(),
+  name: text.optional(),
+  headline: text.optional(),
+  url: link.optional(),
+};
+const hasIdOrUrl = (ref: { id?: string; url?: string }) => ref.id !== undefined || ref.url !== undefined;
+const idOrUrlMessage = { message: 'Needs "id" or "url"' };
+const reference = z.strictObject(referenceShape).refine(hasIdOrUrl, idOrUrlMessage);
+const references = oneOrMore(reference).optional();
+const partReferences = z.array(
+  z.strictObject({ ...referenceShape, position: positiveInt.optional() }).refine(hasIdOrUrl, idOrUrlMessage)
+).min(1).optional();
+
 // 1. Article
 export const articleZodSchema = z.object({
+  id: text.optional(),
   title: text,
   description: text,
   datePublished: dateOrStringSchema,
@@ -281,16 +299,16 @@ export const articleZodSchema = z.object({
   isAccessibleForFree: z.boolean().optional(),
   isPartOfHeadline: text.optional(),
   isPartOfUrl: link.optional(),
+  isPartOf: references,
   seriesPosition: positiveInt.optional(),
-  hasPart: z.array(z.strictObject({
-    headline: text,
-    url: link,
-    position: positiveInt.optional(),
-  })).min(1).optional(),
+  hasPart: partReferences,
 }).superRefine((data, ctx) => {
   requireWith(data, ctx, 'imageUrl', IMAGE_DETAIL_FIELDS);
   requireTogether(data, ctx, ['isPartOfHeadline', 'isPartOfUrl']);
-  requireWith(data, ctx, 'isPartOfUrl', ['seriesPosition']);
+  atMostOne(data, ctx, ['isPartOf', 'isPartOfUrl']);
+  if (data.isPartOf === undefined && data.isPartOfUrl === undefined && data.seriesPosition !== undefined) {
+    ctx.addIssue({ code: 'custom', path: ['seriesPosition'], message: 'Only allowed together with "isPartOf" or "isPartOfUrl"' });
+  }
   if (Array.isArray(data.authorName)) {
     for (const field of ['authorUrl', 'authorId'] as const) {
       if (data[field] !== undefined) {
@@ -303,6 +321,7 @@ export const articleZodSchema = z.object({
 
 // 2. FAQ
 export const faqZodSchema = z.object({
+  id: text.optional(),
   questions: z.array(
     z.strictObject({
       question: text,
@@ -313,6 +332,7 @@ export const faqZodSchema = z.object({
 
 // 3. Product
 export const productZodSchema = z.object({
+  id: text.optional(),
   name: text,
   description: text,
   imageUrl: oneOrMore(link),
@@ -354,6 +374,13 @@ export const productZodSchema = z.object({
   // Shipping & Return Policy
   shippingDetails: shippingDetailsSchema.optional(),
   returnPolicy: returnPolicySchema.optional(),
+  // Relations to other products
+  isVariantOf: reference.optional(),
+  hasVariant: partReferences,
+  isRelatedTo: references,
+  isSimilarTo: references,
+  isAccessoryOrSparePartFor: references,
+  isConsumableFor: references,
 }).superRefine((data, ctx) => {
   atMostOne(data, ctx, ['offers', 'priceRange', 'price']);
   requireTogether(data, ctx, ['price', 'priceCurrency']);
@@ -379,10 +406,13 @@ export const localBusinessZodSchema = z.object({
   }).optional(), 'geo'),
   openingHours: recommended(z.array(openingHoursSpec).min(1).optional(), 'openingHours'),
   sameAs: recommended(z.array(httpUrl).min(1).optional(), 'sameAs'),
+  parentOrganization: reference.optional(),
+  subOrganization: references,
 });
 
 // 5. Event
 export const eventZodSchema = z.object({
+  id: text.optional(),
   name: text,
   startDate: dateOrStringSchema,
   endDate: recommended(dateOrStringSchema.optional(), 'endDate'),
@@ -408,6 +438,8 @@ export const eventZodSchema = z.object({
     url: httpUrl.optional(),
     id: text.optional(),
   }).optional(),
+  superEvent: reference.optional(),
+  subEvent: partReferences,
 }).superRefine((data, ctx) => {
   // Offline events need a Place, Online events a VirtualLocation, Mixed events both.
   const mode = data.attendanceMode ?? 'Offline';
@@ -442,6 +474,8 @@ export const organizationZodSchema = z.object({
   telephone: recommended(text.optional(), 'telephone'),
   email: recommended(z.email().optional(), 'email'),
   address: recommended(postalAddress.optional(), 'address'),
+  parentOrganization: reference.optional(),
+  subOrganization: references,
 });
 
 // 7. WebPage
@@ -478,6 +512,8 @@ export const webPageZodSchema = z.object({
     href: httpUrl,
     hreflang: z.union([languageTag, z.literal('x-default')]),
   })).min(1).optional(),
+  isPartOf: references,
+  hasPart: partReferences,
 }).superRefine((data, ctx) => {
   requireWith(data, ctx, 'image', IMAGE_DETAIL_FIELDS);
   notBefore(data, ctx, 'datePublished', 'dateModified');
@@ -504,6 +540,7 @@ export const profilePageZodSchema = z.object({
 // 10. JobPosting (hiring organization falls back to `defaultArticlePublisher`)
 const employmentType = z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACTOR', 'TEMPORARY', 'INTERN', 'VOLUNTEER', 'OTHER']);
 export const jobPostingZodSchema = z.object({
+  id: text.optional(),
   title: text,
   description: text,
   datePosted: dateOrStringSchema,
@@ -545,6 +582,7 @@ export const jobPostingZodSchema = z.object({
 
 // 11. SoftwareApp
 export const softwareAppZodSchema = z.object({
+  id: text.optional(),
   name: text,
   description: recommended(text.optional(), 'description'),
   url: recommended(httpUrl.optional(), 'url'),
@@ -554,6 +592,8 @@ export const softwareAppZodSchema = z.object({
   priceCurrency: recommended(currency.optional(), 'offers'),
   ratingValue: recommended(rating.optional(), 'aggregateRating'),
   reviewCount: recommended(positiveInt.optional(), 'aggregateRating'),
+  isPartOf: references,
+  hasPart: partReferences,
 }).superRefine((data, ctx) => {
   requireTogether(data, ctx, ['price', 'priceCurrency']);
   requireTogether(data, ctx, ['ratingValue', 'reviewCount']);
@@ -561,6 +601,7 @@ export const softwareAppZodSchema = z.object({
 
 // 12. CollectionPage
 export const collectionPageZodSchema = z.object({
+  id: text.optional(),
   name: text,
   description: text,
   products: z.array(z.strictObject({
@@ -571,10 +612,13 @@ export const collectionPageZodSchema = z.object({
     imageUrl: link.optional(),
   }).superRefine((product, ctx) => requireTogether(product, ctx, ['price', 'priceCurrency'])))
     .min(1, 'At least one product is required'),
+  isPartOf: references,
+  hasPart: partReferences,
 });
 
 // 13. Breadcrumb
 export const breadcrumbZodSchema = z.object({
+  id: text.optional(),
   items: z.array(z.strictObject({
     name: text,
     url: link,
@@ -598,6 +642,7 @@ export const autoBreadcrumbZodSchema = z.object({
 
 // 15. Recipe
 export const recipeZodSchema = z.object({
+  id: text.optional(),
   name: text,
   description: text,
   imageUrl: oneOrMore(link),
@@ -626,6 +671,8 @@ export const recipeZodSchema = z.object({
   ratingValue: recommended(rating.optional(), 'aggregateRating'),
   reviewCount: recommended(positiveInt.optional(), 'aggregateRating'),
   datePublished: dateOrStringSchema.optional(),
+  isPartOf: references,
+  hasPart: partReferences,
 }).superRefine((data, ctx) => {
   requireTogether(data, ctx, ['ratingValue', 'reviewCount']);
   if (Array.isArray(data.authorName) && data.authorId !== undefined) {
@@ -635,6 +682,7 @@ export const recipeZodSchema = z.object({
 
 // 16. Video
 export const videoZodSchema = z.object({
+  id: text.optional(),
   name: text,
   description: text,
   thumbnailUrl: oneOrMore(link),
@@ -652,6 +700,8 @@ export const videoZodSchema = z.object({
     logoUrl: link.optional(),
     id: text.optional(),
   }).optional(), 'publisher'),
+  isPartOf: references,
+  hasPart: partReferences,
 }).superRefine((data, ctx) => {
   if (!data.contentUrl && !data.embedUrl) {
     ctx.addIssue({ code: 'custom', path: ['contentUrl'], message: 'Either contentUrl or embedUrl is required for Google video indexing' });

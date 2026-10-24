@@ -5,6 +5,7 @@ import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { webPageZodSchema, type WebPageProps } from '../zod';
 import { parseProps } from '../utils/validate';
 import { pageUrl } from '../utils/meta';
+import { buildReference, buildReferences } from '../utils/reference';
 
 type Props = WebPageProps;
 
@@ -28,6 +29,8 @@ const {
   publisher,
   robots,
   alternates,
+  isPartOf,
+  hasPart,
 } = parseProps('WebPageSchema', webPageZodSchema, Astro.props, page);
 
 const globalConfig = getGlobalConfig();
@@ -49,6 +52,9 @@ if (dateModified || datePublished) webpageSchema.dateModified = dateModified ?? 
 // robots/alternates drive meta tags only; they are stripped from the JSON-LD output.
 if (robots) webpageSchema.robots = robots;
 if (alternates) webpageSchema.alternates = alternates;
+
+if (isPartOf) webpageSchema.isPartOf = buildReferences(isPartOf, 'WebSite');
+if (hasPart) webpageSchema.hasPart = hasPart.map((part) => buildReference(part, 'WebPage'));
 
 if (image) {
   webpageSchema.image = {

@@ -5,6 +5,7 @@ import Schema from './Schema.astro';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { localBusinessZodSchema, type LocalBusinessProps } from '../zod';
 import { fail, parseProps } from '../utils/validate';
+import { buildReference, buildReferences } from '../utils/reference';
 
 type Props = LocalBusinessProps;
 
@@ -61,5 +62,9 @@ const localBusinessSchema = {
   ...(openingHours && { openingHours }),
   ...(sameAs && { sameAs }),
 } satisfies LocalBusiness;
+Object.assign(localBusinessSchema, {
+  ...(props.parentOrganization && { parentOrganization: buildReference(props.parentOrganization, 'Organization') }),
+  ...(props.subOrganization && { subOrganization: buildReferences(props.subOrganization, 'Organization') }),
+});
 ---
 <Schema item={localBusinessSchema} changefreq={props.changefreq} priority={props.priority} />

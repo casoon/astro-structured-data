@@ -236,6 +236,7 @@ This example also shows a rescheduled event whose tickets are sold on another si
 
 | Prop | Type | Required | Default / fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the event's `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | – | Event name |
 | `startDate` | `string \| Date` | Yes | – | Start date or date-time, ISO 8601 |
 | `endDate` | `string \| Date` | No (recommended) | – | End date or date-time; not before `startDate` |
@@ -252,6 +253,8 @@ This example also shows a rescheduled event whose tickets are sold on another si
 | `availability` | `'InStock' \| 'OutOfStock' \| 'PreOrder' \| 'OnlineOnly'` | No | `'InStock'` | Ticket availability; needs `price` |
 | `organizer` | `{ name: string; url?: string; id?: string }` | No (recommended) | – | Organizer, output as `Organization`; `url` absolute; `id` output as `@id` |
 | `performer` | `{ name: string; url?: string; id?: string }` | No | – | Performer or speaker, output as `Person`; `url` absolute; `id` output as `@id` |
+| `superEvent` | `{ type?, id?, name?, headline?, url? }` | No | – | Reference by `id` or `url`; `type` is free text, default `'Event'` |
+| `subEvent` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Reference by `id` or `url`; `type` is free text, default `'Event'` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 "URL or `/path`" means an absolute `http(s)` URL or a root-relative path. In

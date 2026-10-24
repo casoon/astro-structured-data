@@ -2,10 +2,14 @@
 import Schema from './Schema.astro';
 import { recipeZodSchema, type RecipeProps } from '../zod';
 import { parseProps } from '../utils/validate';
+import { buildReference, buildReferences } from '../utils/reference';
 
 type Props = RecipeProps;
 
 const {
+  id,
+  isPartOf,
+  hasPart,
   changefreq,
   priority,
   name,
@@ -52,6 +56,7 @@ const formattedInstructions = instructions.map((step) => {
 
 const recipeSchema: Record<string, any> = {
   '@type': 'Recipe',
+  ...(id && { '@id': id }),
   name,
   description,
   image: Array.isArray(imageUrl) ? imageUrl : [imageUrl],
@@ -85,5 +90,9 @@ if (ratingValue !== undefined && reviewCount !== undefined) {
     reviewCount: reviewCount.toString(),
   };
 }
+Object.assign(recipeSchema, {
+  ...(isPartOf && { isPartOf: buildReferences(isPartOf, 'CreativeWork') }),
+  ...(hasPart && { hasPart: hasPart.map((part) => buildReference(part, 'CreativeWork')) }),
+});
 ---
 <Schema item={recipeSchema} changefreq={changefreq} priority={priority} />

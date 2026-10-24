@@ -5,6 +5,7 @@ import Schema from './Schema.astro';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { organizationZodSchema, type OrganizationProps } from '../zod';
 import { fail, parseProps } from '../utils/validate';
+import { buildReference, buildReferences } from '../utils/reference';
 
 type Props = OrganizationProps;
 
@@ -20,6 +21,8 @@ const {
   telephone,
   email,
   address,
+  parentOrganization,
+  subOrganization,
 } = parseProps('OrganizationSchema', organizationZodSchema, Astro.props, page);
 
 const globalConfig = getGlobalConfig();
@@ -56,5 +59,9 @@ const orgSchema = {
     }
   })
 } satisfies Organization;
+Object.assign(orgSchema, {
+  ...(parentOrganization && { parentOrganization: buildReference(parentOrganization, 'Organization') }),
+  ...(subOrganization && { subOrganization: buildReferences(subOrganization, 'Organization') }),
+});
 ---
 <Schema item={orgSchema} changefreq={changefreq} priority={priority} />

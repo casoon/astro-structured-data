@@ -176,6 +176,7 @@ and `applicantLocationRequirements` together.
 
 | Prop | Type | Required | Default / fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the job posting's `@id`, so other nodes can reference it |
 | `title` | `string` | Yes | – | Job title |
 | `description` | `string` | Yes | – | Full job description; HTML allowed |
 | `datePosted` | `string \| Date` | Yes | – | Date the posting was published, ISO 8601 |

@@ -220,6 +220,7 @@ gets ` calories` appended (`220` → `"220 calories"`).
 
 | Prop | Type | Required | Default / fallback | Description |
 | --- | --- | --- | --- | --- |
+| `id` | `string` | No | – | Output as the recipe's `@id`, so other nodes can reference it |
 | `name` | `string` | Yes | – | Recipe name |
 | `description` | `string` | Yes | – | Short description |
 | `imageUrl` | `string \| string[]` (URL or `/path`) | Yes | – | Image(s) of the finished dish, output as an array |
@@ -238,6 +239,8 @@ gets ` calories` appended (`220` → `"220 calories"`).
 | `instructions` | `string[] \| Step[]` | Yes | – | Steps, at least one; output as `recipeInstructions` |
 | `ratingValue` | `number` (0–5) | No (recommended) | – | Average rating |
 | `reviewCount` | `number` (positive integer) | No (recommended) | – | Number of ratings |
+| `isPartOf` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'CreativeWork'` |
+| `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Reference by `id` or `url`; `type` is free text, default `'CreativeWork'` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 A `Step` object:
