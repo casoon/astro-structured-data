@@ -27,7 +27,6 @@ export default defineConfig({
       tagline: 'Typed JSON-LD components for Astro',
       website: 'https://astro-structured-data.casoon.de',
       repo: 'casoon/astro-structured-data',
-      version: '2.3.0',
       license: 'MIT',
       packages: [
         { label: 'npm', href: 'https://www.npmjs.com/package/@casoon/astro-structured-data' },
