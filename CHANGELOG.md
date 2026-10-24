@@ -10,6 +10,8 @@ reconstructed from the commit history.
 
 - **Contributors:** the dev toolbar app is split into modules under `src/toolbar/`; its
   behavior is unchanged.
+- **Contributors:** the showcase on the project page shows each example as a search result
+  illustration above its JSON-LD.
 - **Contributors:** `demo/` is reduced to one playground page with all schema components; the
   project page examples live in `examples/`.
 

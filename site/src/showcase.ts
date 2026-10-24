@@ -1,6 +1,7 @@
 import { ansiToHtml } from '@casoon/pages-theme/ansi';
 import type { ShowcaseExample } from '@casoon/pages-theme/showcase';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
+import { previewHtml, previewStyles } from './preview';
 import { errorToAnsi, jsonToAnsi, renderExample } from './render';
 
 // The example files live in ../examples; each is rendered here at build time by the package.
@@ -80,11 +81,20 @@ export const examples: ShowcaseExample[] = await Promise.all(
     const key = `../../examples/${example.slug}.astro`;
     const result = await renderExample(components[key], path);
     const ansi = result.ok ? result.jsonLd.map(jsonToAnsi).join('\n\n') : errorToAnsi(result.error);
+    const preview = result.ok ? previewHtml(result.jsonLd) : undefined;
+    // With a known type the output is the search result illustration above the JSON-LD,
+    // otherwise (and for the build error) the terminal.
+    const output = preview
+      ? {
+          html: `${previewStyles}${preview}<div class="sd-json"><pre tabindex="0">${ansiToHtml(ansi)}</pre></div>`,
+          kind: 'panel' as const,
+        }
+      : { html: ansiToHtml(ansi), kind: 'terminal' as const };
     return {
       ...example,
       file: `examples/${example.slug}.astro`,
       input: { code: sources[key], lang: 'astro' },
-      output: { html: ansiToHtml(ansi), kind: 'terminal' as const },
+      output,
     };
   })
 );
