@@ -6,6 +6,8 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-10-24
+
 ### Added
 
 - **Linked data:** `id` outputs the `@id` of the main entity on `ArticleSchema`, `ProductSchema`,
