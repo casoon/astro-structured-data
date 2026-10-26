@@ -25,3 +25,22 @@ sed -i '' 's/datePublished="2026-10-01"/datePublished="01.10.2026"/' "$page"
 grep datePublished "$page" > "$out/broken-line.txt"
 (cd "$fixture" && "$astro" build 2>&1 || true) \
   | sed -n '/^\[astro-structured-data\] <ArticleSchema>/,/→ at/p' | head -3 > "$out/build-error.txt"
+
+# 3. The scenes show the error wrapped at a space before their width (64 and 54 columns), so the
+#    long first line does not break mid-word; the text itself stays as captured.
+for cols in 64 54; do
+  node -e '
+    const w = Number(process.argv[1]);
+    const out = [];
+    for (let line of require("node:fs").readFileSync(0, "utf8").replace(/\n$/, "").split("\n")) {
+      while ([...line].length > w) {
+        const cut = line.lastIndexOf(" ", w);
+        if (cut <= 0) break;
+        out.push(line.slice(0, cut));
+        line = line.slice(cut + 1);
+      }
+      out.push(line);
+    }
+    process.stdout.write(out.join("\n") + "\n");
+  ' "$cols" < "$out/build-error.txt" > "$out/build-error-$cols.txt"
+done

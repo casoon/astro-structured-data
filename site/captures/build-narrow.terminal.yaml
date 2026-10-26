@@ -28,6 +28,6 @@ steps:
     lang: text
   - run: astro build
   - wait: 400
-  - show: build-error.txt
+  - show: build-error-54.txt
     lang: text
   - wait: 4500
