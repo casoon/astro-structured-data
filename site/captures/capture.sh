@@ -2,8 +2,9 @@
 # Regenerates the terminal captures on the start page: real builds of the sample project in
 # fixture/ with the package built at the repository root.
 #   npm run build && site/captures/capture.sh
-# Rebuild the scene after a capture:
-#   cd site/captures && npx -y -p @casoon/castwright@0.4.0 -p shiki castwright build build.terminal.yaml --format svg -o .
+# Rebuild the scenes (wide, and narrow for phones) after a capture:
+#   cd site/captures && for f in build build-narrow; do
+#     npx -y -p @casoon/castwright@0.5.0 -p shiki castwright build "$f.terminal.yaml" --format svg -o .; done
 set -euo pipefail
 
 out="$(cd "$(dirname "$0")" && pwd)"
