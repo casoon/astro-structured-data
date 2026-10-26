@@ -8,7 +8,7 @@ Search engines read [schema.org](https://schema.org) JSON-LD to understand a pag
 [![Astro](https://img.shields.io/badge/astro-5%20%7C%206%20%7C%207-orange.svg)](https://astro.build/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Website and documentation:** [casoon.github.io/astro-structured-data](https://casoon.github.io/astro-structured-data/) · [npm](https://www.npmjs.com/package/@casoon/astro-structured-data) · [Product page](https://astro-structured-data.casoon.de/)
+**Website and documentation:** [casoon.github.io/astro-structured-data](https://casoon.github.io/astro-structured-data/) · [npm](https://www.npmjs.com/package/@casoon/astro-structured-data)
 
 <p align="center">
   <img src="site/captures/build.svg" width="562" alt="Terminal: a blog post page uses ArticleSchema with title, description, datePublished, author, image and publisher. astro build builds the page; its head now contains the canonical link, description, author, the Open Graph and Twitter tags, and a BlogPosting JSON-LD block. With datePublished changed to 01.10.2026 the build stops with: ArticleSchema on /blog/hello-astro/ received invalid props, Must be an ISO 8601 date, at datePublished.">
