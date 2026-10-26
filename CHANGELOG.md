@@ -6,6 +6,12 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-10-26
+
+### Added
+
+- **Releases:** the Release workflow publishes the package to npm through trusted publishing, after approval in the `npm` environment — no npm token is stored anywhere and the package carries a provenance statement.
+
 ### Changed
 
 - **Project site:** a shorter hero title, and a 54-column terminal scene on phones so the build
