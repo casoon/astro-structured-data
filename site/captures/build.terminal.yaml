@@ -1,4 +1,4 @@
-# Plays the captured builds in build-ok.txt, meta.txt, json-ld.txt and build-error.txt (see
+# Plays the captured builds in build-ok.txt, meta.txt, json-ld.txt and build-error-64.txt (see
 # capture.sh): the sample page in fixture/, built once as it is and once with a German date.
 version: 1
 terminal:
@@ -29,6 +29,6 @@ steps:
     lang: text
   - run: astro build
   - wait: 400
-  - show: build-error.txt
+  - show: build-error-64.txt
     lang: text
   - wait: 4500

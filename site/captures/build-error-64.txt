@@ -1,0 +1,4 @@
+[astro-structured-data] <ArticleSchema> on /blog/hello-astro/
+received invalid props:
+✖ Must be an ISO 8601 date (YYYY-MM-DD) or date-time, or a Date
+  → at datePublished

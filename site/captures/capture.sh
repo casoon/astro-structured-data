@@ -2,8 +2,9 @@
 # Regenerates the terminal captures on the start page: real builds of the sample project in
 # fixture/ with the package built at the repository root.
 #   npm run build && site/captures/capture.sh
-# Rebuild the scene after a capture:
-#   cd site/captures && npx -y -p @casoon/castwright@0.4.0 -p shiki castwright build build.terminal.yaml --format svg -o .
+# Rebuild the scenes (wide, and narrow for phones) after a capture:
+#   cd site/captures && for f in build build-narrow; do
+#     npx -y -p @casoon/castwright@0.5.0 -p shiki castwright build "$f.terminal.yaml" --format svg -o .; done
 set -euo pipefail
 
 out="$(cd "$(dirname "$0")" && pwd)"
@@ -24,3 +25,22 @@ sed -i '' 's/datePublished="2026-10-01"/datePublished="01.10.2026"/' "$page"
 grep datePublished "$page" > "$out/broken-line.txt"
 (cd "$fixture" && "$astro" build 2>&1 || true) \
   | sed -n '/^\[astro-structured-data\] <ArticleSchema>/,/→ at/p' | head -3 > "$out/build-error.txt"
+
+# 3. The scenes show the error wrapped at a space before their width (64 and 54 columns), so the
+#    long first line does not break mid-word; the text itself stays as captured.
+for cols in 64 54; do
+  node -e '
+    const w = Number(process.argv[1]);
+    const out = [];
+    for (let line of require("node:fs").readFileSync(0, "utf8").replace(/\n$/, "").split("\n")) {
+      while ([...line].length > w) {
+        const cut = line.lastIndexOf(" ", w);
+        if (cut <= 0) break;
+        out.push(line.slice(0, cut));
+        line = line.slice(cut + 1);
+      }
+      out.push(line);
+    }
+    process.stdout.write(out.join("\n") + "\n");
+  ' "$cols" < "$out/build-error.txt" > "$out/build-error-$cols.txt"
+done

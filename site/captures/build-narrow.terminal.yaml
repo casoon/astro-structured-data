@@ -1,0 +1,33 @@
+# The narrow version of build.terminal.yaml for phones (54 columns): the same captured builds
+# without the meta tags (their URL lines would wrap); the long json-ld command is continued on a
+# second shell line. Output lines wrap at word boundaries, like in a real terminal.
+version: 1
+terminal:
+  title: astro-structured-data
+  cols: 54
+  rows: 30
+  theme: catppuccin-mocha
+steps:
+  - run: cat src/pages/blog/hello-astro.astro
+  - show: fixture/src/pages/blog/hello-astro.astro
+  - wait: 2500
+  - clear: true
+  - run: astro build
+  - show: build-ok.txt
+    lang: text
+  - run: node head.mjs --json-ld \
+  - prompt: "> "
+  - run: dist/blog/hello-astro/index.html
+  - prompt: "$ "
+  - show: json-ld.txt
+    lang: json
+  - wait: 4000
+  - clear: true
+  - run: grep datePublished src/pages/blog/hello-astro.astro
+  - show: broken-line.txt
+    lang: text
+  - run: astro build
+  - wait: 400
+  - show: build-error-54.txt
+    lang: text
+  - wait: 4500

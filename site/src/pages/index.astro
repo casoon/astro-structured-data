@@ -13,7 +13,9 @@ import {
 import Base from '@casoon/pages-theme/layouts/Base.astro';
 import config from 'virtual:casoon-pages/config';
 import { url } from '@casoon/pages-theme/url';
-// Animated SVG built with castwright from captures/build.terminal.yaml (real builds, see capture.sh).
+// Animated SVGs built with castwright from captures/build*.terminal.yaml (real builds, see
+// capture.sh). The narrow scene (54 columns, without the meta tags) keeps the text readable on phones.
+import buildNarrowSvg from '../../captures/build-narrow.svg?url';
 import buildSvg from '../../captures/build.svg?url';
 import Diagram from '../components/Diagram.astro';
 
@@ -103,7 +105,7 @@ const groups = [
 
 <Base>
   <Hero
-    title="Rich results for your Astro site, checked before you ship."
+    title="Rich results, checked before you ship."
     lead="Put a component on the page and pass the data it already has. astro-structured-data writes the schema.org JSON-LD and meta tags that search engines read, and stops the build when the data would not be valid."
   >
     <Install
@@ -119,14 +121,16 @@ const groups = [
       <Badge>Astro 5 · 6 · 7</Badge>
       <Badge tone="accent">0 kB client JS</Badge>
     </Badges>
-    <img
-      slot="output"
-      class="terminal-demo"
-      src={buildSvg}
-      width="561.6"
-      height="530"
-      alt="Terminal: a blog post page uses ArticleSchema with title 'Hello, Astro', description, datePublished 2026-10-01, author Ada Lovelace, an image and the publisher. astro build builds the page. The generated head contains canonical, description, author, og:title, og:description, og:url, og:image, og:site_name, og:type article, article:published_time, article:modified_time and the twitter tags with summary_large_image. The JSON-LD is a BlogPosting with headline, dates, mainEntityOfPage, author, publisher and image. With datePublished changed to 01.10.2026 the build stops: '<ArticleSchema> on /blog/hello-astro/ received invalid props: Must be an ISO 8601 date (YYYY-MM-DD) or date-time, or a Date, at datePublished'."
-    />
+    <picture slot="output">
+      <source media="(max-width: 640px)" srcset={buildNarrowSvg} width="477.6" height="584" />
+      <img
+        class="terminal-demo"
+        src={buildSvg}
+        width="561.6"
+        height="530"
+        alt="Terminal: a blog post page uses ArticleSchema with title 'Hello, Astro', description, datePublished 2026-10-01, author Ada Lovelace, an image and the publisher. astro build builds the page. The generated head contains canonical, description, author, og:title, og:description, og:url, og:image, og:site_name, og:type article, article:published_time, article:modified_time and the twitter tags with summary_large_image. The JSON-LD is a BlogPosting with headline, dates, mainEntityOfPage, author, publisher and image. With datePublished changed to 01.10.2026 the build stops: '<ArticleSchema> on /blog/hello-astro/ received invalid props: Must be an ISO 8601 date (YYYY-MM-DD) or date-time, or a Date, at datePublished'. On narrow screens the meta tags are left out."
+      />
+    </picture>
   </Hero>
 
   <section class="section" aria-labelledby="results-heading">

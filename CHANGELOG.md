@@ -6,6 +6,11 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+### Changed
+
+- **Project site:** a shorter hero title, and a 54-column terminal scene on phones so the build
+  output stays readable; theme 0.8.3.
+
 ## [2.3.0] - 2026-10-24
 
 ### Added
