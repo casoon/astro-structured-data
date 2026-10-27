@@ -1,23 +1,34 @@
 ---
+import { readFile } from 'node:fs/promises';
 import {
   Badge,
   Badges,
   Button,
   CodeBlock,
   Facts,
+  Faq,
   Features,
   Hero,
   Install,
   Quickstart,
+  ReleaseHighlights,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
 import config from 'virtual:casoon-pages/config';
+import { parseChangelog } from '@casoon/pages-theme/lib/changelog';
 import { url } from '@casoon/pages-theme/url';
 // Animated SVGs built with castwright from captures/build*.terminal.yaml (real builds, see
 // capture.sh). The narrow scene (54 columns, without the meta tags) keeps the text readable on phones.
 import buildNarrowSvg from '../../captures/build-narrow.svg?url';
 import buildSvg from '../../captures/build.svg?url';
 import Diagram from '../components/Diagram.astro';
+
+// Skip "Unreleased": it has no version to show as "New in v…" yet.
+const latestRelease = config.changelog
+  ? parseChangelog(await readFile(config.changelog, 'utf8')).find(
+      (r) => r.version.toLowerCase() !== 'unreleased'
+    )
+  : undefined;
 
 const pageCode = `---
 import { ArticleSchema } from '@casoon/astro-structured-data/components';
@@ -256,6 +267,33 @@ const groups = [
   >
     <CodeBlock code={pageCode} lang="astro" title="src/layouts/Post.astro" label="Page" />
   </Quickstart>
+
+  {latestRelease && <ReleaseHighlights release={latestRelease} />}
+
+  <Faq
+    items={[
+      {
+        q: 'What happens if I pass invalid data to a component?',
+        a: 'The build fails with the component, the page and the offending field, for example a date that is not ISO 8601 or a currency that is not an ISO 4217 code. The markup never reaches production silently wrong.',
+      },
+      {
+        q: 'Does this add any JavaScript to the pages my visitors load?',
+        a: 'No. Every component runs at build time (or on the server in SSR) and only writes a JSON-LD script tag and meta tags into the HTML.',
+      },
+      {
+        q: 'What if I leave out a field Google recommends but does not require?',
+        a: 'The build still succeeds. After astro build, the integration lists each missing recommended field once per type, so you can decide whether to add it.',
+      },
+      {
+        q: 'Can I combine several schemas on one page into a single JSON-LD block?',
+        a: 'Yes. With useGraph set, all schemas of a page are merged into one @graph block wherever the SchemaGraph component is placed, instead of one script tag per component.',
+      },
+      {
+        q: 'Which Astro and Node versions are supported?',
+        a: 'Astro 5, 6 and 7, with Node 18 or later. The compatibility table in the README lists which package version matches which Astro range.',
+      },
+    ]}
+  />
 </Base>
 
 <style>
