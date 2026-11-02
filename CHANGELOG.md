@@ -8,6 +8,7 @@ reconstructed from the commit history.
 
 ### Changed
 
+- **Pages:** the project site uses the current shared theme (0.12.5).
 - **Project site:** the footer follows the page language instead of always showing German text,
   and the start page now carries a release teaser and an FAQ (theme 0.11.1).
 
