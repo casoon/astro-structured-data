@@ -1,2 +1,2 @@
-[build] 1 page(s) built in 200ms
+[build] 1 page(s) built in 500ms
 [build] Complete!

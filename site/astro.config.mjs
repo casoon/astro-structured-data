@@ -30,6 +30,7 @@ export default defineConfig({
       packages: [
         { label: 'npm', href: 'https://www.npmjs.com/package/@casoon/astro-structured-data' },
       ],
+      mdxComponents: './src/mdx-components.ts',
       docsGroups: {
         'getting-started': 'Getting started',
         guides: 'Guides',

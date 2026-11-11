@@ -6,6 +6,14 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+### Changed
+
+- **Docs:** the README is a short overview that links to the documentation on the project site;
+  everything it explained before is in the docs. The graph mode and on-demand rendering guides
+  show how graph mode works and the measured time to first byte as diagrams.
+- **Project site:** search result cards and source labels meet 4.5:1 contrast again with the
+  current theme, and the terminal scenes are rebuilt with castwright 0.6.
+
 ## [2.4.0] - 2026-11-11
 
 ### Changed

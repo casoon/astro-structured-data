@@ -40,12 +40,14 @@ HTML responses are buffered by the middleware rather than streamed.
 ### Generated tags
 
 - Canonical, description, robots, author, `reading-time` (non-standard)
-- Alternates: `<link rel="alternate" hreflang="…">` from `alternates`
+- Alternates: `<link rel="alternate" hreflang="…">` from `alternates` or from
+  `workTranslation` (`url` and `inLanguage` of each translation)
 - Open Graph: `og:title`, `og:description`, `og:image` with width, height, type and alt,
   `og:url`, `og:type`, `og:site_name`, `og:locale`, and for articles
   `article:published_time`, `article:modified_time`, `article:author` (author profile
   URLs; the name goes into `<meta name="author">`), `article:section`,
-  `article:tag`
+  `article:tag`; for videos `og:video` (plus `og:video:secure_url` with an `embedUrl`) and
+  `video:duration` in seconds
 - Twitter: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`,
   `twitter:image:alt`, `twitter:site`, `twitter:creator`
 
@@ -53,6 +55,30 @@ Relative image URLs in the meta tags are resolved to absolute URLs with `siteUrl
 browser would: `/image.jpg` against the origin, `image.jpg` against the site path. `siteName`,
 `locale`, `twitterSite` and `twitterCreator` from the integration options fill the site-wide
 tags.
+
+### Example
+
+The `ArticleSchema` of the [Quickstart](../../getting-started/quickstart/) on
+`/blog/hello-astro/`, with `structuredData({ generateMeta: true, siteName: 'Example Blog' })`
+and `site: 'https://example.com'`, adds these tags to `<head>`:
+
+```html
+<link rel="canonical" href="https://example.com/blog/hello-astro/">
+<meta name="description" content="Our first post.">
+<meta name="author" content="Ada Lovelace">
+<meta property="og:title" content="Hello, Astro">
+<meta property="og:description" content="Our first post.">
+<meta property="og:url" content="https://example.com/blog/hello-astro/">
+<meta property="og:image" content="https://example.com/img/hello.jpg">
+<meta property="og:site_name" content="Example Blog">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-10-01">
+<meta property="article:modified_time" content="2026-10-01">
+<meta name="twitter:title" content="Hello, Astro">
+<meta name="twitter:description" content="Our first post.">
+<meta name="twitter:image" content="https://example.com/img/hello.jpg">
+<meta name="twitter:card" content="summary_large_image">
+```
 
 ## Robots and alternates
 

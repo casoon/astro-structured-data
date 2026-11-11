@@ -71,12 +71,34 @@ structuredData({ siteUrl: 'https://example.com' })
 
 | Package version | Astro | Node.js |
 | --- | --- | --- |
-| **2.3.x** | 5.x · 6.x · 7.x | ≥ 18 |
-| 2.2.x | 5.x · 6.x · 7.x | ≥ 18 |
-| 2.1.x | 5.x · 6.x · 7.x | ≥ 18 |
+| **2.4.x** | 5.x · 6.x · 7.x | ≥ 18 |
+| 2.1.x – 2.3.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 2.0.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 1.5.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 1.4.x | 5.x · 6.x | ≥ 18 |
+
+The Node.js minimum is the one of your Astro version (its `engines` field): Astro 5 needs
+18.20.8, 20.3 or 22+, Astro 6 needs 22.12+, Astro 7.4 needs 22.23.4+.
+
+Astro 5 and 6 are checked locally with `npm run test:compat`; last verified with Astro 5.18.2
+and 6.4.8 on Node 22.12 and 24. Coming from 1.x: see [Upgrading from 1.x](../../guides/upgrading/).
+
+### How compatibility is checked
+
+`npm test` runs the unit and end-to-end tests (real static build, dev server and Node SSR)
+against the Astro 7 installed in the repository. `npm run test:compat` copies the sources and
+tests into a temporary directory per Astro major, installs the newest release of that major
+together with the matching `@astrojs/node` adapter (9.x for Astro 5, 10.x for Astro 6) and
+Astro's Vite version, builds the package there and runs the full suite: component
+validation, graph, generated meta, static build, dev server and Node SSR.
+
+- Pass a major to check only that one (`npm run test:compat -- 6`); `--keep` keeps the
+  temporary directories.
+- It needs network access for `npm install` and Node 22.12 or newer, the minimum of the test
+  tooling, so Astro 5 on Node 18/20 is not covered. Run it under a specific Node version with
+  e.g. `volta run --node 22.12.0 npm run test:compat`.
+- Astro 6 runs with Vitest 4, because Vitest 5 on Vite 7 cannot load Astro 6's virtual
+  modules; this only affects the test setup.
 
 The runtime dependencies are `zod` and `schema-dts` (types only). The components add no client
 JavaScript to your pages; the Dev Toolbar panel exists only in `astro dev`.

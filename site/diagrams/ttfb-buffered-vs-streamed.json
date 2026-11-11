@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "type": "bar",
+  "orientation": "horizontal",
+  "title": "Time to first byte, streamed and buffered",
+  "description": "Median time to first byte of 60 requests per page and configuration. Without the middleware and in the default configuration the page streams: the first byte leaves after about 3 ms on the small page and about 13 ms on the large one, also when a component awaits data for 200 ms. With useGraph or generateMeta the response is buffered, so on the pages with an await the first byte leaves only when the page is complete, after about 204 ms and 215 ms. Without an await all configurations are about equal.",
+  "source": "npm run bench:ssr (scripts/bench-ssr/), Apple Silicon Mac, Node 24, Astro 7.3, @astrojs/node 11.1",
+  "categoryAxis": { "title": "Page" },
+  "valueAxis": { "title": "Time to first byte, ms", "decimals": 1 },
+  "categories": ["small (6 KB)", "small + await", "large (2.7 MB)", "large + await"],
+  "series": [
+    { "name": "Without the middleware", "values": [2.6, 2.7, 10.9, 13.6] },
+    { "name": "Default (streams)", "values": [2.2, 3.4, 11.0, 12.9] },
+    { "name": "useGraph: true", "values": [2.4, 204.1, 10.8, 218.2] },
+    { "name": "generateMeta: true", "values": [2.0, 203.7, 11.6, 215.1] }
+  ],
+  "width": 760,
+  "height": 520,
+  "mobile": { "width": 360, "height": 640 }
+}

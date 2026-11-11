@@ -14,22 +14,45 @@ import { ArticleSchema } from '@casoon/astro-structured-data/components';
 ---
 
 <ArticleSchema
-  title="Structured data for Astro sites"
-  description="How JSON-LD is generated from typed, validated component props."
-  datePublished="2026-09-10"
-  authorName="Jane Doe"
-  imageUrl="/images/structured-data.jpg"
+  title="Hello, Astro"
+  description="Our first post."
+  datePublished="2026-10-01"
+  authorName="Ada Lovelace"
+  imageUrl="/img/hello.jpg"
+  publisherName="Example Blog"
 />
 ```
 
 The component can sit in the page body or in the layout's `<head>`; the output is the same.
+In a layout, pass the data you already have, e.g. `title={post.data.title}`.
 
 ## Build
 
-Run `astro build`. The page now contains a `<script type="application/ld+json">` block with a
-`BlogPosting` (the default `schemaType` of `ArticleSchema`), the author as a `Person`, and
-`mainEntityOfPage` pointing to the page URL built from your site URL. The
-[showcase](../../../showcase/blog-post/) shows the complete output of this example, rendered by
+Run `astro build`. On `/blog/hello-astro/` of `https://example.com`, the page now contains a
+`<script type="application/ld+json">` block with a `BlogPosting` (the default `schemaType` of
+`ArticleSchema`), the author as a `Person`, and `mainEntityOfPage` pointing to the page URL
+built from your site URL:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Hello, Astro",
+  "description": "Our first post.",
+  "datePublished": "2026-10-01",
+  "dateModified": "2026-10-01",
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://example.com/blog/hello-astro/" },
+  "author": { "@type": "Person", "name": "Ada Lovelace" },
+  "isAccessibleForFree": true,
+  "publisher": { "@type": "Organization", "name": "Example Blog" },
+  "image": { "@type": "ImageObject", "url": "/img/hello.jpg" }
+}
+```
+
+With `generateMeta: true`, the same data also fills the canonical link, the description and
+the Open Graph and Twitter tags in `<head>`; the
+[meta tags guide](../../guides/meta-tags/#example) shows the tags of this example. The
+[showcase](../../../showcase/blog-post/) shows the complete output of a blog post, rendered by
 the package while this site was built.
 
 ## When the data is wrong

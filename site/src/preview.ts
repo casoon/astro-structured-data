@@ -172,7 +172,7 @@ export function previewHtml(jsonLd: unknown[]): string | undefined {
 
 /** Styles for the card; uses the theme's colour tokens. Included once per output. */
 export const previewStyles = `<style>
-.sd-preview{padding:18px;border:1px solid var(--border);border-radius:12px;background:var(--bg-deep)}
+.sd-preview{padding:18px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}
 .sd-preview p{margin:0}
 .sd-path{color:var(--muted);font-size:13px}
 .sd-title{margin:4px 0 8px!important;color:var(--accent);font-size:19px;font-weight:500;line-height:1.3}

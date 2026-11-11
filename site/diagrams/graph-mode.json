@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "type": "flow",
+  "title": "How graph mode builds the @graph block",
+  "description": "While the page renders, every schema component validates its props and registers its schema in a store kept per request and page in Astro.locals; <SchemaGraph /> renders only a placeholder. Once the page has fully rendered, the middleware resolves the page identity: the url of WebPageSchema, otherwise the site URL plus the page path. An article's mainEntityOfPage is pointed to that @id. If the page renders <SchemaGraph /> not exactly once, the build fails. Otherwise the placeholder is replaced by one script of type application/ld+json holding all schemas in an @graph array. With generateMeta, the canonical, Open Graph and Twitter tags of the primary schema, such as an article, are inserted into <head> as well, with the page @id as canonical URL.",
+  "source": "src/components/Schema.astro, src/components/SchemaGraph.astro, src/middleware.ts, src/utils/graph.ts, src/utils/meta.ts, src/utils/json-ld.ts",
+  "width": 1084,
+  "height": 884,
+  "flow": {
+    "lanes": [
+      {
+        "id": "render",
+        "label": "While the page renders"
+      },
+      {
+        "id": "middleware",
+        "label": "Middleware, after rendering"
+      },
+      {
+        "id": "html",
+        "label": "HTML response"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "components",
+        "label": "Schema components",
+        "sublabel": "validate props",
+        "lane": "render",
+        "kind": "start"
+      },
+      {
+        "id": "store",
+        "label": "Per-page store",
+        "sublabel": "Astro.locals",
+        "lane": "render",
+        "kind": "store"
+      },
+      {
+        "id": "placeholder",
+        "label": "<SchemaGraph />",
+        "sublabel": "placeholder only",
+        "lane": "render"
+      },
+      {
+        "id": "pageid",
+        "label": "Page identity",
+        "sublabel": "WebPage url / site + path",
+        "lane": "middleware"
+      },
+      {
+        "id": "link",
+        "label": "mainEntityOfPage",
+        "sublabel": "→ page @id",
+        "lane": "middleware"
+      },
+      {
+        "id": "once",
+        "label": "Exactly once?",
+        "lane": "middleware",
+        "kind": "decision"
+      },
+      {
+        "id": "fail",
+        "label": "Build fails",
+        "sublabel": "none or several",
+        "lane": "html",
+        "kind": "end"
+      },
+      {
+        "id": "graph",
+        "label": "One @graph script",
+        "sublabel": "at the placeholder",
+        "lane": "html",
+        "kind": "io"
+      },
+      {
+        "id": "meta",
+        "label": "Meta tags",
+        "sublabel": "of the primary schema",
+        "lane": "html",
+        "kind": "end"
+      }
+    ],
+    "edges": [
+      {
+        "from": "components",
+        "to": "store",
+        "label": "register"
+      },
+      {
+        "from": "store",
+        "to": "pageid",
+        "label": "whole body read"
+      },
+      {
+        "from": "pageid",
+        "to": "link"
+      },
+      {
+        "from": "link",
+        "to": "once"
+      },
+      {
+        "from": "once",
+        "to": "fail",
+        "label": "no"
+      },
+      {
+        "from": "once",
+        "to": "graph",
+        "label": "yes"
+      },
+      {
+        "from": "placeholder",
+        "to": "once",
+        "dash": "dashed"
+      },
+      {
+        "from": "graph",
+        "to": "meta",
+        "label": "generateMeta",
+        "dash": "dashed"
+      }
+    ],
+    "mainPath": [
+      "components",
+      "store",
+      "pageid",
+      "link",
+      "once",
+      "graph"
+    ]
+  }
+}
