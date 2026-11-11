@@ -100,11 +100,17 @@ export default function structuredData(options: StructuredDataOptions = {}): Ast
             } catch (error) {
               throw new Error(`[astro-structured-data] Invalid JSON-LD in ${file}: ${(error as Error).message}`);
             }
-            if (options.warnOnMissingRecommended === false) continue;
-
             // A block holds one item, an array of items, or a @graph (also inside such an array).
+            // Nulls carry no data and are skipped; anything else that is not an object can't be checked.
             const items: any[] = (Array.isArray(data) ? data : [data])
-              .flatMap((entry: any) => (Array.isArray(entry?.['@graph']) ? entry['@graph'] : [entry]));
+              .flatMap((entry: any) => (Array.isArray(entry?.['@graph']) ? entry['@graph'] : [entry]))
+              .filter((item: unknown) => {
+                if (item === null) return false;
+                if (typeof item === 'object' && !Array.isArray(item)) return true;
+                logger.warn(`[structured-data] Unsupported JSON-LD in ${file}: expected an object, got ${Array.isArray(item) ? 'array' : typeof item}`);
+                return false;
+              });
+            if (options.warnOnMissingRecommended === false) continue;
 
             for (const item of items) {
               for (const field of missingRecommended(item)) {

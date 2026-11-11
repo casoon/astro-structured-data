@@ -163,13 +163,15 @@ export default defineToolbarApp({
         }
         if (data !== undefined) {
           // Rendering errors are bugs of the panel, not invalid JSON — let them surface as such.
-          if (data['@graph'] && Array.isArray(data['@graph'])) {
+          // Nulls carry no data and get no card.
+          if (data === null) return;
+          if (Array.isArray(data['@graph'])) {
             data['@graph'].forEach((item: any, idx: number) => {
-              createCard(item, `Script #${index + 1} (Graph Item #${idx + 1})`, true);
+              if (item !== null) createCard(item, `Script #${index + 1} (Graph Item #${idx + 1})`, true);
             });
           } else if (Array.isArray(data)) {
             data.forEach((item: any, idx: number) => {
-              createCard(item, `Script #${index + 1} (Item #${idx + 1})`);
+              if (item !== null) createCard(item, `Script #${index + 1} (Item #${idx + 1})`);
             });
           } else {
             createCard(data, `Script #${index + 1}`);
