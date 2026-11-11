@@ -98,6 +98,24 @@ test('checks items inside @graph and stays quiet when everything is present', as
   expect(warnings).toEqual([]);
 });
 
+test.each([
+  ['top level', null],
+  ['an array', [null, { '@type': 'Organization', name: 'ACME' }]],
+  ['a @graph', { '@context': 'https://schema.org', '@graph': [null, { '@type': 'Organization', name: 'ACME' }] }],
+])('skips null JSON-LD at %s', async (_, data) => {
+  const warnings = await buildDone(jsonLd(data));
+  expect(warnings.every((w) => /Organization is missing recommended field/.test(w))).toBe(true);
+  expect(warnings.length > 0).toBe(data !== null);
+});
+
+test('reports unsupported JSON-LD structures with the file instead of crashing', async () => {
+  expect(await buildDone(jsonLd([42, 'text', [{}]]))).toEqual([
+    '[structured-data] Unsupported JSON-LD in index.html: expected an object, got number',
+    '[structured-data] Unsupported JSON-LD in index.html: expected an object, got string',
+    '[structured-data] Unsupported JSON-LD in index.html: expected an object, got array',
+  ]);
+});
+
 test('can disable the recommended-field warnings but still validates JSON', async () => {
   expect(await buildDone(jsonLd({ '@type': 'Organization', name: 'ACME' }), { warnOnMissingRecommended: false })).toEqual([]);
   await expect(buildDone('<script type="application/ld+json">nope</script>', { warnOnMissingRecommended: false })).rejects.toThrow(/Invalid JSON-LD/);

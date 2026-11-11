@@ -29,6 +29,10 @@ components are placed, including components that await data first.
   `WebPageSchema` `url` or an article's `mainEntityOfPage`. The `url` of an event, business or
   product is never used as the page's canonical. If the page sets its own canonical link,
   `og:url` uses that URL too, so both always agree.
+- **Rewrites:** after a middleware rewrite (`next('/target')` or `context.rewrite()`), the
+  tags come from the schemas of the rewrite target, and the page path for the canonical is the
+  target's path, the same path the components build their page URLs from. To point an alias
+  elsewhere, pass `url` to `WebPageSchema`.
 - A page with a primary schema but no `</head>` fails the build.
 
 HTML responses are buffered by the middleware rather than streamed.

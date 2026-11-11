@@ -1,0 +1,8 @@
+---
+// Page content: `count` list rows of about 170 bytes each.
+const { count } = Astro.props;
+const rows = Array.from({ length: count }, (_, i) => i);
+---
+<ul>
+  {rows.map((i) => <li>Row {i}: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li>)}
+</ul>

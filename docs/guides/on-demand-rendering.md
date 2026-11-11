@@ -17,18 +17,68 @@ CMS or an API therefore needs the same care as any other input. Validate it wher
 in, for example with the exported [Zod schemas](../content-collections/), and decide there
 what a page without valid data shows.
 
-## Responses are buffered
+## Streaming and buffering
 
 The integration adds a middleware that completes every HTML page once it has rendered: it
 inserts the `@graph` block in [graph mode](../graph-mode/), checks the sitemap hints of the
 page and inserts the [meta tags](../meta-tags/) with `generateMeta`. Components that await
-data register their schemas only while the page streams, so the middleware reads the whole
-response before it changes anything. HTML responses are therefore sent in one piece instead
-of being streamed.
+data register their schemas only while the page streams.
 
-For most pages this makes no measurable difference. For very large pages rendered on demand,
-it delays the first byte until the page is complete. Responses that are not HTML, and
-responses without a body, are passed through unchanged.
+- **With `useGraph` or `generateMeta`,** the middleware has to change the page after the last
+  schema has registered, so it reads the whole response first. These HTML responses are sent
+  in one piece: the first byte leaves when the page is complete.
+- **Without both (the default),** nothing is inserted and the page streams as Astro renders
+  it. The sitemap hints are checked before each chunk is passed on, so a conflict is still
+  found, and the block of the conflicting schema is never sent.
+
+Responses that are not HTML, and responses without a body, are passed through unchanged.
+
+### When a streamed page is held back
+
+An `ArticleSchema` refers to the page node with `mainEntityOfPage`. If a `WebPageSchema` with
+a different `url` renders after it, the middleware points that reference to the WebPage's
+`url` at the end of the page. A block that has already been sent cannot be changed, so from
+an article on, the rest of the page is held back until it is complete, unless a page schema
+whose `url` is the page's own URL rendered before it. Put `WebPageSchema` before
+`ArticleSchema`, for example in the layout, to keep such pages streaming.
+
+### Errors after the first chunk
+
+Errors found while the first chunk is checked fail the request as before (see above). Once
+the first chunk has been sent, the status `200` and the headers are out. A later conflict of
+sitemap hints, like any other error of a component that renders later (for example invalid
+props after an `await`), then breaks off the response: Astro logs the error, ends the body
+with `Internal server error` and closes the connection, so the client sees an incomplete
+response. This is how Astro handles errors in streamed pages without the integration, too.
+If a page must answer with an error page instead, enable `generateMeta` or `useGraph`, or
+validate the data before the page starts rendering.
+
+### Measurements
+
+`npm run bench:ssr` builds a test site with the Node adapter (`scripts/bench-ssr/`) and
+measures time to first byte (median of 60 sequential requests) and the peak memory increase
+of the server for 60 requests in batches of 10. The page has a `WebPageSchema` and an
+`ArticleSchema` before its content; "await" adds a component between two halves of the
+content that waits 200 ms before rendering its schema. Measured on an Apple Silicon Mac with
+Node 24, Astro 7.3 and `@astrojs/node` 11.1:
+
+| Configuration | small (6 KB) | small + await | large (2.7 MB) | large + await | large + await, article without WebPage |
+| --- | --- | --- | --- | --- | --- |
+| Without the middleware | 2.6 ms | 2.7 ms | 10.9 ms | 13.6 ms | 11.6 ms |
+| Default (streams) | 2.2 ms | 3.4 ms | 11.0 ms | 12.9 ms | 215.9 ms |
+| `useGraph: true` | 2.4 ms | 204.1 ms | 10.8 ms | 218.2 ms | 216.0 ms |
+| `generateMeta: true` | 2.0 ms | 203.7 ms | 11.6 ms | 215.1 ms | 214.1 ms |
+
+The total time per request is the same in all configurations (about 2 ms, 204 ms, 13 ms and
+215 ms). Buffering does not make pages slower; it moves the first byte to the end of the
+render, so a page that waits for data sends nothing until the data is there. Pages whose
+frontmatter awaits the data before any output are not affected, because Astro sends nothing
+before that either.
+
+Peak memory of the server for the large page with an await (10 parallel requests): about
+210–240 MB more than at rest without the middleware and with streaming, about 430–480 MB with
+graph mode or meta tags, which hold the page as a string while they complete it. The values
+vary by tens of MB between runs; small pages show no difference.
 
 ## The build report covers built HTML
 

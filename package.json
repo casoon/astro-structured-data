@@ -34,6 +34,8 @@
   "scripts": {
     "build": "tsc && node scripts/build-components.mjs",
     "test": "vitest run",
+    "test:compat": "node scripts/compat.mjs",
+    "bench:ssr": "npm run build && node scripts/bench-ssr/run.mjs",
     "prepublishOnly": "npm run build",
     "check": "astro check --tsconfig tsconfig.check.json"
   },

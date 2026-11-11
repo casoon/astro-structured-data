@@ -1,3 +1,5 @@
+import { isAggregateOffer, missingOfferPrice } from '../utils/offers.js';
+
 // Types the toolbar has content checks for; anything else is shown as "Not checked", never "Valid".
 export const CHECKED_TYPES = new Set([
   'Article', 'BlogPosting', 'NewsArticle', 'FAQPage', 'Product', 'CollectionPage', 'BreadcrumbList',
@@ -41,23 +43,25 @@ export function collectWarnings(data: any, isGraphMember: boolean): string[] {
     if (!data.offers) {
       warnings.push("Missing 'offers' (recommended for Google Rich Results)");
     } else {
-      const validateSingleOffer = (offer: any, prefix = "") => {
-        if (offer.price === undefined) warnings.push(`${prefix}Offer is missing 'price'`);
-        if (!offer.priceCurrency) warnings.push(`${prefix}Offer is missing 'priceCurrency'`);
-        if (!offer.shippingDetails) warnings.push(`${prefix}Offer is missing 'shippingDetails' (recommended for Google Merchant Listings)`);
-        if (!offer.hasMerchantReturnPolicy) warnings.push(`${prefix}Offer is missing 'hasMerchantReturnPolicy' (recommended for Google Merchant Listings)`);
+      const validateOffer = (offer: any, suffix = "") => {
+        if (offer === null || typeof offer !== 'object') {
+          warnings.push(`Offer${suffix} must be an object`);
+          return;
+        }
+        const label = `${isAggregateOffer(offer) ? 'AggregateOffer' : 'Offer'}${suffix}`;
+        for (const field of missingOfferPrice(offer)) warnings.push(`${label} is missing '${field}'`);
+        if (isAggregateOffer(offer)) {
+          if (offer.highPrice == null) warnings.push(`${label} is missing 'highPrice' (recommended)`);
+        } else {
+          if (!offer.shippingDetails) warnings.push(`${label} is missing 'shippingDetails' (recommended for Google Merchant Listings)`);
+          if (!offer.hasMerchantReturnPolicy) warnings.push(`${label} is missing 'hasMerchantReturnPolicy' (recommended for Google Merchant Listings)`);
+        }
       };
 
       if (Array.isArray(data.offers)) {
-        data.offers.forEach((o: any, idx: number) => {
-          validateSingleOffer(o, `Offer #${idx + 1} `);
-        });
-      } else if (data.offers['@type'] === 'AggregateOffer') {
-        if (data.offers.lowPrice === undefined) warnings.push("AggregateOffer is missing 'lowPrice'");
-        if (data.offers.highPrice === undefined) warnings.push("AggregateOffer is missing 'highPrice'");
-        if (!data.offers.priceCurrency) warnings.push("AggregateOffer is missing 'priceCurrency'");
+        data.offers.forEach((o: any, idx: number) => validateOffer(o, ` #${idx + 1}`));
       } else {
-        validateSingleOffer(data.offers);
+        validateOffer(data.offers);
       }
     }
   } else if (schemaType === 'CollectionPage') {

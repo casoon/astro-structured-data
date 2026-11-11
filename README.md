@@ -314,7 +314,7 @@ Every example in the [showcase](https://casoon.github.io/astro-structured-data/s
 
 Options are validated when the integration is created; unknown keys and invalid values fail the build.
 
-The integration adds a middleware that completes every HTML page once it has rendered: it inserts the `@graph` block (graph mode) and the meta tags (`generateMeta`). Because it needs the complete page, HTML responses are buffered instead of streamed.
+The integration adds a middleware that completes every HTML page once it has rendered: it inserts the `@graph` block (graph mode) and the meta tags (`generateMeta`). Because it needs the complete page for that, HTML responses are buffered instead of streamed in these two modes; without both, pages stream (see the on-demand rendering guide).
 
 ## Validation
 
@@ -673,12 +673,12 @@ Docs: [schema.org/Organization](https://schema.org/Organization) · [Google: Org
 
 ### WebSiteSchema
 
-Docs: [schema.org/WebSite](https://schema.org/WebSite) · [Google: Sitelinks Searchbox](https://developers.google.com/search/docs/appearance/structured-data/sitelinks-searchbox)
+Docs: [schema.org/WebSite](https://schema.org/WebSite) · [schema.org/SearchAction](https://schema.org/SearchAction)
 
 ```astro
 <WebSiteSchema name="My Site" />
 
-<!-- With Sitelinks Searchbox -->
+<!-- With a SearchAction for the site search -->
 <WebSiteSchema name="My Site" searchQueryInput="q" />
 ```
 
@@ -687,7 +687,7 @@ Docs: [schema.org/WebSite](https://schema.org/WebSite) · [Google: Sitelinks Sea
 | `name` | `string` | Yes | Site name |
 | `url` | `string` | No | Site URL (falls back to `siteUrl`) |
 | `id` | `string` | No | `@id` for linked data, e.g. `'https://example.com/#website'` |
-| `searchQueryInput` | `string` | No | URL query param name to enable Sitelinks Searchbox, e.g. `'q'` |
+| `searchQueryInput` | `string` | No | Query param name of the site search, e.g. `'q'`; adds a schema.org `SearchAction` (Google no longer shows the sitelinks search box) |
 
 ---
 
@@ -1097,15 +1097,22 @@ Returns `{ wordCount: number; readingTimeMinutes: number; timeRequired: string }
 | 1.5.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 1.4.x | 5.x · 6.x | ≥ 18 |
 
+The Node.js minimum is the one of your Astro version (its `engines` field): Astro 5 needs 18.20.8, 20.3 or 22+, Astro 6 needs 22.12+, Astro 7.4 needs 22.23.4+.
+
+Astro 5 and 6 are checked locally with `npm run test:compat` (see Development); last verified with Astro 5.18.2 and 6.4.8 on Node 22.12 and 24.
+
 Coming from 1.x: see the [upgrade guide](https://casoon.github.io/astro-structured-data/docs/guides/upgrading/). All changes are listed in the [changelog](CHANGELOG.md).
 
 ## Development
 
 ```bash
-npm test        # unit tests and end-to-end tests (real static build, dev server and Node SSR)
-npm run check   # type-check, including the .astro components
+npm test              # unit tests and end-to-end tests (real static build, dev server and Node SSR)
+npm run test:compat   # the same suite against Astro 5 and Astro 6
+npm run check         # type-check, including the .astro components
 npm run build
 ```
+
+`npm test` runs against the Astro 7 installed in the repo. `npm run test:compat` copies the sources and tests into a temporary directory per Astro major, installs the newest release of that major together with the matching `@astrojs/node` adapter (9.x for Astro 5, 10.x for Astro 6) and Astro's Vite version, builds the package there and runs the full suite: component validation, graph, generated meta, static build, dev server and Node SSR. Pass a major to check only that one (`npm run test:compat -- 6`), `--keep` keeps the temporary directories. It needs network access for `npm install` and Node 22.12 or newer (the minimum of the test tooling, so Astro 5 on Node 18/20 is not covered); run it under a specific Node version with e.g. `volta run --node 22.12.0 npm run test:compat`. Astro 6 runs with Vitest 4, because Vitest 5 on Vite 7 cannot load Astro 6's virtual modules; this only affects the test setup.
 
 ## License
 

@@ -1,0 +1,7 @@
+---
+// Awaits "data" before rendering its schema, like a component that loads from a CMS.
+import { FAQSchema } from '../../../../dist/components.js';
+
+await new Promise((resolve) => setTimeout(resolve, 200));
+---
+<FAQSchema questions={[{ question: 'Delayed?', answer: 'Rendered after 200 ms.' }]} />

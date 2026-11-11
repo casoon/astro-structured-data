@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { missingOfferPrice } from './utils/offers.js';
 
 // ---------------------------------------------------------------------------
 // Building blocks
@@ -169,9 +170,8 @@ const singleOffer = withType(z.looseObject({
   priceSpecification: oneOrMore(priceSpecification).optional(),
   ...offerCommon,
 }).superRefine((offer, ctx) => {
-  if (offer.priceSpecification === undefined) {
-    if (offer.price === undefined) ctx.addIssue({ code: 'custom', path: ['price'], message: 'Required unless priceSpecification is set' });
-    if (offer.priceCurrency === undefined) ctx.addIssue({ code: 'custom', path: ['priceCurrency'], message: 'Required unless priceSpecification is set' });
+  for (const field of missingOfferPrice(offer)) {
+    ctx.addIssue({ code: 'custom', path: [field], message: 'Required unless priceSpecification is set' });
   }
 }), 'Offer');
 

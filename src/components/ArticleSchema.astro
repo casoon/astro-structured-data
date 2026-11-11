@@ -3,122 +3,16 @@ import Schema from './Schema.astro';
 // @ts-ignore
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { articleZodSchema, type ArticleProps } from '../zod';
-import { fail, parseProps } from '../utils/validate';
+import { parseProps } from '../utils/validate';
 import { pageUrl } from '../utils/meta';
-import { buildReference, buildReferences } from '../utils/reference';
+import { buildArticle } from '../builders/article';
 
 type Props = ArticleProps;
 
 const page = Astro.url.pathname;
-const {
-  changefreq,
-  priority,
-  id,
-  title,
-  description,
-  datePublished,
-  dateModified,
-  authorName,
-  authorType = 'Person',
-  authorUrl,
-  authorId,
-  imageUrl,
-  imageWidth,
-  imageHeight,
-  imageFormat,
-  imageCaption,
-  publisherName,
-  publisherLogo,
-  publisherId,
-  schemaType = 'BlogPosting',
-  inLanguage,
-  articleSection,
-  keywords,
-  wordCount,
-  readingTimeMinutes,
-  isAccessibleForFree = true,
-  isPartOfHeadline,
-  isPartOfUrl,
-  isPartOf,
-  seriesPosition,
-  hasPart,
-} = parseProps('ArticleSchema', articleZodSchema, Astro.props, page);
+const { changefreq, priority, ...props } = parseProps('ArticleSchema', articleZodSchema, Astro.props, page);
 
 const globalConfig = getGlobalConfig();
-const resolvedPublisherName = publisherName ?? globalConfig.defaultArticlePublisher?.name;
-const resolvedPublisherLogo = publisherLogo ?? globalConfig.defaultArticlePublisher?.logo?.url;
-// The default @id only belongs to the default publisher, not to one named via props.
-const resolvedPublisherId = publisherId ?? (publisherName ? undefined : globalConfig.defaultArticlePublisher?.id);
-if (resolvedPublisherLogo && !resolvedPublisherName) {
-  fail('ArticleSchema', page, '"publisherLogo" needs a publisher name (publisherName prop or defaultArticlePublisher.name)');
-}
-if (publisherId && !resolvedPublisherName) {
-  fail('ArticleSchema', page, '"publisherId" needs a publisher name (publisherName prop or defaultArticlePublisher.name)');
-}
-
-const buildAuthor = (name: string) => ({
-  '@type': authorType,
-  name,
-  ...(authorId ? { '@id': authorId } : {}),
-  ...(authorUrl ? { url: authorUrl } : {}),
-});
-
-const articleSchema: Record<string, any> = {
-  '@type': schemaType,
-  ...(id ? { '@id': id } : {}),
-  headline: title,
-  description,
-  datePublished,
-  dateModified: dateModified ?? datePublished,
-  mainEntityOfPage: {
-    '@type': 'WebPage',
-    '@id': pageUrl(page, globalConfig.siteUrl),
-  },
-  author: Array.isArray(authorName)
-    ? authorName.map(buildAuthor)
-    : buildAuthor(authorName),
-  isAccessibleForFree,
-};
-
-if (resolvedPublisherName) {
-  articleSchema.publisher = {
-    '@type': 'Organization',
-    name: resolvedPublisherName,
-    ...(resolvedPublisherId ? { '@id': resolvedPublisherId } : {}),
-    ...(resolvedPublisherLogo
-      ? { logo: { '@type': 'ImageObject', url: resolvedPublisherLogo } }
-      : {}),
-  };
-}
-
-if (imageUrl) {
-  articleSchema.image = {
-    '@type': 'ImageObject',
-    url: imageUrl,
-    ...(imageWidth ? { width: imageWidth } : {}),
-    ...(imageHeight ? { height: imageHeight } : {}),
-    ...(imageFormat ? { encodingFormat: imageFormat } : {}),
-    ...(imageCaption ? { caption: imageCaption } : {}),
-  };
-}
-
-if (inLanguage) articleSchema.inLanguage = inLanguage;
-if (articleSection) articleSchema.articleSection = articleSection;
-
-if (keywords) {
-  articleSchema.keywords = Array.isArray(keywords) ? keywords.join(', ') : keywords;
-}
-
-if (wordCount) articleSchema.wordCount = wordCount;
-if (readingTimeMinutes) articleSchema.timeRequired = `PT${readingTimeMinutes}M`;
-
-if (isPartOf) {
-  articleSchema.isPartOf = buildReferences(isPartOf, schemaType);
-} else if (isPartOfHeadline && isPartOfUrl) {
-  articleSchema.isPartOf = buildReference({ headline: isPartOfHeadline, url: isPartOfUrl }, schemaType);
-}
-if (articleSchema.isPartOf && seriesPosition !== undefined) articleSchema.position = seriesPosition;
-
-if (hasPart) articleSchema.hasPart = hasPart.map((part) => buildReference(part, schemaType));
+const articleSchema = buildArticle(props, { url: pageUrl(page, globalConfig.siteUrl), page, config: globalConfig });
 ---
 <Schema item={articleSchema} changefreq={changefreq} priority={priority} />

@@ -113,7 +113,8 @@ On `/blog/structured-data-in-astro/`:
 }
 ```
 
-- `mainEntityOfPage` is always the current page, built from `siteUrl` and the page path.
+- `mainEntityOfPage` refers to the page node: built from `siteUrl` and the page path, or the
+  `url` of a `WebPageSchema` on the same page, so both share one `@id`.
 - `publisher` comes from `defaultArticlePublisher` because no `publisherName` was passed.
 - `keywords` is joined into one comma-separated string; `readingTimeMinutes` becomes
   `timeRequired` as an ISO 8601 duration.

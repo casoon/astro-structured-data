@@ -1,0 +1,23 @@
+---
+// `?rows=N` sets the page size (rendered twice), `?delay` renders a component between both
+// halves that awaits data for 200 ms before registering its schema. `?article-only` leaves out
+// the WebPageSchema that otherwise renders before the ArticleSchema.
+import { ArticleSchema, WebPageSchema } from '../../../../dist/components.js';
+import Layout from '../layouts/Layout.astro';
+import Delayed from '../components/Delayed.astro';
+import Rows from '../components/Rows.astro';
+
+export const prerender = false;
+const rows = Number(Astro.url.searchParams.get('rows') ?? 20);
+const delay = Astro.url.searchParams.has('delay');
+const articleOnly = Astro.url.searchParams.has('article-only');
+---
+<Layout>
+  {!articleOnly && <WebPageSchema title="Benchmark page" changefreq="weekly" />}
+  <ArticleSchema title="Benchmark" description="SSR benchmark page" datePublished="2026-01-01" authorName="Ada" />
+  <main>
+    <Rows count={rows} />
+    {delay && <Delayed />}
+    <Rows count={rows} />
+  </main>
+</Layout>

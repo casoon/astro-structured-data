@@ -26,8 +26,10 @@ import { SchemaGraph } from '@casoon/astro-structured-data/components';
 
 `<SchemaGraph />` only marks the position. The `@graph` is filled in by the integration's
 middleware after the whole page has rendered, so schema components can sit anywhere: before or
-after it, and in components that await data. Schemas are collected per page path, so nothing
-leaks from one page into the next during a static build.
+after it, and in components that await data. Schemas are collected per request and page, so
+nothing leaks from one page into the next during a static build. After a middleware rewrite
+(`next('/target')` or `context.rewrite()`), the graph holds the schemas of the rewrite target,
+the page that actually rendered.
 
 A page with schemas but without `<SchemaGraph />`, or with more than one, fails the build
 so no schema goes missing. Without `useGraph`, `<SchemaGraph />` renders nothing.
@@ -50,3 +52,16 @@ page one too (`ArticleSchema`, `ProductSchema`, `EventSchema`, `RecipeSchema`, `
 | `ProductSchema` | `isVariantOf`, `hasVariant`, `isRelatedTo`, `isSimilarTo`, `isAccessoryOrSparePartFor`, `isConsumableFor` |
 | `OrganizationSchema`, `LocalBusinessSchema` | `parentOrganization`, `subOrganization` |
 | `EventSchema` | `superEvent`, `subEvent` |
+
+## ID conventions
+
+- **Page:** the page node's `@id` is the page URL: the `url` passed to `WebPageSchema`, otherwise
+  `siteUrl` plus the page path. An article's `mainEntityOfPage` refers to the same `@id`, also
+  when `WebPageSchema` sets `url` and whichever component renders first, and the canonical
+  link with `generateMeta` uses it too.
+- **Website:** give `WebSiteSchema` an `id` such as `https://example.com/#website` and refer to
+  it from `WebPageSchema` with `isPartOf`.
+- **Organization:** set `defaultArticlePublisher.id`, for example
+  `https://example.com/#organization`. `OrganizationSchema` and the publisher of `ArticleSchema`
+  and `WebPageSchema` (and the hiring organization of `JobPostingSchema`) then share that `@id`.
+  A publisher or organization named via props does not get this `@id`; pass its own `id`.

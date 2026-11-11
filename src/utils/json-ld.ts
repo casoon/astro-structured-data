@@ -25,6 +25,11 @@ export function serializeJsonLd(value: unknown): string {
   );
 }
 
+/** The JSON of a schema's own `<script type="application/ld+json">` block (without graph mode). */
+export function serializeSchemaItem(item: Record<string, any>): string {
+  return serializeJsonLd({ '@context': 'https://schema.org', ...stripNonSchemaKeys(item) });
+}
+
 export interface SitemapHints {
   changefreq?: string;
   priority?: number;

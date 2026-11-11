@@ -27,6 +27,14 @@ export function resetSchemas(locals: any, pageKey?: string) {
   locals.__structuredDataGraphPage = pageKey;
 }
 
+/**
+ * The page the store holds schemas for: the path the components rendered under. After a
+ * middleware rewrite that is the rewrite target, not the path that was requested.
+ */
+export function getRegisteredPage(locals: any): string | undefined {
+  return locals?.__structuredDataGraphPage;
+}
+
 export function getRegisteredSchemas(locals: any, pageKey?: string): Record<string, any>[] {
   return locals?.__structuredDataGraphPage === pageKey ? (locals.structuredDataGraph ?? []) : [];
 }
