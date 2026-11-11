@@ -2,11 +2,9 @@
 # Regenerates the terminal captures on the start page: real builds of the sample project in
 # fixture/ with the package built at the repository root.
 #   npm run build && site/captures/capture.sh
-# Rebuild the scenes (wide, and narrow for phones) after a capture. castwright 0.6 loads shiki
-# from its own install, so install both into one scratch directory ($cw) instead of npx -p:
-#   npm i --prefix "$cw" @casoon/castwright@0.6.0 shiki
+# Rebuild the scenes (wide, and narrow for phones) after a capture:
 #   cd site/captures && for f in build build-narrow; do
-#     "$cw/node_modules/.bin/castwright" build "$f.terminal.yaml" --format svg -o .; done
+#     npx -y -p @casoon/castwright@0.6.0 -p shiki castwright build "$f.terminal.yaml" --format svg -o .; done
 set -euo pipefail
 
 out="$(cd "$(dirname "$0")" && pwd)"
