@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
+import { buildArticle, type ArticleContext } from '../src/builders/article.ts';
 import { buildProduct, type ProductContext } from '../src/builders/product.ts';
-import { productZodSchema, structuredDataOptionsSchema } from '../src/zod.ts';
+import { articleZodSchema, productZodSchema, structuredDataOptionsSchema } from '../src/zod.ts';
 
 const url = 'https://example.com/shop/gadget/';
 const product = { name: 'Gadget', description: 'A gadget', imageUrl: '/gadget.jpg' };
@@ -175,5 +176,99 @@ describe('buildProduct references', () => {
     expect(data.isSimilarTo).toEqual([{ '@type': 'Product', '@id': '#a' }, { '@type': 'Product', url: '/b/' }]);
     expect(data.isAccessoryOrSparePartFor).toEqual({ '@type': 'ProductGroup', '@id': '/pants/#group' });
     expect(data.isConsumableFor).toEqual({ '@type': 'Product', '@id': '/printer/' });
+  });
+});
+
+const article = { title: 'Title', description: 'Description', datePublished: '2026-01-01', authorName: 'Ada' };
+
+const article$ = (props: Record<string, unknown>, options: Record<string, unknown> = {}): any => {
+  const config: ArticleContext['config'] = structuredDataOptionsSchema.parse(options);
+  return buildArticle(articleZodSchema.parse({ ...article, ...props }), { url, page: '/shop/gadget/', config });
+};
+
+describe('buildArticle defaults', () => {
+  test('minimal props', () => {
+    expect(article$({})).toEqual({
+      '@type': 'BlogPosting',
+      headline: 'Title',
+      description: 'Description',
+      datePublished: '2026-01-01',
+      dateModified: '2026-01-01',
+      mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+      author: { '@type': 'Person', name: 'Ada' },
+      isAccessibleForFree: true,
+    });
+  });
+
+  test('explicit values replace the defaults', () => {
+    const data = article$({ schemaType: 'NewsArticle', authorType: 'Organization', dateModified: '2026-02-01', isAccessibleForFree: false });
+    expect(data).toMatchObject({
+      '@type': 'NewsArticle',
+      author: { '@type': 'Organization', name: 'Ada' },
+      dateModified: '2026-02-01',
+      isAccessibleForFree: false,
+    });
+  });
+
+  test('optional fields: image, keywords, reading time', () => {
+    const data = article$({
+      imageUrl: '/i.jpg', imageWidth: 800, imageHeight: 600, imageFormat: 'image/jpeg', imageCaption: 'Cap',
+      inLanguage: 'de', articleSection: 'Tech', keywords: ['a', 'b'], wordCount: 300, readingTimeMinutes: 5,
+    });
+    expect(data.image).toEqual({ '@type': 'ImageObject', url: '/i.jpg', width: 800, height: 600, encodingFormat: 'image/jpeg', caption: 'Cap' });
+    expect(data).toMatchObject({ inLanguage: 'de', articleSection: 'Tech', keywords: 'a, b', wordCount: 300, timeRequired: 'PT5M' });
+    expect(article$({ keywords: 'x, y' }).keywords).toBe('x, y');
+  });
+
+  test('defaultArticlePublisher fills the publisher, including its @id', () => {
+    const options = { defaultArticlePublisher: { name: 'Pub', logo: { url: '/logo.png' }, id: 'https://example.com/#org' } };
+    expect(article$({}, options).publisher).toEqual({
+      '@type': 'Organization', name: 'Pub', '@id': 'https://example.com/#org', logo: { '@type': 'ImageObject', url: '/logo.png' },
+    });
+  });
+
+  test('no publisher without a name', () => {
+    expect(article$({})).not.toHaveProperty('publisher');
+  });
+});
+
+describe('buildArticle references', () => {
+  test('@id and mainEntityOfPage', () => {
+    const data = article$({ id: '#post' });
+    expect(data['@id']).toBe('#post');
+    expect(data.mainEntityOfPage).toEqual({ '@type': 'WebPage', '@id': url });
+    expect(article$({})).not.toHaveProperty('@id');
+  });
+
+  test('author @id and url; several authors become an array', () => {
+    expect(article$({ authorId: '#ada', authorUrl: 'https://ada.example' }).author)
+      .toEqual({ '@type': 'Person', name: 'Ada', '@id': '#ada', url: 'https://ada.example' });
+    expect(article$({ authorName: ['Ada', 'Bob'] }).author)
+      .toEqual([{ '@type': 'Person', name: 'Ada' }, { '@type': 'Person', name: 'Bob' }]);
+  });
+
+  test('publisher @id: explicit, and the default id only for the default publisher', () => {
+    const options = { defaultArticlePublisher: { name: 'Pub', id: '#default' } };
+    expect(article$({ publisherName: 'Other' }, options).publisher).toEqual({ '@type': 'Organization', name: 'Other' });
+    expect(article$({ publisherName: 'Other', publisherId: '#other' }, options).publisher['@id']).toBe('#other');
+    expect(article$({ publisherId: '#own' }, options).publisher).toEqual({ '@type': 'Organization', name: 'Pub', '@id': '#own' });
+  });
+
+  test('publisher logo or id without any publisher name throws', () => {
+    expect(() => article$({ publisherLogo: '/logo.png' })).toThrow(/<ArticleSchema> on \/shop\/gadget\/: "publisherLogo"/);
+    expect(() => article$({ publisherId: '#p' })).toThrow(/"publisherId" needs a publisher name/);
+  });
+
+  test('isPartOf / hasPart default to the article type', () => {
+    expect(article$({ isPartOfHeadline: 'Series', isPartOfUrl: '/series/', seriesPosition: 2 })).toMatchObject({
+      isPartOf: { '@type': 'BlogPosting', headline: 'Series', url: '/series/' },
+      position: 2,
+    });
+    expect(article$({ schemaType: 'Article', isPartOf: [{ id: '#s1' }, { type: 'CreativeWorkSeries', url: '/s2/' }] }).isPartOf).toEqual([
+      { '@type': 'Article', '@id': '#s1' },
+      { '@type': 'CreativeWorkSeries', url: '/s2/' },
+    ]);
+    expect(article$({ hasPart: [{ id: '#p1', position: 1 }] }).hasPart).toEqual([{ '@type': 'BlogPosting', '@id': '#p1', position: 1 }]);
+    expect(article$({})).not.toHaveProperty('position');
   });
 });
