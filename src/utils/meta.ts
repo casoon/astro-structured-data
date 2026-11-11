@@ -63,6 +63,29 @@ export function findPageItems(items: Record<string, any>[]): Record<string, any>
   return items.filter((it) => hasType(it, ...PAGE_TYPES));
 }
 
+/**
+ * The page's identity: the `url` of a schema describing the page (`WebPageSchema`'s `url`
+ * prop) or else `defaultUrl`, the page's URL on the site. It is the WebPage's `@id` and the
+ * node an article's `mainEntityOfPage` refers to.
+ */
+export function resolvePageId(pageItems: Record<string, any>[], defaultUrl: string): string {
+  return pageItems.find((page) => typeof page.url === 'string')?.url ?? defaultUrl;
+}
+
+/**
+ * Points `mainEntityOfPage` references to the page's default URL at the resolved page node,
+ * whichever component rendered first. Unchanged items are returned as they are.
+ */
+export function linkToPageNode(items: Record<string, any>[], defaultUrl: string): Record<string, any>[] {
+  const pageId = resolvePageId(findPageItems(items), defaultUrl);
+  if (pageId === defaultUrl) return items;
+  return items.map((item) => {
+    const ref = item.mainEntityOfPage;
+    if (!ref || typeof ref !== 'object' || ref['@id'] !== defaultUrl) return item;
+    return { ...item, mainEntityOfPage: { ...ref, '@id': pageId } };
+  });
+}
+
 const ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
 
 /** Meta descriptions are plain text; some schema fields (e.g. JobPosting.description) may contain HTML. */

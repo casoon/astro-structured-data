@@ -113,6 +113,18 @@ function expectRewrittenPage(html: string, graph: boolean) {
   expect(head).toContain('<link rel="canonical" href="https://example.com/target/">');
 }
 
+/** `/canonical/`: an article next to a WebPage with an explicit `url`. */
+function expectCanonicalPage(html: string) {
+  const [head] = html.split('</head>');
+  const nodes = [...html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
+    .flatMap(([, json]) => JSON.parse(json)['@graph'] ?? [JSON.parse(json)]);
+  const preferred = 'https://example.com/preferred/';
+
+  expect(nodes.find((node: any) => node['@type'] === 'WebPage')['@id']).toBe(preferred);
+  expect(nodes.find((node: any) => node['@type'] === 'BlogPosting').mainEntityOfPage['@id']).toBe(preferred);
+  expect(head).toContain(`<link rel="canonical" href="${preferred}">`);
+}
+
 describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph }) => {
   const options: Options = { useGraph: graph, generateMeta: true };
 
@@ -123,6 +135,7 @@ describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph 
     for (const alias of REWRITES) {
       expectRewrittenPage(await readFile(join(outDir, alias, 'index.html'), 'utf-8'), graph);
     }
+    expectCanonicalPage(await readFile(join(outDir, 'canonical', 'index.html'), 'utf-8'));
   }, 60_000);
 
   test('dev server (streaming render)', async () => {
@@ -133,6 +146,7 @@ describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph 
       for (const alias of REWRITES) {
         expectRewrittenPage(await (await fetch(`http://localhost:${server.port}/${alias}/`)).text(), graph);
       }
+      expectCanonicalPage(await (await fetch(`http://localhost:${server.port}/canonical/`)).text());
     } finally {
       await server.stop();
     }
@@ -153,6 +167,7 @@ describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph 
       for (const alias of REWRITES) {
         expectRewrittenPage(await (await fetch(`http://localhost:${server.port}/${alias}/`)).text(), graph);
       }
+      expectCanonicalPage(await (await fetch(`http://localhost:${server.port}/canonical/`)).text());
     } finally {
       await server.stop();
     }

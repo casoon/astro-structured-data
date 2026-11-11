@@ -2,8 +2,8 @@ import type { MiddlewareHandler } from 'astro';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { getRegisteredPage, getRegisteredSchemas, resetSchemas } from './utils/graph.js';
 import { injectMetaTags } from './utils/head.js';
-import { collectSitemapHints, GRAPH_PLACEHOLDER, renderGraphScript } from './utils/json-ld.js';
-import { findPageItems, findPrimaryItem, generateMetaTags, pageUrl } from './utils/meta.js';
+import { collectSitemapHints, GRAPH_PLACEHOLDER, renderGraphScript, serializeSchemaItem } from './utils/json-ld.js';
+import { findPageItems, findPrimaryItem, generateMetaTags, linkToPageNode, pageUrl } from './utils/meta.js';
 
 /**
  * Completes every HTML page once it has fully rendered: inserts the `@graph` block (graph
@@ -28,13 +28,16 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // Reading the body drives the render to completion; only then is the store final.
   let html = await response.text();
   const page = getRegisteredPage(context.locals) ?? context.url.pathname;
-  const items = getRegisteredSchemas(context.locals, page);
+  const registered = getRegisteredSchemas(context.locals, page);
   // `context.rewrite()` runs the middleware again for the target; the inner run completes the
   // page, so this one must not complete it a second time.
   resetSchemas(context.locals);
   const config = getGlobalConfig();
+  const canonicalUrl = pageUrl(page, config.siteUrl!);
+  const items = linkToPageNode(registered, canonicalUrl);
 
   if (config.useGraph) html = insertGraph(html, items, page);
+  else html = relinkInlineSchemas(html, registered, items);
 
   if (items.length > 0) {
     collectSitemapHints(items); // throws on invalid or conflicting hints
@@ -42,7 +45,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     if (primaryItem) {
       const seo = generateMetaTags(primaryItem, {
         siteUrl: config.siteUrl,
-        canonicalUrl: pageUrl(page, config.siteUrl!),
+        canonicalUrl,
         siteName: config.siteName,
         locale: config.locale,
         twitterSite: config.twitterSite,
@@ -56,6 +59,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   headers.delete('content-length');
   return new Response(html, { status: response.status, statusText: response.statusText, headers });
 };
+
+/** Without graph mode, rewrites the blocks whose page reference was resolved after they rendered. */
+function relinkInlineSchemas(html: string, registered: Record<string, any>[], items: Record<string, any>[]): string {
+  registered.forEach((item, i) => {
+    if (items[i] !== item) html = html.split(serializeSchemaItem(item)).join(serializeSchemaItem(items[i]));
+  });
+  return html;
+}
 
 function insertGraph(html: string, items: Record<string, any>[], page: string): string {
   const parts = html.split(GRAPH_PLACEHOLDER);

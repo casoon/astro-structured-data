@@ -52,3 +52,16 @@ page one too (`ArticleSchema`, `ProductSchema`, `EventSchema`, `RecipeSchema`, `
 | `ProductSchema` | `isVariantOf`, `hasVariant`, `isRelatedTo`, `isSimilarTo`, `isAccessoryOrSparePartFor`, `isConsumableFor` |
 | `OrganizationSchema`, `LocalBusinessSchema` | `parentOrganization`, `subOrganization` |
 | `EventSchema` | `superEvent`, `subEvent` |
+
+## ID conventions
+
+- **Page:** the page node's `@id` is the page URL: the `url` passed to `WebPageSchema`, otherwise
+  `siteUrl` plus the page path. An article's `mainEntityOfPage` refers to the same `@id`, also
+  when `WebPageSchema` sets `url` and whichever component renders first, and the canonical
+  link with `generateMeta` uses it too.
+- **Website:** give `WebSiteSchema` an `id` such as `https://example.com/#website` and refer to
+  it from `WebPageSchema` with `isPartOf`.
+- **Organization:** set `defaultArticlePublisher.id`, for example
+  `https://example.com/#organization`. `OrganizationSchema` and the publisher of `ArticleSchema`
+  and `WebPageSchema` (and the hiring organization of `JobPostingSchema`) then share that `@id`.
+  A publisher or organization named via props does not get this `@id`; pass its own `id`.

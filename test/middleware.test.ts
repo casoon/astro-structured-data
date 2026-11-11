@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { onRequest } from '../src/middleware.ts';
 import { registerSchema } from '../src/utils/graph.ts';
 import { injectMetaTags } from '../src/utils/head.ts';
-import { GRAPH_PLACEHOLDER } from '../src/utils/json-ld.ts';
+import { GRAPH_PLACEHOLDER, serializeSchemaItem } from '../src/utils/json-ld.ts';
 
 const config = vi.hoisted(() => ({ current: {} as Record<string, any> }));
 vi.mock('virtual:astro-structured-data/config', () => ({ getGlobalConfig: () => config.current }));
@@ -258,6 +258,43 @@ test('injectMetaTags recognises existing tags regardless of quoting and case', (
   expect(result).not.toContain('generated');
   expect(result.match(/hreflang="en"/gi)).toHaveLength(1);
   expect(result).toContain('<link rel="alternate" hreflang="fr" href="https://example.com/fr/">');
+});
+
+describe('page identity', () => {
+  const pageNode = (url?: string) => ({ '@type': 'WebPage', '@id': url ?? `https://example.com${PAGE}`, name: 'Page', ...(url ? { url } : {}) });
+  const inline = (items: Record<string, any>[]) =>
+    page('<title>T</title>', items.map((item) => `<script type="application/ld+json">${serializeSchemaItem(item)}</script>`).join(''));
+
+  async function output(items: Record<string, any>[], useGraph: boolean) {
+    config.current.useGraph = useGraph;
+    const html = await (await run(items, { html: useGraph ? graphPage : inline(items) })).text();
+    const nodes = jsonLdScripts(html).flatMap(({ data }) => data['@graph'] ?? [data]);
+    return { html, nodes, byType: (type: string) => nodes.find((node: any) => node['@type'] === type) };
+  }
+
+  describe.each([true, false])('useGraph: %s', (useGraph) => {
+    test.each([['article first', false], ['WebPage first', true]])(
+      'the article refers to the WebPage of an explicit url (%s)', async (_, webPageFirst) => {
+        const preferred = 'https://example.com/preferred/';
+        const items = webPageFirst ? [pageNode(preferred), article] : [article, pageNode(preferred)];
+        const { html, nodes, byType } = await output(items, useGraph);
+
+        expect(nodes).toHaveLength(2);
+        expect(byType('WebPage')['@id']).toBe(preferred);
+        expect(byType('BlogPosting').mainEntityOfPage['@id']).toBe(preferred);
+        expect(head(html)).toContain(`<link rel="canonical" href="${preferred}">`);
+        expect(head(html)).toContain(`<meta property="og:url" content="${preferred}">`);
+      }
+    );
+
+    test('without an explicit url, all point to the page URL', async () => {
+      const { html, byType } = await output([article, pageNode()], useGraph);
+      const url = `https://example.com${PAGE}`;
+      expect(byType('WebPage')['@id']).toBe(url);
+      expect(byType('BlogPosting').mainEntityOfPage['@id']).toBe(url);
+      expect(head(html)).toContain(`<link rel="canonical" href="${url}">`);
+    });
+  });
 });
 
 describe('rewrites', () => {

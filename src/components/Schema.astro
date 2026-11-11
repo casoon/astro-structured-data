@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import type { SitemapProps } from '../zod';
 import { registerSchema } from '../utils/graph';
-import { collectSitemapHints, serializeJsonLd, sitemapAttributes, stripNonSchemaKeys } from '../utils/json-ld';
+import { collectSitemapHints, serializeSchemaItem, sitemapAttributes } from '../utils/json-ld';
 import { parseProps } from '../utils/validate';
 
 type Props = { item: Record<string, any> } & SitemapProps;
@@ -25,10 +25,7 @@ const item: Record<string, any> = { ...rawItem, ...hints };
 registerSchema(Astro.locals, item, page);
 
 const useGraph = getGlobalConfig().useGraph ?? false;
-const jsonLd = serializeJsonLd({
-  '@context': 'https://schema.org',
-  ...stripNonSchemaKeys(item),
-});
+const jsonLd = serializeSchemaItem(item);
 const sitemapAttrs = sitemapAttributes(hints);
 ---
 {!useGraph && <script is:inline type="application/ld+json" {...sitemapAttrs} set:html={jsonLd} />}

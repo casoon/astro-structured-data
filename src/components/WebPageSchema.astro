@@ -38,7 +38,8 @@ const globalConfig = getGlobalConfig();
 const resolvedUrl = url ?? pageUrl(page, globalConfig.siteUrl);
 const webpageSchema: Record<string, any> = {
   '@type': 'WebPage',
-  // Same value ArticleSchema uses for mainEntityOfPage, so both point to one node.
+  // The node ArticleSchema's mainEntityOfPage refers to; with an explicit `url` the middleware
+  // points that reference here too (resolvePageId).
   '@id': resolvedUrl,
   name: title,
   url: resolvedUrl,

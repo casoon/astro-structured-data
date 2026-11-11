@@ -1,0 +1,9 @@
+---
+import { ArticleSchema, WebPageSchema } from '../../../../../dist/components.js';
+import Layout from '../layouts/Layout.astro';
+---
+<Layout>
+  <!-- The article renders before the WebPage that sets the canonical URL. -->
+  <ArticleSchema title="Article" description="D" datePublished="2026-01-01" authorName="A" />
+  <WebPageSchema title="Page" url="https://example.com/preferred/" />
+</Layout>
