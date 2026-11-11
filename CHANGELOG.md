@@ -8,6 +8,7 @@ reconstructed from the commit history.
 
 ### Changed
 
+- **Pages:** the project site uses the current shared theme (0.12.8).
 - **Docs:** the README is a short overview that links to the documentation on the project site;
   everything it explained before is in the docs. The graph mode and on-demand rendering guides
   show how graph mode works and the measured time to first byte as diagrams.
