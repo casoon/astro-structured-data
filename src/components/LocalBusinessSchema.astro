@@ -27,6 +27,8 @@ const address = props.address ?? defaults.address;
 const geo = props.geo ?? defaults.geo;
 const openingHours = props.openingHours ?? defaults.openingHours;
 const sameAs = props.sameAs ?? defaults.sameAs;
+const parentOrganization = props.parentOrganization ?? defaults.parentOrganization;
+const subOrganization = props.subOrganization ?? defaults.subOrganization;
 
 if (!name) {
   fail('LocalBusinessSchema', page, 'Missing business name: set the "name" prop or defaultLocalBusiness.name');
@@ -63,8 +65,8 @@ const localBusinessSchema = {
   ...(sameAs && { sameAs }),
 } satisfies LocalBusiness;
 Object.assign(localBusinessSchema, {
-  ...(props.parentOrganization && { parentOrganization: buildReference(props.parentOrganization, 'Organization') }),
-  ...(props.subOrganization && { subOrganization: buildReferences(props.subOrganization, 'Organization') }),
+  ...(parentOrganization && { parentOrganization: buildReference(parentOrganization, 'Organization') }),
+  ...(subOrganization && { subOrganization: buildReferences(subOrganization, 'Organization') }),
 });
 ---
 <Schema item={localBusinessSchema} changefreq={props.changefreq} priority={props.priority} />

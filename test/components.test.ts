@@ -343,6 +343,16 @@ describe('no fabricated or dropped data', () => {
     expect((await render(C.LocalBusinessSchema, { name: 'Other' })).scripts[0].data).not.toHaveProperty('@id');
   });
 
+  test('defaultLocalBusiness organization relations apply unless overridden by props', async () => {
+    config.current.defaultLocalBusiness = { name: 'Branch', parentOrganization: { id: '#parent' }, subOrganization: [{ id: '#sub' }] };
+    const data = (await render(C.LocalBusinessSchema, {})).scripts[0].data;
+    expect(data.parentOrganization).toEqual({ '@type': 'Organization', '@id': '#parent' });
+    expect(data.subOrganization).toEqual([{ '@type': 'Organization', '@id': '#sub' }]);
+    const overridden = (await render(C.LocalBusinessSchema, { parentOrganization: { id: '#hq' }, subOrganization: [{ id: '#other' }] })).scripts[0].data;
+    expect(overridden.parentOrganization).toEqual({ '@type': 'Organization', '@id': '#hq' });
+    expect(overridden.subOrganization).toEqual([{ '@type': 'Organization', '@id': '#other' }]);
+  });
+
   test('Article rejects a publisher id without a publisher name', async () => {
     await expect(render(C.ArticleSchema, { ...article, publisherId: '#org' })).rejects.toThrow(/publisherId/);
   });
