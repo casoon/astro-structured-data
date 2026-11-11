@@ -8,8 +8,32 @@ reconstructed from the commit history.
 
 ### Changed
 
+- **Middleware:** without `useGraph` and `generateMeta`, pages rendered on demand stream instead
+  of being buffered; sitemap-hint conflicts are still detected, and an error found after the first
+  chunk breaks off the response.
+  Details: [On-demand rendering](https://casoon.github.io/astro-structured-data/docs/guides/on-demand-rendering/).
 - **Project site:** the footer follows the page language instead of always showing German text,
   and the start page now carries a release teaser and an FAQ (theme 0.11.1).
+- **WebSiteSchema:** docs and README describe `searchQueryInput` as schema.org `SearchAction`
+  markup; Google no longer shows the sitelinks search box (since 21 November 2024).
+- **Contributors:** `npm run test:compat` runs the full test suite against Astro 5 and Astro 6
+  with their matching Node adapter; `npm run bench:ssr` measures time to first byte and memory of
+  on-demand pages.
+
+### Fixed
+
+- **ArticleSchema:** `mainEntityOfPage` refers to the same page `@id` as a `WebPageSchema` with an
+  explicit `url`, whichever component renders first and with or without graph mode.
+- **Build check:** JSON-LD blocks containing `null` no longer crash the build; other entries that
+  are not objects are reported with their file.
+- **Dev Toolbar:** offers are checked by their own type, also inside an `offers` array, and prices
+  in `priceSpecification` are accepted.
+- **LocalBusinessSchema:** `parentOrganization` and `subOrganization` from `defaultLocalBusiness`
+  apply when the props are not set.
+- **Middleware:** pages rendered through a rewrite (`next('/target')`, `context.rewrite()`) keep
+  their JSON-LD graph and generated meta tags.
+- **WebSiteSchema:** the SearchAction `query-input` names the same placeholder as `urlTemplate`,
+  whatever `searchQueryInput` is.
 
 ## [2.3.1] - 2026-10-26
 
