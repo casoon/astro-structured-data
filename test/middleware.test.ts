@@ -1,4 +1,4 @@
-import { beforeEach, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { onRequest } from '../src/middleware.ts';
 import { registerSchema } from '../src/utils/graph.ts';
 import { injectMetaTags } from '../src/utils/head.ts';
@@ -258,4 +258,38 @@ test('injectMetaTags recognises existing tags regardless of quoting and case', (
   expect(result).not.toContain('generated');
   expect(result.match(/hreflang="en"/gi)).toHaveLength(1);
   expect(result).toContain('<link rel="alternate" hreflang="fr" href="https://example.com/fr/">');
+});
+
+describe('rewrites', () => {
+  const target = '/target/';
+  const webPage = { '@type': 'WebPage', name: 'Target', url: `https://example.com${target}` };
+  const contextFor = (path: string, locals: Record<string, any>): any => ({ url: new URL(`http://localhost:4321${path}`), locals });
+  const render = (locals: Record<string, any>, html: string) => {
+    registerSchema(locals, webPage, target);
+    return new Response(html, { headers: { 'content-type': 'text/html' } });
+  };
+
+  test.each([true, false])("next('/target') keeps the schemas the target registers (useGraph: %s)", async (useGraph) => {
+    config.current.useGraph = useGraph;
+    const locals = {};
+    const response = await onRequest(contextFor('/alias/', locals), async () => render(locals, useGraph ? graphPage : page()));
+    const html = await (response as Response).text();
+
+    expect(head(html)).toContain('<meta property="og:title" content="Target">');
+    expect(head(html)).toContain(`<link rel="canonical" href="https://example.com${target}">`);
+    if (useGraph) expect(jsonLdScripts(html)[0].data['@graph'][0].name).toBe('Target');
+  });
+
+  test.each([true, false])('context.rewrite() completes the page once (useGraph: %s)', async (useGraph) => {
+    config.current.useGraph = useGraph;
+    const locals = {};
+    // context.rewrite() runs the whole middleware chain again for the target, sharing locals.
+    const response = await onRequest(contextFor('/alias/', locals), () =>
+      onRequest(contextFor(target, locals), async () => render(locals, useGraph ? graphPage : page())) as Promise<Response>);
+    const html = await (response as Response).text();
+
+    expect(html.match(/property="og:title"/g)).toHaveLength(1);
+    expect(html.match(/rel="canonical"/g)).toHaveLength(1);
+    if (useGraph) expect(jsonLdScripts(html)).toHaveLength(1);
+  });
 });

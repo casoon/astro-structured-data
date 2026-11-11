@@ -26,8 +26,10 @@ import { SchemaGraph } from '@casoon/astro-structured-data/components';
 
 `<SchemaGraph />` only marks the position. The `@graph` is filled in by the integration's
 middleware after the whole page has rendered, so schema components can sit anywhere: before or
-after it, and in components that await data. Schemas are collected per page path, so nothing
-leaks from one page into the next during a static build.
+after it, and in components that await data. Schemas are collected per request and page, so
+nothing leaks from one page into the next during a static build. After a middleware rewrite
+(`next('/target')` or `context.rewrite()`), the graph holds the schemas of the rewrite target,
+the page that actually rendered.
 
 A page with schemas but without `<SchemaGraph />`, or with more than one, fails the build
 so no schema goes missing. Without `useGraph`, `<SchemaGraph />` renders nothing.

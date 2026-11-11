@@ -93,6 +93,26 @@ function expectCompletePage(html: string, graph: boolean) {
   expect(body).not.toMatch(/property="og:|name="twitter:|rel="canonical"/);
 }
 
+const REWRITES = ['alias-next', 'alias-rewrite'];
+
+/** `/alias-next/` (`next('/target/')`) and `/alias-rewrite/` (`context.rewrite()`) render /target/. */
+function expectRewrittenPage(html: string, graph: boolean) {
+  const [head] = html.split('</head>');
+  const scripts = [...html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
+    .map(([, json]) => JSON.parse(json));
+  const types = scripts.flatMap((data) => (data['@graph'] ?? [data]).map((item: any) => item['@type']));
+
+  expect(html).toContain('Target content');
+  expect(types, html.slice(0, 3000)).toEqual(['WebPage']);
+  expect(scripts).toHaveLength(1);
+  expect(scripts[0]['@graph'] !== undefined).toBe(graph);
+  expect(html).not.toContain('data-structured-data-graph');
+  // Completed once: the target's tags, canonical to the rendered page.
+  expect(head.match(/property="og:title"/g)).toEqual(['property="og:title"']);
+  expect(head).toContain('<meta property="og:title" content="Target">');
+  expect(head).toContain('<link rel="canonical" href="https://example.com/target/">');
+}
+
 describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph }) => {
   const options: Options = { useGraph: graph, generateMeta: true };
 
@@ -100,6 +120,9 @@ describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph 
     const outDir = await freshOutDir();
     await build(astroConfig(options, outDir));
     expectCompletePage(await readFile(join(outDir, 'index.html'), 'utf-8'), graph);
+    for (const alias of REWRITES) {
+      expectRewrittenPage(await readFile(join(outDir, alias, 'index.html'), 'utf-8'), graph);
+    }
   }, 60_000);
 
   test('dev server (streaming render)', async () => {
@@ -107,6 +130,9 @@ describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph 
     try {
       const response = await fetch(`http://localhost:${server.port}/`);
       expectCompletePage(await response.text(), graph);
+      for (const alias of REWRITES) {
+        expectRewrittenPage(await (await fetch(`http://localhost:${server.port}/${alias}/`)).text(), graph);
+      }
     } finally {
       await server.stop();
     }
@@ -124,6 +150,9 @@ describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph 
     try {
       const response = await fetch(`http://localhost:${server.port}/`);
       expectCompletePage(await response.text(), graph);
+      for (const alias of REWRITES) {
+        expectRewrittenPage(await (await fetch(`http://localhost:${server.port}/${alias}/`)).text(), graph);
+      }
     } finally {
       await server.stop();
     }

@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'astro';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
-import { getRegisteredSchemas, resetSchemas } from './utils/graph.js';
+import { getRegisteredPage, getRegisteredSchemas, resetSchemas } from './utils/graph.js';
 import { injectMetaTags } from './utils/head.js';
 import { collectSitemapHints, GRAPH_PLACEHOLDER, renderGraphScript } from './utils/json-ld.js';
 import { findPageItems, findPrimaryItem, generateMetaTags, pageUrl } from './utils/meta.js';
@@ -13,10 +13,12 @@ import { findPageItems, findPrimaryItem, generateMetaTags, pageUrl } from './uti
  * `next()` resolves while the body is still streaming, and components that await data
  * register their schemas only later. The whole body is therefore read before the schema store
  * is used, which means HTML responses are buffered instead of streamed.
+ *
+ * The page is the one the components rendered under, read from the store after rendering: a
+ * rewrite (`next('/target')`, `context.rewrite()`) renders another path than the requested one.
  */
 export const onRequest: MiddlewareHandler = async (context, next) => {
-  const page = context.url.pathname;
-  resetSchemas(context.locals, page);
+  resetSchemas(context.locals, context.url.pathname);
 
   const response = await next();
   if (!response.headers.get('content-type')?.includes('text/html')) return response;
@@ -25,7 +27,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   // Reading the body drives the render to completion; only then is the store final.
   let html = await response.text();
+  const page = getRegisteredPage(context.locals) ?? context.url.pathname;
   const items = getRegisteredSchemas(context.locals, page);
+  // `context.rewrite()` runs the middleware again for the target; the inner run completes the
+  // page, so this one must not complete it a second time.
+  resetSchemas(context.locals);
   const config = getGlobalConfig();
 
   if (config.useGraph) html = insertGraph(html, items, page);
