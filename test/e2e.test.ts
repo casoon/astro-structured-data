@@ -173,3 +173,38 @@ describe.each([{ graph: true }, { graph: false }])('useGraph: $graph', ({ graph 
     }
   }, 60_000);
 });
+
+// Without graph mode and meta tags the middleware streams the page instead of buffering it.
+test('production SSR without graph and meta tags streams the page', async () => {
+  const port = await freePort();
+  const config = astroConfig({ useGraph: false, generateMeta: false }, await freshOutDir(), {
+    output: 'server',
+    adapter: node({ mode: 'standalone' }),
+    server: { port },
+  });
+  await build(config);
+  const server = await preview(config);
+  const jsonLd = (html: string) =>
+    [...html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)].map(([, json]) => JSON.parse(json));
+  try {
+    const reader = (await fetch(`http://localhost:${server.port}/`)).body!.getReader();
+    const decoder = new TextDecoder();
+    let html = decoder.decode((await reader.read()).value, { stream: true });
+    // The first chunk leaves before the delayed component has rendered.
+    expect(html).toContain('</head>');
+    expect(html).not.toContain('Delayed article');
+    for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) html += decoder.decode(chunk.value, { stream: true });
+
+    expect(jsonLd(html).map((node) => node['@type'])).toEqual(['LocalBusiness', 'BlogPosting']);
+    expect(html).toContain('data-sitemap-changefreq="weekly"');
+
+    const canonical = jsonLd(await (await fetch(`http://localhost:${server.port}/canonical/`)).text());
+    expect(canonical.find((node) => node['@type'] === 'BlogPosting').mainEntityOfPage['@id']).toBe('https://example.com/preferred/');
+
+    for (const alias of REWRITES) {
+      expect(jsonLd(await (await fetch(`http://localhost:${server.port}/${alias}/`)).text())).toHaveLength(1);
+    }
+  } finally {
+    await server.stop();
+  }
+}, 60_000);

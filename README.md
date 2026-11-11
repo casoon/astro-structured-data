@@ -314,7 +314,7 @@ Every example in the [showcase](https://casoon.github.io/astro-structured-data/s
 
 Options are validated when the integration is created; unknown keys and invalid values fail the build.
 
-The integration adds a middleware that completes every HTML page once it has rendered: it inserts the `@graph` block (graph mode) and the meta tags (`generateMeta`). Because it needs the complete page, HTML responses are buffered instead of streamed.
+The integration adds a middleware that completes every HTML page once it has rendered: it inserts the `@graph` block (graph mode) and the meta tags (`generateMeta`). Because it needs the complete page for that, HTML responses are buffered instead of streamed in these two modes; without both, pages stream (see the on-demand rendering guide).
 
 ## Validation
 

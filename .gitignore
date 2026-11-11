@@ -3,6 +3,7 @@ dist/
 *.tgz
 .astro/
 test/fixtures/**/.e2e-*/
+scripts/bench-ssr/.out/
 
 # Demo
 demo/node_modules/

@@ -198,8 +198,63 @@ test('fails when the page has no </head> to insert into', async () => {
 });
 
 test('fails on conflicting sitemap hints between schemas of one page', async () => {
-  config.current.generateMeta = false;
   await expect(run([{ ...article, priority: 0.5 }, { ...business, priority: 0.9 }])).rejects.toThrow(/Conflicting sitemap priority/);
+});
+
+describe('streaming (no graph, no meta tags)', () => {
+  beforeEach(() => {
+    config.current.generateMeta = false;
+  });
+
+  test('breaks off before the block of a schema with a conflicting sitemap hint', async () => {
+    const conflicting = { ...business, priority: 0.9 };
+    const html = page('<title>T</title>', `<script type="application/ld+json">${serializeSchemaItem(conflicting)}</script>`);
+    const response = await run([{ ...article, priority: 0.5 }, conflicting], { html });
+    const reader = response.body!.getReader();
+    const first = new TextDecoder().decode((await reader.read()).value);
+
+    expect(first).not.toContain('ACME Shop');
+    await expect(reader.read()).rejects.toThrow(/Conflicting sitemap priority/);
+  });
+
+  test('fails the request on a conflict found before the first chunk is sent', async () => {
+    const context: any = { url: new URL(`http://localhost:4321${PAGE}`), locals: {} };
+    await expect(onRequest(context, async () => {
+      registerSchema(context.locals, { ...article, priority: 0.5 }, PAGE);
+      registerSchema(context.locals, { ...business, priority: 0.9 }, PAGE);
+      return new Response(page(), { headers: { 'content-type': 'text/html' } });
+    })).rejects.toThrow(/Conflicting sitemap priority/);
+  });
+
+  test.each([
+    ['without a page reference', [business], true],
+    ['after a WebPage with the page URL', [{ '@type': 'WebPage', url: `https://example.com${PAGE}` }, article], true],
+    ['with an article before any WebPage', [article], false],
+  ])('streams on %s', async (_, items, streams) => {
+    const context: any = { url: new URL(`http://localhost:4321${PAGE}`), locals: {} };
+    let release!: () => void;
+    const late = new Promise<void>((resolve) => (release = resolve));
+    const responsePromise = onRequest(context, async () => {
+      for (const item of items) registerSchema(context.locals, item, PAGE);
+      return new Response(new ReadableStream<Uint8Array>({
+        async pull(controller) {
+          controller.enqueue(new TextEncoder().encode('<!doctype html><html><head></head><body>'));
+          await late;
+          controller.enqueue(new TextEncoder().encode('</body></html>'));
+          controller.close();
+        },
+      }), { headers: { 'content-type': 'text/html' } });
+    }) as Promise<Response>;
+    // Started before the rest of the page exists, or only once it is complete.
+    const started = await Promise.race([responsePromise.then(() => true), new Promise((resolve) => setTimeout(() => resolve(false), 20))]);
+    expect(started).toBe(streams);
+    release();
+    expect(await (await responsePromise).text()).toBe('<!doctype html><html><head></head><body></body></html>');
+  });
+
+  test('removes a stale content-length', async () => {
+    expect((await run([business])).headers.get('content-length')).toBeNull();
+  });
 });
 
 test('graph mode: fills the SchemaGraph placeholder with every schema, including late ones', async () => {
@@ -294,6 +349,18 @@ describe('page identity', () => {
       expect(byType('BlogPosting').mainEntityOfPage['@id']).toBe(url);
       expect(head(html)).toContain(`<link rel="canonical" href="${url}">`);
     });
+  });
+
+  test.each([['article first', false], ['WebPage first', true]])('streaming: the article refers to the WebPage of an explicit url (%s)', async (_, webPageFirst) => {
+    config.current.generateMeta = false;
+    const preferred = 'https://example.com/preferred/';
+    const items = webPageFirst ? [pageNode(preferred), article] : [article, pageNode(preferred)];
+    // The blocks follow the first chunk, as they do when their components register first.
+    const blocks = items.map((item) => `<script type="application/ld+json">${serializeSchemaItem(item)}</script>`).join('');
+    const html = await (await run(items, { html: page(`<title>T</title><!--${'x'.repeat(5000)}-->`, blocks) })).text();
+    const nodes = jsonLdScripts(html).map(({ data }) => data);
+
+    expect(nodes.find((node: any) => node['@type'] === 'BlogPosting').mainEntityOfPage['@id']).toBe(preferred);
   });
 });
 
