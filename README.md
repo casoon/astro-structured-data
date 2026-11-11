@@ -1092,7 +1092,8 @@ Returns `{ wordCount: number; readingTimeMinutes: number; timeRequired: string }
 
 | Package version | Astro | Node.js |
 |---|---|---|
-| **2.1.x** | 5.x · 6.x · 7.x | ≥ 18 |
+| **2.4.x** | 5.x · 6.x · 7.x | ≥ 18 |
+| 2.1.x – 2.3.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 2.0.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 1.5.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 1.4.x | 5.x · 6.x | ≥ 18 |

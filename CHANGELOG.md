@@ -6,6 +6,8 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-11-11
+
 ### Changed
 
 - **Dependencies:** zod 4.6.7 and schema-dts 2.1.0 in the lockfile; tests run on Astro 7.4.
