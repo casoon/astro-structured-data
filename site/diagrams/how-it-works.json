@@ -5,7 +5,7 @@
   "description": "You pass your data as props to a schema component; integration options such as the site URL, a default publisher or brand fill in the rest. Each component validates its props against its Zod schema. Invalid data stops the build with the component, the page and the field. Valid data becomes schema.org JSON-LD, written as one script per schema. After the page has rendered, a middleware merges all schemas into one @graph block when useGraph is on and derives canonical, Open Graph and Twitter tags when generateMeta is on. After astro build, every JSON-LD block is checked for valid JSON and missing recommended fields.",
   "source": "src/components/*.astro, src/zod.ts, src/middleware.ts, src/index.ts",
   "width": 1084,
-  "height": 780,
+  "height": 836,
   "flow": {
     "lanes": [
       {

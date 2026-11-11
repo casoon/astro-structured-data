@@ -8,11 +8,12 @@ reconstructed from the commit history.
 
 ### Changed
 
+- **Dependencies:** zod 4.6.7 and schema-dts 2.1.0 in the lockfile; tests run on Astro 7.4.
 - **Middleware:** without `useGraph` and `generateMeta`, pages rendered on demand stream instead
   of being buffered; sitemap-hint conflicts are still detected, and an error found after the first
   chunk breaks off the response.
   Details: [On-demand rendering](https://casoon.github.io/astro-structured-data/docs/guides/on-demand-rendering/).
-- **Pages:** the project site uses the current shared theme (0.12.6).
+- **Pages:** the project site uses the current shared theme (0.12.6), chartlet 0.23 and Astro 7.4.
 - **Project site:** the footer follows the page language instead of always showing German text,
   and the start page now carries a release teaser and an FAQ (theme 0.11.1).
 - **WebSiteSchema:** docs and README describe `searchQueryInput` as schema.org `SearchAction`
