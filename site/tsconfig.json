@@ -4,7 +4,6 @@
     ".astro/types.d.ts",
     "**/*"
   ],
-  // vendor/ is the synced theme; it is checked where it is developed (gh-pages-template).
   // captures/fixture/ is a separate sample project that only builds through its own config.
-  "exclude": ["dist", "vendor", "captures/fixture"]
+  "exclude": ["dist", "captures/fixture"]
 }
