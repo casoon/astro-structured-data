@@ -673,12 +673,12 @@ Docs: [schema.org/Organization](https://schema.org/Organization) · [Google: Org
 
 ### WebSiteSchema
 
-Docs: [schema.org/WebSite](https://schema.org/WebSite) · [Google: Sitelinks Searchbox](https://developers.google.com/search/docs/appearance/structured-data/sitelinks-searchbox)
+Docs: [schema.org/WebSite](https://schema.org/WebSite) · [schema.org/SearchAction](https://schema.org/SearchAction)
 
 ```astro
 <WebSiteSchema name="My Site" />
 
-<!-- With Sitelinks Searchbox -->
+<!-- With a SearchAction for the site search -->
 <WebSiteSchema name="My Site" searchQueryInput="q" />
 ```
 
@@ -687,7 +687,7 @@ Docs: [schema.org/WebSite](https://schema.org/WebSite) · [Google: Sitelinks Sea
 | `name` | `string` | Yes | Site name |
 | `url` | `string` | No | Site URL (falls back to `siteUrl`) |
 | `id` | `string` | No | `@id` for linked data, e.g. `'https://example.com/#website'` |
-| `searchQueryInput` | `string` | No | URL query param name to enable Sitelinks Searchbox, e.g. `'q'` |
+| `searchQueryInput` | `string` | No | Query param name of the site search, e.g. `'q'`; adds a schema.org `SearchAction` (Google no longer shows the sitelinks search box) |
 
 ---
 

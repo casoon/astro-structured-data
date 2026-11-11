@@ -237,6 +237,12 @@ describe('no fabricated or dropped data', () => {
     expect(page['@id']).toBe(art.mainEntityOfPage['@id']);
   });
 
+  test('SearchAction placeholder matches query-input for any parameter name', async () => {
+    const data = (await render(C.WebSiteSchema, { name: 'Site', searchQueryInput: 'find_me-2' })).scripts[0].data;
+    expect(data.potentialAction.target.urlTemplate).toBe('https://example.com/?find_me-2={search_term_string}');
+    expect(data.potentialAction['query-input']).toBe('required name=search_term_string');
+  });
+
   test('linkable entities take an @id', async () => {
     const id = 'https://example.com/#x';
     expect((await render(C.WebSiteSchema, { name: 'Site', id })).scripts[0].data['@id']).toBe(id);

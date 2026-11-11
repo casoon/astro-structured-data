@@ -8,9 +8,10 @@ order: 11
 as a whole. Google uses the site name for the name shown next to search results; see [Google:
 Site names](https://developers.google.com/search/docs/appearance/site-names). With
 `searchQueryInput` it adds a [`SearchAction`](https://schema.org/SearchAction) that describes
-the site's search URL, the markup Google used for the Sitelinks search box. Google has retired
-that search box ([Google Search updates](https://developers.google.com/search/updates#bye-sitelinkbox));
-the `SearchAction` remains valid schema.org markup.
+the site's search URL as schema.org markup. Google used this markup for the sitelinks search
+box, which it no longer shows since 21 November 2024 ([Google Search Central
+blog](https://developers.google.com/search/blog/2024/10/sitelinks-search-box)); the
+`SearchAction` remains valid schema.org markup and does not trigger a Google search feature.
 
 Place it once, on the home page or in the base layout. For a single page, use
 [`WebPageSchema`](../webpage/).
@@ -47,7 +48,7 @@ With `siteUrl: 'https://example.com'`:
       "@type": "EntryPoint",
       "urlTemplate": "https://example.com/?q={search_term_string}"
     },
-    "query-input": "required name=q"
+    "query-input": "required name=search_term_string"
   }
 }
 ```
@@ -71,7 +72,9 @@ Without `searchQueryInput`, only `@type`, `name` and `url` are output.
   configured.
 - `searchQueryInput` may only contain letters, digits, `_` and `-` ("Must be a query parameter
   name like "q""). The search URL is built as `<url without trailing slash>/?<param>={search_term_string}`,
-  so the search has to live at the root of the site.
+  so the search has to live at the root of the site. The placeholder is always
+  `search_term_string`, and `query-input` declares that name (`required name=search_term_string`);
+  the configured parameter name appears only in the URL.
 - WebSite has no recommended fields.
 
 ## Meta tags
