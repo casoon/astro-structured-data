@@ -39,5 +39,4 @@ and does not check its content.
 - **Reference**: integration options, an overview of all components and the exported
   functions.
 
-The product page is at [astro-structured-data.casoon.de](https://astro-structured-data.casoon.de/),
-the package on [npm](https://www.npmjs.com/package/@casoon/astro-structured-data).
+The package is on [npm](https://www.npmjs.com/package/@casoon/astro-structured-data).
