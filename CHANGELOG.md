@@ -8,7 +8,7 @@ reconstructed from the commit history.
 
 ### Changed
 
-- **Pages:** the project site uses the current shared theme (0.12.12).
+- **Pages:** the project site uses the current shared theme (0.12.14).
 
 
 ## [2.4.1] - 2026-11-11
