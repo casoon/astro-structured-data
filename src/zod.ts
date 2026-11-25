@@ -255,7 +255,7 @@ export const sitemapShape = {
 export type SitemapProps = z.input<z.ZodObject<typeof sitemapShape>>;
 
 // Reference to another node by `id` and/or `url` with a free `type` — for isPartOf, hasPart,
-// product variants, parent organizations and the like.
+// about, mentions, product variants, parent organizations and the like.
 const referenceShape = {
   type: text.optional(),
   id: text.optional(),
@@ -302,6 +302,8 @@ export const articleZodSchema = z.object({
   isPartOf: references,
   seriesPosition: positiveInt.optional(),
   hasPart: partReferences,
+  about: references,
+  mentions: references,
 }).superRefine((data, ctx) => {
   requireWith(data, ctx, 'imageUrl', IMAGE_DETAIL_FIELDS);
   requireTogether(data, ctx, ['isPartOfHeadline', 'isPartOfUrl']);

@@ -285,6 +285,23 @@ describe('no fabricated or dropped data', () => {
     await expect(render(C.ArticleSchema, { ...article, seriesPosition: 1 })).rejects.toThrow(/seriesPosition/);
   });
 
+  test('Article about / mentions references', async () => {
+    const data = (await render(C.ArticleSchema, {
+      ...article,
+      about: { type: 'SoftwareSourceCode', id: 'https://example.com/projects/x/#software' },
+      mentions: [{ id: '#a' }, { url: 'https://b.example/' }],
+    })).scripts[0].data;
+    expect(data.about).toEqual({ '@type': 'SoftwareSourceCode', '@id': 'https://example.com/projects/x/#software' });
+    expect(data.mentions).toEqual([{ '@type': 'Thing', '@id': '#a' }, { '@type': 'Thing', url: 'https://b.example/' }]);
+  });
+
+  test('Article about / mentions rules', async () => {
+    await expect(render(C.ArticleSchema, { ...article, about: { name: 'Topic' } })).rejects.toThrow(/"id" or "url"/);
+    await expect(render(C.ArticleSchema, { ...article, mentions: [{ id: '#a' }, { type: 'Thing' }] })).rejects.toThrow(/"id" or "url"/);
+    await expect(render(C.ArticleSchema, { ...article, about: { id: '#a', sameAs: 'https://x.example/' } })).rejects.toThrow(/sameAs/);
+    await expect(render(C.ArticleSchema, { ...article, mentions: { id: '#a', position: 1 } })).rejects.toThrow(/position/);
+  });
+
   test('main entities take an @id', async () => {
     const id = '#entity';
     const cases: [any, any][] = [

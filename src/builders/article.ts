@@ -48,6 +48,8 @@ export function buildArticle(props: ArticleData, { url, page, config }: ArticleC
     isPartOf,
     seriesPosition,
     hasPart,
+    about,
+    mentions,
   } = props;
 
   const resolvedPublisherName = publisherName ?? config.defaultArticlePublisher?.name;
@@ -125,6 +127,8 @@ export function buildArticle(props: ArticleData, { url, page, config }: ArticleC
   if (articleSchema.isPartOf && seriesPosition !== undefined) articleSchema.position = seriesPosition;
 
   if (hasPart) articleSchema.hasPart = hasPart.map((part) => buildReference(part, schemaType));
+  if (about) articleSchema.about = buildReferences(about, 'Thing');
+  if (mentions) articleSchema.mentions = buildReferences(mentions, 'Thing');
 
   return articleSchema;
 }

@@ -6,10 +6,18 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-11-25
+
+### Added
+
+- **ArticleSchema:** `about` and `mentions` reference the topic of an article and the things it
+  refers to by `@id` or `url`, with a free `type` that falls back to `Thing`.
+  Details: [ArticleSchema](https://casoon.github.io/astro-structured-data/docs/components/article/#topic-of-the-article).
+
 ### Changed
 
+- **Docs:** the README names the author and links the background article on Insights (in German).
 - **Pages:** the project site uses the current shared theme (0.18.0).
-
 
 ## [2.4.1] - 2026-11-11
 

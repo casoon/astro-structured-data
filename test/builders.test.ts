@@ -271,4 +271,17 @@ describe('buildArticle references', () => {
     expect(article$({ hasPart: [{ id: '#p1', position: 1 }] }).hasPart).toEqual([{ '@type': 'BlogPosting', '@id': '#p1', position: 1 }]);
     expect(article$({})).not.toHaveProperty('position');
   });
+
+  test('about / mentions default to Thing; one reference stays an object, several become an array', () => {
+    expect(article$({ about: { type: 'SoftwareSourceCode', id: 'https://example.com/projects/x/#software' } }).about)
+      .toEqual({ '@type': 'SoftwareSourceCode', '@id': 'https://example.com/projects/x/#software' });
+    expect(article$({ about: { id: '#topic', name: 'Topic' } }).about).toEqual({ '@type': 'Thing', '@id': '#topic', name: 'Topic' });
+    expect(article$({ mentions: [{ id: '#a' }, { type: 'SoftwareApplication', url: 'https://b.example/', name: 'B' }] }).mentions).toEqual([
+      { '@type': 'Thing', '@id': '#a' },
+      { '@type': 'SoftwareApplication', url: 'https://b.example/', name: 'B' },
+    ]);
+    const plain = article$({});
+    expect(plain).not.toHaveProperty('about');
+    expect(plain).not.toHaveProperty('mentions');
+  });
 });

@@ -129,6 +129,10 @@ npm run build
 
 `npm run test:compat -- 6` checks one major only; it needs network access and Node 22.12+. Details: [How compatibility is checked](https://casoon.github.io/astro-structured-data/docs/getting-started/installation/#how-compatibility-is-checked).
 
+## Author
+
+Built and maintained by [Jörn Seidel](https://www.casoon.de/joern-seidel/) ([CASOON](https://www.casoon.de/)). Background and design decisions are described in an article on Insights (in German): [astro-structured-data: JSON-LD für Astro, beim Build geprüft](https://insights.casoon.de/artikel/astro-structured-data-json-ld-beim-build-pruefen/).
+
 ## License
 
 MIT

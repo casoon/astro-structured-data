@@ -282,6 +282,40 @@ series: `name` on `isPartOf` becomes the page's `og:site_name`.
 }
 ```
 
+## Topic of the article
+
+`about` points to what the article is about, `mentions` to things it refers to along the way,
+for example a project described on its own page. Both take the same references as `isPartOf`;
+`type` falls back to `Thing`:
+
+```astro
+<ArticleSchema
+  title="Validated JSON-LD in Astro"
+  description="How astro-structured-data checks structured data at build time."
+  datePublished="2026-11-25"
+  authorName="Jane Doe"
+  about={{ type: 'SoftwareSourceCode', id: 'https://example.com/projects/astro-structured-data/#software' }}
+  mentions={[{ id: 'https://astro.build/#software', name: 'Astro' }]}
+/>
+```
+
+```json
+{
+  "@type": "BlogPosting",
+  "about": {
+    "@type": "SoftwareSourceCode",
+    "@id": "https://example.com/projects/astro-structured-data/#software"
+  },
+  "mentions": [
+    {
+      "@type": "Thing",
+      "@id": "https://astro.build/#software",
+      "name": "Astro"
+    }
+  ]
+}
+```
+
 ## Props
 
 | Prop | Type | Required | Default / fallback | Description |
@@ -315,6 +349,8 @@ series: `name` on `isPartOf` becomes the page's `og:site_name`.
 | `isPartOf` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Typed reference to the parent (`type` falls back to `schemaType`); needs `id` or `url`; not together with `isPartOfUrl` |
 | `seriesPosition` | `number` (positive integer) | No | – | Position within the series, output as `position`; needs `isPartOf` or `isPartOfUrl` |
 | `hasPart` | `{ type?, id?, name?, headline?, url?, position? }[]` | No | – | Parts of a series (at least one entry, each with `id` or `url`) |
+| `about` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Topic of the article, e.g. a project or product (`type` falls back to `Thing`); needs `id` or `url` |
+| `mentions` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Things the article refers to (`type` falls back to `Thing`); needs `id` or `url` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
 
 "URL or `/path`" means an absolute `http(s)` URL or a root-relative path.
@@ -331,7 +367,7 @@ Violations fail the build (see [Validation](../../guides/validation/)):
 - `isPartOfHeadline` and `isPartOfUrl` are set together or not at all. `isPartOf` replaces them
   and is not allowed together with `isPartOfUrl`. `seriesPosition` needs `isPartOf` or
   `isPartOfUrl`.
-- `isPartOf` and every `hasPart` entry need `id` or `url`.
+- `isPartOf`, `about`, `mentions` and every `hasPart` entry need `id` or `url`.
 - `authorUrl` and `authorId` are not supported when `authorName` is an array.
 - A publisher logo needs a publisher name: `publisherLogo` (or `defaultArticlePublisher.logo`)
   without `publisherName` or `defaultArticlePublisher.name` fails the build. The same applies to
