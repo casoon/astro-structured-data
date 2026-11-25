@@ -6,6 +6,11 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+### Changed
+
+- **Pages:** the project site uses the current shared theme (0.19.0).
+
+
 ## [2.5.0] - 2026-11-25
 
 ### Added
