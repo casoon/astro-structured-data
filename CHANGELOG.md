@@ -6,6 +6,8 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-11-27
+
 ### Added
 
 - **LocalBusinessSchema:** `type` sets a schema.org subtype such as `Physiotherapy` or
