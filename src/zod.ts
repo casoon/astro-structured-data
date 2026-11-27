@@ -267,6 +267,16 @@ const hasIdOrUrl = (ref: { id?: string; url?: string }) => ref.id !== undefined 
 const idOrUrlMessage = { message: 'Needs "id" or "url"' };
 const reference = z.strictObject(referenceShape).refine(hasIdOrUrl, idOrUrlMessage);
 const references = oneOrMore(reference).optional();
+// A served area: a place name as text, or a place with a schema.org type (default `Place`).
+const servedArea = z.union([
+  text,
+  z.strictObject({
+    type: z.enum(['Place', 'AdministrativeArea', 'City', 'State', 'Country']).optional(),
+    name: text,
+    id: text.optional(),
+    url: httpUrl.optional(),
+  }),
+]);
 const partReferences = z.array(
   z.strictObject({ ...referenceShape, position: positiveInt.optional() }).refine(hasIdOrUrl, idOrUrlMessage)
 ).min(1).optional();
@@ -408,6 +418,8 @@ export const localBusinessZodSchema = z.object({
   }).optional(), 'geo'),
   openingHours: recommended(z.array(openingHoursSpec).min(1).optional(), 'openingHours'),
   sameAs: recommended(z.array(httpUrl).min(1).optional(), 'sameAs'),
+  areaServed: oneOrMore(servedArea).optional(),
+  founder: references,
   parentOrganization: reference.optional(),
   subOrganization: references,
 });

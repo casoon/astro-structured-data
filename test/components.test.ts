@@ -370,6 +370,28 @@ describe('no fabricated or dropped data', () => {
     expect(overridden.subOrganization).toEqual([{ '@type': 'Organization', '@id': '#other' }]);
   });
 
+  test('LocalBusiness areaServed and founder, also from defaultLocalBusiness', async () => {
+    const data = (await render(C.LocalBusinessSchema, {
+      name: 'Shop',
+      areaServed: [{ type: 'City', name: 'Rostock' }, { type: 'State', name: 'Mecklenburg-Vorpommern' }, 'Schwerin', { name: 'Ostsee' }],
+      founder: { id: '#founder' },
+    })).scripts[0].data;
+    expect(data.areaServed).toEqual([
+      { '@type': 'City', name: 'Rostock' },
+      { '@type': 'State', name: 'Mecklenburg-Vorpommern' },
+      'Schwerin',
+      { '@type': 'Place', name: 'Ostsee' },
+    ]);
+    expect(data.founder).toEqual({ '@type': 'Person', '@id': '#founder' });
+
+    config.current.defaultLocalBusiness = { name: 'Shop', areaServed: 'Rostock', founder: [{ type: 'Organization', id: '#org' }] };
+    const fromDefaults = (await render(C.LocalBusinessSchema, {})).scripts[0].data;
+    expect(fromDefaults.areaServed).toBe('Rostock');
+    expect(fromDefaults.founder).toEqual([{ '@type': 'Organization', '@id': '#org' }]);
+    expect((await render(C.LocalBusinessSchema, { areaServed: { type: 'City', name: 'Schwerin' } })).scripts[0].data.areaServed)
+      .toEqual({ '@type': 'City', name: 'Schwerin' });
+  });
+
   test('Article rejects a publisher id without a publisher name', async () => {
     await expect(render(C.ArticleSchema, { ...article, publisherId: '#org' })).rejects.toThrow(/publisherId/);
   });
@@ -476,6 +498,8 @@ describe('invalid data fails the build', () => {
     ['remote job without applicant location', C.JobPostingSchema, { ...job, jobLocation: undefined, jobLocationType: 'TELECOMMUTE' }, /applicantLocationRequirements/],
     ['video without content or embed URL', C.VideoSchema, { ...video, embedUrl: undefined }, /contentUrl/],
     ['opening hours in free text', C.LocalBusinessSchema, { name: 'Shop', openingHours: ['weekdays'] }, /openingHours/],
+    ['area served with an unknown type', C.LocalBusinessSchema, { name: 'Shop', areaServed: { type: 'Town', name: 'Rostock' } }, /areaServed/],
+    ['founder without id or url', C.LocalBusinessSchema, { name: 'Shop', founder: { name: 'Jane' } }, /"id" or "url"/],
     ['empty FAQ', C.FAQSchema, { questions: [] }, /questions/],
     ['breadcrumb without name', C.BreadcrumbSchema, { items: [{ url: '/' }] }, /name/],
     ['unknown nested key', C.EventSchema, { ...event, organizer: { name: 'O', website: 'https://o.example' } }, /website/],

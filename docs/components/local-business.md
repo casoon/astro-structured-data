@@ -143,6 +143,32 @@ phone number, coordinates and opening hours):
 such as `address` replaces the configured object as a whole; its fields are not merged with
 the default address.
 
+## Service area and founder
+
+`areaServed` names where the business works, `founder` points to the person who founded it,
+usually by the `@id` of a `Person` node output elsewhere on the site:
+
+```js
+defaultLocalBusiness: {
+  // …
+  areaServed: [
+    { type: 'City', name: 'Rostock' },
+    { type: 'State', name: 'Mecklenburg-Vorpommern' },
+  ],
+  founder: { id: 'https://example.com/#person' },
+}
+```
+
+```json
+"areaServed": [
+  { "@type": "City", "name": "Rostock" },
+  { "@type": "State", "name": "Mecklenburg-Vorpommern" }
+],
+"founder": { "@type": "Person", "@id": "https://example.com/#person" }
+```
+
+A city page can pass its own `areaServed` and keep everything else from the defaults.
+
 ## Props
 
 | Prop | Type | Required | Default / fallback | Description |
@@ -159,6 +185,8 @@ the default address.
 | `geo` | `{ latitude: number; longitude: number }` | No (recommended) | `defaultLocalBusiness.geo` | Coordinates; latitude −90 to 90, longitude −180 to 180 |
 | `openingHours` | `string[]` | No (recommended) | `defaultLocalBusiness.openingHours` | Opening hours in schema.org format, at least one entry |
 | `sameAs` | `string[]` (absolute URLs) | No (recommended) | `defaultLocalBusiness.sameAs` | Profiles of the business elsewhere (Google Business Profile, social media), at least one entry |
+| `areaServed` | `string`, `{ type?, name, id?, url? }` or an array of both | No | `defaultLocalBusiness.areaServed` | Area the business serves: a place name as text, or a place with `type` `'Place'` (default), `'AdministrativeArea'`, `'City'`, `'State'` or `'Country'` |
+| `founder` | `{ type?, id?, name?, headline?, url? }` or an array | No | `defaultLocalBusiness.founder` | Reference by `id` or `url`; `type` is free text, default `'Person'` |
 | `parentOrganization` | `{ type?, id?, name?, headline?, url? }` | No | – | Reference by `id` or `url`; `type` is free text, default `'Organization'` |
 | `subOrganization` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'Organization'` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |

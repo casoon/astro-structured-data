@@ -27,6 +27,8 @@ const address = props.address ?? defaults.address;
 const geo = props.geo ?? defaults.geo;
 const openingHours = props.openingHours ?? defaults.openingHours;
 const sameAs = props.sameAs ?? defaults.sameAs;
+const areaServed = props.areaServed ?? defaults.areaServed;
+const founder = props.founder ?? defaults.founder;
 const parentOrganization = props.parentOrganization ?? defaults.parentOrganization;
 const subOrganization = props.subOrganization ?? defaults.subOrganization;
 
@@ -64,7 +66,16 @@ const localBusinessSchema = {
   ...(openingHours && { openingHours }),
   ...(sameAs && { sameAs }),
 } satisfies LocalBusiness;
+type ServedArea = string | { type?: string; name: string; id?: string; url?: string };
+const buildServedArea = (area: ServedArea) => typeof area === 'string' ? area : {
+  '@type': area.type ?? 'Place',
+  ...(area.id && { '@id': area.id }),
+  name: area.name,
+  ...(area.url && { url: area.url }),
+};
 Object.assign(localBusinessSchema, {
+  ...(areaServed && { areaServed: Array.isArray(areaServed) ? areaServed.map(buildServedArea) : buildServedArea(areaServed) }),
+  ...(founder && { founder: buildReferences(founder, 'Person') }),
   ...(parentOrganization && { parentOrganization: buildReference(parentOrganization, 'Organization') }),
   ...(subOrganization && { subOrganization: buildReferences(subOrganization, 'Organization') }),
 });

@@ -6,6 +6,13 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+### Added
+
+- **LocalBusinessSchema:** `areaServed` names the area a business serves, as text or as a
+  `Place`, `AdministrativeArea`, `City`, `State` or `Country`; `founder` references the founder
+  by `@id` or `url`. Both can be set in `defaultLocalBusiness`.
+  Details: [LocalBusinessSchema](https://casoon.github.io/astro-structured-data/docs/components/local-business/#service-area-and-founder).
+
 ### Changed
 
 - **Pages:** the project site uses the current shared theme (0.19.0).
