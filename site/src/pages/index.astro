@@ -1,17 +1,21 @@
 ---
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 import {
   Badge,
   Badges,
   Button,
   CodeBlock,
-  Facts,
+  ElementList,
   Faq,
-  Features,
   Hero,
   Install,
   Quickstart,
   ReleaseHighlights,
+  SectionIntro,
+  Split,
+  StatBand,
+  Tradeoffs,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
 import config from 'virtual:casoon-pages/config';
@@ -22,6 +26,36 @@ import { url } from '@casoon/pages-theme/url';
 import buildNarrowSvg from '../../captures/build-narrow.svg?url';
 import buildSvg from '../../captures/build.svg?url';
 import Diagram from '../components/Diagram.astro';
+import InvalidEvent from '../../../examples/invalid-event.astro';
+import { renderExample } from '../render';
+
+// Key figures, read from the package so they cannot drift.
+const componentCount = (await readdir('../src/components')).filter((f) => f.endsWith('.astro')).length;
+const zodCount = (await readFile('../src/zod.ts', 'utf8')).match(/^export const \w+ZodSchema\b/gm)?.length ?? 0;
+const pkg = JSON.parse(await readFile('../package.json', 'utf8'));
+const astroMajors = [...pkg.peerDependencies.astro.matchAll(/\^(\d+)/g)].map((m) => m[1]);
+
+// The real error examples/invalid-event.astro stops the build with, rendered by the package.
+const invalid = await renderExample(InvalidEvent as AstroComponentFactory, '/events/meetup/');
+if (invalid.ok) throw new Error('examples/invalid-event.astro is expected to fail validation');
+const invalidSource = `<EventSchema
+  name="Tech Meetup Berlin"
+  startDate="15.06.2026"
+  attendanceMode="Offline"
+  locationName="Hub Berlin"
+  price={10}
+  priceCurrency="euro"
+/>`;
+
+const collectionCode = `// src/content.config.ts
+import { defineCollection } from 'astro:content';
+import { glob } from 'astro/loaders';
+import { eventZodSchema } from '@casoon/astro-structured-data/zod';
+
+const events = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/events' }),
+  schema: eventZodSchema,
+});`;
 
 // Skip "Unreleased": it has no version to show as "New in v…" yet.
 const latestRelease = config.changelog
@@ -144,6 +178,15 @@ const groups = [
     </picture>
   </Hero>
 
+  <StatBand
+    items={[
+      { value: String(componentCount), label: 'Astro components, one per schema type plus generic and graph' },
+      { value: String(zodCount), label: 'Zod schemas for content collections and forms' },
+      { value: astroMajors.join(' · '), label: 'Astro major versions supported' },
+      { value: '0 kB', label: 'client JavaScript added to your pages' },
+    ]}
+  />
+
   <section class="section" aria-labelledby="results-heading">
     <p class="cp-label">What it is for</p>
     <h2 id="results-heading">From the data on your page to a richer search result</h2>
@@ -188,23 +231,47 @@ const groups = [
     </p>
   </section>
 
-  <Features
-    heading="Why it exists"
-    items={[
-      {
-        title: 'Hand-written JSON-LD fails silently',
-        body: 'A German date, a € sign instead of EUR or a missing field raises no error. The markup is simply ignored, and you notice weeks later in Search Console.',
-      },
-      {
-        title: 'Your pages already have the data',
-        body: 'Titles, dates, prices and addresses sit in frontmatter, content collections or your CMS. Pass them as props instead of keeping a second copy as JSON.',
-      },
-      {
-        title: 'Errors surface in the build',
-        body: 'Every component checks its props. Wrong data stops the build with the component, the page and the field, so it never reaches production.',
-      },
-    ]}
+  <SectionIntro
+    title="Checked in the build, not weeks later in Search Console."
+    lead="Hand-written JSON-LD fails silently: a German date or a € sign instead of EUR raises no error, the markup is just ignored. Here every prop is validated before the page is written."
   />
+
+  <Split
+    index="01"
+    title="Wrong data stops the build"
+    lead="Each component validates its props with Zod: ISO 8601 dates, ISO 4217 currencies, absolute URLs, fields that belong together. The error names the component, the page and every field."
+    note="Output of `examples/invalid-event.astro`, rendered by the package when this page was built."
+    links={[{ label: 'Validation rules', href: url('docs/guides/validation/') }]}
+  >
+    <CodeBlock code={invalidSource} lang="astro" title="src/pages/events/meetup.astro" label="Page" />
+    <CodeBlock code={invalid.error} lang="text" title="astro build" label="Error" />
+  </Split>
+
+  <Split
+    index="02"
+    reverse
+    title="Meta tags from the same data"
+    lead="With `generateMeta`, canonical, Open Graph and Twitter tags are derived from the primary schema of the page, so title, description and image are written once."
+    links={[{ label: 'Meta tags', href: url('docs/guides/meta-tags/') }]}
+  >
+    <ElementList
+      items={[
+        { term: 'canonical', body: 'The page URL, from the schema that describes the page.' },
+        { term: 'og:*', body: 'Title, description, image, URL, site name and type.' },
+        { term: 'article:*', body: 'Published and modified time for articles.' },
+        { term: 'twitter:*', body: 'The card, with a large image when there is one.' },
+      ]}
+    />
+  </Split>
+
+  <Split
+    index="03"
+    title="The same schemas for your content"
+    lead="Every component ships its Zod schema. Use it for a content collection, and wrong frontmatter is reported in the file where it is written, before a page renders it."
+    links={[{ label: 'Zod schemas and content', href: url('docs/guides/content-collections/') }]}
+  >
+    <CodeBlock code={collectionCode} lang="ts" title="src/content.config.ts" label="Config" />
+  </Split>
 
   <section class="section" aria-labelledby="how-heading">
     <p class="cp-label">How it works</p>
@@ -248,12 +315,14 @@ const groups = [
     </div>
   </section>
 
-  <Facts
+  <Tradeoffs
+    title="What it does not do"
+    lead="The package makes the markup correct and complete. Some things stay outside of it."
     items={[
-      { value: '18', label: 'Astro components, one per schema type plus generic and graph' },
-      { value: '16', label: 'Zod schemas for content collections and forms' },
-      { value: '277', label: 'tests, including real static, dev and SSR builds' },
-      { value: '0 kB', label: 'client JavaScript added to your pages' },
+      '**No guaranteed rich result.** Whether and how a result is enhanced is decided by the search engine.',
+      '**No live check against Google.** The rules follow the documented required and recommended fields; the Rich Results Test stays the final word.',
+      '**The generic component is not validated.** `<Schema>` outputs any schema.org object as given, for types without a dedicated component.',
+      '**Graph mode and meta tags hold back streaming.** With either on, an on-demand page is sent in one piece once it has fully rendered.',
     ]}
   />
 

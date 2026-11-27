@@ -6,6 +6,13 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+### Changed
+
+- **Pages:** the start page shows key figures read from the package, the build error of an
+  invalid event as rendered by the package, the derived meta tags and the Zod schemas for
+  content, and what the package does not do.
+- **Docs:** the compatibility table covers 2.6.x.
+
 ## [2.6.0] - 2026-11-27
 
 ### Added

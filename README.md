@@ -77,7 +77,7 @@ Imported from `@casoon/astro-structured-data/components`. Each page has an examp
 | [`ArticleSchema`](https://casoon.github.io/astro-structured-data/docs/components/article/) | Blog posts, news and articles (`BlogPosting`, `Article`, `NewsArticle`) |
 | [`FAQSchema`](https://casoon.github.io/astro-structured-data/docs/components/faq/) | Question and answer pages (`FAQPage`) |
 | [`ProductSchema`](https://casoon.github.io/astro-structured-data/docs/components/product/) | Products with offers, ratings, shipping and returns |
-| [`LocalBusinessSchema`](https://casoon.github.io/astro-structured-data/docs/components/local-business/) | Address, phone and opening hours of a business |
+| [`LocalBusinessSchema`](https://casoon.github.io/astro-structured-data/docs/components/local-business/) | Address, phone, opening hours and service area of a business |
 | [`EventSchema`](https://casoon.github.io/astro-structured-data/docs/components/event/) | On-site, online and hybrid events |
 | [`OrganizationSchema`](https://casoon.github.io/astro-structured-data/docs/components/organization/) | The organization behind the site |
 | [`WebSiteSchema`](https://casoon.github.io/astro-structured-data/docs/components/website/) | The site itself, optionally with a site search action |
@@ -106,7 +106,7 @@ Zod schemas for every component, `validateRecommended` and `calculateReadingTime
 
 | Package version | Astro | Node.js |
 |---|---|---|
-| **2.4.x** | 5.x · 6.x · 7.x | ≥ 18 |
+| **2.4.x – 2.6.x** | 5.x · 6.x · 7.x | ≥ 18 |
 | 2.1.x – 2.3.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 2.0.x | 5.x · 6.x · 7.x | ≥ 18 |
 | 1.5.x | 5.x · 6.x · 7.x | ≥ 18 |
