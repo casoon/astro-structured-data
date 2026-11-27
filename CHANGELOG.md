@@ -6,6 +6,8 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-11-27
+
 ### Added
 
 - **LocalBusinessSchema:** `areaServed` names the area a business serves, as text or as a
@@ -16,7 +18,6 @@ reconstructed from the commit history.
 ### Changed
 
 - **Pages:** the project site uses the current shared theme (0.19.0).
-
 
 ## [2.5.0] - 2026-11-25
 
