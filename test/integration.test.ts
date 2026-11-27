@@ -40,6 +40,9 @@ test('rejects invalid option values and defaults', () => {
   expect(() => structuredData({ siteUrl: 'ftp://example.com' })).toThrow(/siteUrl/);
   expect(() => structuredData({ twitterSite: 'example' })).toThrow(/twitterSite/);
   expect(() => structuredData({ defaultLocalBusiness: { name: 'Shop', openingHours: ['always'] } })).toThrow(/openingHours/);
+  expect(() => structuredData({ defaultLocalBusiness: { name: 'Shop', type: 'WebDesignCompany' } as any })).toThrow(/defaultLocalBusiness/);
+  expect(() => structuredData({ defaultLocalBusiness: { name: 'Shop', ratingValue: 4 } })).toThrow(/reviewCount/);
+  expect(() => structuredData({ defaultLocalBusiness: { name: 'Shop', unknown: 1 } as any })).toThrow(/defaultLocalBusiness/);
   expect(() => structuredData({ defaultArticlePublisher: { name: '' } })).toThrow(/defaultArticlePublisher/);
 });
 

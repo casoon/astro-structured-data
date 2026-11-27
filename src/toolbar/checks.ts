@@ -1,4 +1,5 @@
 import { isAggregateOffer, missingOfferPrice } from '../utils/offers.js';
+import { withLocalBusiness } from '../local-business-types.js';
 
 // Types the toolbar has content checks for; anything else is shown as "Not checked", never "Valid".
 export const CHECKED_TYPES = new Set([
@@ -9,7 +10,8 @@ export const CHECKED_TYPES = new Set([
 
 /** The type to check and preview: for an `@type` array the first one the toolbar knows. */
 export function primaryType(value: unknown): string | undefined {
-  const types = (Array.isArray(value) ? value : [value]).filter((t): t is string => typeof t === 'string');
+  // LocalBusiness subtypes are checked and previewed as LocalBusiness.
+  const types = withLocalBusiness((Array.isArray(value) ? value : [value]).filter((t): t is string => typeof t === 'string'));
   return types.find((t) => CHECKED_TYPES.has(t)) ?? types[0];
 }
 

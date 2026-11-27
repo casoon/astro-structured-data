@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { missingOfferPrice } from './utils/offers.js';
+import { LOCAL_BUSINESS_TYPES, withLocalBusiness } from './local-business-types.js';
 
 // ---------------------------------------------------------------------------
 // Building blocks
@@ -403,6 +404,7 @@ export const productZodSchema = z.object({
 // 4. Local Business (all fields optional — site-wide defaults can fill them in; the
 // component requires a name after merging).
 export const localBusinessZodSchema = z.object({
+  type: z.enum(LOCAL_BUSINESS_TYPES).optional(),
   name: text.optional(),
   id: text.optional(),
   url: recommended(httpUrl.optional(), 'url'),
@@ -420,8 +422,21 @@ export const localBusinessZodSchema = z.object({
   sameAs: recommended(z.array(httpUrl).min(1).optional(), 'sameAs'),
   areaServed: oneOrMore(servedArea).optional(),
   founder: references,
+  ratingValue: rating.optional(),
+  reviewCount: positiveInt.optional(),
+  offerCatalog: z.strictObject({
+    name: text,
+    items: z.array(z.strictObject({
+      name: text,
+      description: text.optional(),
+      url: link.optional(),
+      type: z.enum(['Service', 'Product']).optional(),
+    })).min(1),
+  }).optional(),
   parentOrganization: reference.optional(),
   subOrganization: references,
+}).superRefine((data, ctx) => {
+  requireTogether(data, ctx, ['ratingValue', 'reviewCount']);
 });
 
 // 5. Event
@@ -825,8 +840,8 @@ function hasPath(item: Record<string, any>, path: string): boolean {
 
 /** Recommended schema.org properties missing on a JSON-LD item (empty for types without any). */
 export function missingRecommended(item: Record<string, any>): string[] {
-  const types: unknown[] = Array.isArray(item['@type']) ? item['@type'] : [item['@type']];
-  const fields = new Set(types.flatMap((type) => (typeof type === 'string' && RECOMMENDED_FIELDS[type]) || []));
+  const types = withLocalBusiness((Array.isArray(item['@type']) ? item['@type'] : [item['@type']]).filter((t): t is string => typeof t === 'string'));
+  const fields = new Set(types.flatMap((type) => RECOMMENDED_FIELDS[type] ?? []));
   return [...fields].filter((path) => !hasPath(item, path));
 }
 

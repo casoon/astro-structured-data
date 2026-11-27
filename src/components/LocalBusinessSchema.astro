@@ -14,6 +14,7 @@ const props = parseProps('LocalBusinessSchema', localBusinessZodSchema, Astro.pr
 // Site-wide defaults are validated against the same schema when the integration is set up.
 const defaults = getGlobalConfig().defaultLocalBusiness ?? {};
 
+const type = props.type ?? defaults.type ?? 'LocalBusiness';
 const name = props.name ?? defaults.name;
 // The default @id only belongs to the default business, not to one named via props.
 const id = props.id ?? (props.name ? undefined : defaults.id);
@@ -28,6 +29,9 @@ const geo = props.geo ?? defaults.geo;
 const openingHours = props.openingHours ?? defaults.openingHours;
 const sameAs = props.sameAs ?? defaults.sameAs;
 const areaServed = props.areaServed ?? defaults.areaServed;
+// Rating value and count come as a pair, from the props or from the defaults.
+const rating = props.ratingValue !== undefined ? props : defaults;
+const offerCatalog: LocalBusinessProps['offerCatalog'] = props.offerCatalog ?? defaults.offerCatalog;
 const founder = props.founder ?? defaults.founder;
 const parentOrganization = props.parentOrganization ?? defaults.parentOrganization;
 const subOrganization = props.subOrganization ?? defaults.subOrganization;
@@ -73,7 +77,27 @@ const buildServedArea = (area: ServedArea) => typeof area === 'string' ? area : 
   name: area.name,
   ...(area.url && { url: area.url }),
 };
+// A subtype such as Physiotherapy or HairSalon (validated against schema.org).
+localBusinessSchema['@type'] = type as 'LocalBusiness';
 Object.assign(localBusinessSchema, {
+  ...(rating.ratingValue !== undefined && rating.reviewCount !== undefined && {
+    aggregateRating: { '@type': 'AggregateRating', ratingValue: rating.ratingValue, reviewCount: rating.reviewCount },
+  }),
+  ...(offerCatalog && {
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: offerCatalog.name,
+      itemListElement: offerCatalog.items.map((item) => ({
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': item.type ?? 'Service',
+          name: item.name,
+          ...(item.description && { description: item.description }),
+          ...(item.url && { url: item.url }),
+        },
+      })),
+    },
+  }),
   ...(areaServed && { areaServed: Array.isArray(areaServed) ? areaServed.map(buildServedArea) : buildServedArea(areaServed) }),
   ...(founder && { founder: buildReferences(founder, 'Person') }),
   ...(parentOrganization && { parentOrganization: buildReference(parentOrganization, 'Organization') }),

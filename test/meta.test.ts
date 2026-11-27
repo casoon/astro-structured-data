@@ -54,6 +54,8 @@ test('picks Event and JobPosting over site-wide schemas', () => {
   const event = { '@type': 'Event', name: 'Meetup' };
   const job = { '@type': 'JobPosting', title: 'Dev' };
   assert.equal(findPrimaryItem([business, event]), event);
+  const bakery = { '@type': 'Bakery', name: 'B' };
+  assert.equal(findPrimaryItem([site, bakery]), bakery);
   assert.equal(findPrimaryItem([site, job]), job);
 });
 

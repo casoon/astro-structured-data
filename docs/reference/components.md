@@ -15,7 +15,7 @@ import { ArticleSchema, FAQSchema } from '@casoon/astro-structured-data/componen
 | [`ArticleSchema`](../../components/article/) | `BlogPosting` (default), `Article`, `NewsArticle` | `title`, `description`, `datePublished`, `authorName` |
 | [`FAQSchema`](../../components/faq/) | `FAQPage` | `questions` |
 | [`ProductSchema`](../../components/product/) | `Product` | `name`, `description`, `imageUrl` |
-| [`LocalBusinessSchema`](../../components/local-business/) | `LocalBusiness` | `name` (or `defaultLocalBusiness.name`) |
+| [`LocalBusinessSchema`](../../components/local-business/) | `LocalBusiness` or a subtype | `name` (or `defaultLocalBusiness.name`) |
 | [`EventSchema`](../../components/event/) | `Event` | `name`, `startDate`; venue and/or `onlineUrl` by `attendanceMode` |
 | [`OrganizationSchema`](../../components/organization/) | `Organization` | `name` (or `defaultArticlePublisher.name`) |
 | [`WebSiteSchema`](../../components/website/) | `WebSite` | `name` |

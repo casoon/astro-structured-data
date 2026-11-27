@@ -1,3 +1,4 @@
+import { withLocalBusiness } from '../local-business-types.js';
 export interface GeneratedMeta {
   canonical?: string;
   description?: string;
@@ -36,8 +37,9 @@ export const PRIMARY_META_TYPES = [
 /** `@type` may be a single type or a list of types. */
 export function typesOf(item: Record<string, any>): string[] {
   const type = item['@type'];
-  if (Array.isArray(type)) return type.filter((t): t is string => typeof t === 'string');
-  return typeof type === 'string' ? [type] : [];
+  // LocalBusiness subtypes (Bakery, Physiotherapy, …) count as LocalBusiness.
+  if (Array.isArray(type)) return withLocalBusiness(type.filter((t): t is string => typeof t === 'string'));
+  return typeof type === 'string' ? withLocalBusiness([type]) : [];
 }
 
 const hasType = (item: Record<string, any>, ...types: string[]) => typesOf(item).some((t) => types.includes(t));

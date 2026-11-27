@@ -1,6 +1,6 @@
 ---
 title: LocalBusinessSchema
-description: Outputs a LocalBusiness with address, coordinates, opening hours and contact data; use it for shops, offices and other businesses with a physical location.
+description: Outputs a LocalBusiness or one of its subtypes with address, coordinates, opening hours and contact data; use it for shops, offices and other businesses with a physical location.
 order: 4
 ---
 
@@ -9,7 +9,8 @@ outputs a [`LocalBusiness`](https://schema.org/LocalBusiness) with
 [`PostalAddress`](https://schema.org/PostalAddress) and
 [`GeoCoordinates`](https://schema.org/GeoCoordinates), and targets Google's
 [local business details](https://developers.google.com/search/docs/appearance/structured-data/local-business)
-(address, opening hours and phone number in the knowledge panel and on Maps).
+(address, opening hours and phone number in the knowledge panel and on Maps). With `type`,
+it outputs a more specific subtype such as `Bakery`, `Physiotherapy` or `AutoDealer`.
 
 Business data rarely changes between pages, so it usually lives in the integration option
 `defaultLocalBusiness`. Every prop falls back to it individually.
@@ -143,6 +144,59 @@ phone number, coordinates and opening hours):
 such as `address` replaces the configured object as a whole; its fields are not merged with
 the default address.
 
+## Business type
+
+`type` sets a schema.org subtype of `LocalBusiness`, such as `Bakery`, `HairSalon`,
+`Physiotherapy`, `MedicalClinic`, `AutoDealer` or `HomeAndConstructionBusiness`. Only the
+LocalBusiness subtypes defined in schema.org are accepted; a type that does not exist there,
+such as `WebDesignCompany`, fails the build. The default is `LocalBusiness`.
+
+```js
+defaultLocalBusiness: {
+  type: 'Bakery',
+  name: 'Example Bakery',
+  // …
+}
+```
+
+Meta tags, the recommended-field report and the dev toolbar handle a subtype like
+`LocalBusiness`.
+
+## Rating and offer catalog
+
+`ratingValue` and `reviewCount` are output as an `AggregateRating` and only come together.
+`offerCatalog` lists the services or products of the business as a `hasOfferCatalog`:
+
+```js
+defaultLocalBusiness: {
+  // …
+  ratingValue: 4.6,
+  reviewCount: 118,
+  offerCatalog: {
+    name: 'Services',
+    items: [
+      { name: 'Bread and rolls', url: '/range/bread/' },
+      { name: 'Wedding cakes', description: 'Made to order', url: '/range/cakes/' },
+    ],
+  },
+}
+```
+
+```json
+"aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.6, "reviewCount": 118 },
+"hasOfferCatalog": {
+  "@type": "OfferCatalog",
+  "name": "Services",
+  "itemListElement": [
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Bread and rolls", "url": "/range/bread/" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wedding cakes", "description": "Made to order", "url": "/range/cakes/" } }
+  ]
+}
+```
+
+Items are a `Service` unless `type: 'Product'` is set. Google does not show review stars for
+a business that publishes ratings about itself; the rating is still valid schema.org data.
+
 ## Service area and founder
 
 `areaServed` names where the business works, `founder` points to the person who founded it,
@@ -173,6 +227,7 @@ A city page can pass its own `areaServed` and keep everything else from the defa
 
 | Prop | Type | Required | Default / fallback | Description |
 | --- | --- | --- | --- | --- |
+| `type` | LocalBusiness subtype | No | `defaultLocalBusiness.type`, else `'LocalBusiness'` | Output as `@type`, e.g. `'Bakery'` or `'Physiotherapy'`; only schema.org subtypes of LocalBusiness |
 | `name` | `string` | Yes, unless configured | `defaultLocalBusiness.name` | Business name |
 | `id` | `string` | No | `defaultLocalBusiness.id`, unless `name` is set | Output as `@id`, so other items can reference the business |
 | `url` | `string` (absolute URL) | No (recommended) | `defaultLocalBusiness.url` | Business website |
@@ -187,6 +242,9 @@ A city page can pass its own `areaServed` and keep everything else from the defa
 | `sameAs` | `string[]` (absolute URLs) | No (recommended) | `defaultLocalBusiness.sameAs` | Profiles of the business elsewhere (Google Business Profile, social media), at least one entry |
 | `areaServed` | `string`, `{ type?, name, id?, url? }` or an array of both | No | `defaultLocalBusiness.areaServed` | Area the business serves: a place name as text, or a place with `type` `'Place'` (default), `'AdministrativeArea'`, `'City'`, `'State'` or `'Country'` |
 | `founder` | `{ type?, id?, name?, headline?, url? }` or an array | No | `defaultLocalBusiness.founder` | Reference by `id` or `url`; `type` is free text, default `'Person'` |
+| `ratingValue` | `number` (0–5) | No | `defaultLocalBusiness.ratingValue` | Average rating, output with `reviewCount` as `aggregateRating` |
+| `reviewCount` | `number` (positive integer) | No | `defaultLocalBusiness.reviewCount` | Number of reviews; required together with `ratingValue` |
+| `offerCatalog` | `{ name, items: { name, description?, url?, type? }[] }` | No | `defaultLocalBusiness.offerCatalog` | Services or products as `hasOfferCatalog`; `type` is `'Service'` (default) or `'Product'`, at least one item |
 | `parentOrganization` | `{ type?, id?, name?, headline?, url? }` | No | – | Reference by `id` or `url`; `type` is free text, default `'Organization'` |
 | `subOrganization` | `{ type?, id?, name?, headline?, url? }` or an array | No | – | Reference by `id` or `url`; `type` is free text, default `'Organization'` |
 | `changefreq`, `priority` | sitemap hints | No | – | See [Meta tags and sitemap hints](../../guides/meta-tags/) |
@@ -206,6 +264,8 @@ Violations fail the build (see [Validation](../../guides/validation/)):
   an optional time range, e.g. `'Mo-Fr 09:00-18:00'`, `'Sa 10:00-14:00'`,
   `'Mo,We,Fr 08:00-12:00'`, `'Su'`. Days are `Mo`, `Tu`, `We`, `Th`, `Fr`, `Sa`, `Su`; times
   are `HH:MM` with hours `00` to `24`.
+- `type` must be `LocalBusiness` or one of its subtypes in schema.org.
+- `ratingValue` and `reviewCount` only together, from the props or from the defaults.
 - `url` and `sameAs` entries must be absolute `http(s)` URLs; `email` must be a valid email
   address.
 - Text fields must not be empty.

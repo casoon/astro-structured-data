@@ -6,8 +6,16 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+### Added
+
+- **LocalBusinessSchema:** `type` sets a schema.org subtype such as `Physiotherapy` or
+  `AutoDealer`; `ratingValue`, `reviewCount` and `offerCatalog` add a rating and a catalog of
+  services. Details: [LocalBusinessSchema](https://casoon.github.io/astro-structured-data/docs/components/local-business/#business-type).
+
 ### Changed
 
+- **Meta tags, build report, Dev Toolbar:** LocalBusiness subtypes are handled like
+  `LocalBusiness`.
 - **Pages:** the start page shows key figures read from the package, the build error of an
   invalid event as rendered by the package, the derived meta tags and the Zod schemas for
   content, and what the package does not do.

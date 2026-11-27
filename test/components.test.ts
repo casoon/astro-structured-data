@@ -392,6 +392,38 @@ describe('no fabricated or dropped data', () => {
       .toEqual({ '@type': 'City', name: 'Schwerin' });
   });
 
+  test('LocalBusiness subtype, rating and offer catalog, also from defaultLocalBusiness', async () => {
+    const data = (await render(C.LocalBusinessSchema, {
+      type: 'Physiotherapy',
+      name: 'Praxis',
+      ratingValue: 4.9,
+      reviewCount: 88,
+      offerCatalog: {
+        name: 'Leistungen',
+        items: [{ name: 'Krankengymnastik', url: '/leistungen/kg/' }, { name: 'Gutschein', type: 'Product', description: 'Für alle Leistungen' }],
+      },
+    })).scripts[0].data;
+    expect(data['@type']).toBe('Physiotherapy');
+    expect(data.aggregateRating).toEqual({ '@type': 'AggregateRating', ratingValue: 4.9, reviewCount: 88 });
+    expect(data.hasOfferCatalog).toEqual({
+      '@type': 'OfferCatalog',
+      name: 'Leistungen',
+      itemListElement: [
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Krankengymnastik', url: '/leistungen/kg/' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Gutschein', description: 'Für alle Leistungen' } },
+      ],
+    });
+    expect((await render(C.LocalBusinessSchema, { name: 'Shop' })).scripts[0].data['@type']).toBe('LocalBusiness');
+
+    config.current.defaultLocalBusiness = { type: 'AutoDealer', name: 'Autohaus', ratingValue: 4.6, reviewCount: 118 };
+    const fromDefaults = (await render(C.LocalBusinessSchema, {})).scripts[0].data;
+    expect(fromDefaults['@type']).toBe('AutoDealer');
+    expect(fromDefaults.aggregateRating).toEqual({ '@type': 'AggregateRating', ratingValue: 4.6, reviewCount: 118 });
+    const overridden = (await render(C.LocalBusinessSchema, { type: 'AutoRepair', ratingValue: 4.8, reviewCount: 20 })).scripts[0].data;
+    expect(overridden['@type']).toBe('AutoRepair');
+    expect(overridden.aggregateRating.reviewCount).toBe(20);
+  });
+
   test('Article rejects a publisher id without a publisher name', async () => {
     await expect(render(C.ArticleSchema, { ...article, publisherId: '#org' })).rejects.toThrow(/publisherId/);
   });
@@ -498,6 +530,9 @@ describe('invalid data fails the build', () => {
     ['remote job without applicant location', C.JobPostingSchema, { ...job, jobLocation: undefined, jobLocationType: 'TELECOMMUTE' }, /applicantLocationRequirements/],
     ['video without content or embed URL', C.VideoSchema, { ...video, embedUrl: undefined }, /contentUrl/],
     ['opening hours in free text', C.LocalBusinessSchema, { name: 'Shop', openingHours: ['weekdays'] }, /openingHours/],
+    ['business type that is not in schema.org', C.LocalBusinessSchema, { name: 'Shop', type: 'WebDesignCompany' }, /type/],
+    ['rating without review count', C.LocalBusinessSchema, { name: 'Shop', ratingValue: 4.5 }, /reviewCount/],
+    ['empty offer catalog', C.LocalBusinessSchema, { name: 'Shop', offerCatalog: { name: 'Leistungen', items: [] } }, /items/],
     ['area served with an unknown type', C.LocalBusinessSchema, { name: 'Shop', areaServed: { type: 'Town', name: 'Rostock' } }, /areaServed/],
     ['founder without id or url', C.LocalBusinessSchema, { name: 'Shop', founder: { name: 'Jane' } }, /"id" or "url"/],
     ['empty FAQ', C.FAQSchema, { questions: [] }, /questions/],

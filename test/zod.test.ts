@@ -44,6 +44,12 @@ test('integration defaults cover recommended props', () => {
   assert.ok(!article.some((w) => w.field === 'publisherName' || w.field === 'publisherLogo'));
 });
 
+test('missingRecommended treats LocalBusiness subtypes as LocalBusiness', () => {
+  const fields = missingRecommended({ '@type': 'Bakery', name: 'B' });
+  assert.ok(fields.includes('telephone'));
+  assert.ok(fields.includes('address'));
+});
+
 test('missingRecommended checks every type of an @type array', () => {
   const fields = missingRecommended({ '@type': ['Product', 'Thing'], name: 'P', offers: {} });
   assert.ok(fields.includes('brand'));

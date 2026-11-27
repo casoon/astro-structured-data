@@ -1,5 +1,10 @@
 import { expect, test } from 'vitest';
-import { collectWarnings } from '../src/toolbar/checks.ts';
+import { collectWarnings, primaryType } from '../src/toolbar/checks.ts';
+
+test('LocalBusiness subtypes are checked as LocalBusiness', () => {
+  expect(primaryType('Physiotherapy')).toBe('LocalBusiness');
+  expect(primaryType('Thing')).toBe('Thing');
+});
 
 const product = (offers: unknown) => ({
   '@context': 'https://schema.org',
