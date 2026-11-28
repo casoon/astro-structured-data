@@ -7,6 +7,7 @@ import {
   Button,
   CodeBlock,
   ElementList,
+  Features,
   Faq,
   Hero,
   Install,
@@ -108,50 +109,52 @@ const previews = [
   },
 ];
 
-const groups = [
-  {
-    label: 'Content',
-    items: [
-      ['ArticleSchema', 'article'],
-      ['RecipeSchema', 'recipe'],
-      ['VideoSchema', 'video'],
-      ['FAQSchema', 'faq'],
-    ],
-  },
-  {
-    label: 'Shops and apps',
-    items: [
-      ['ProductSchema', 'product'],
-      ['CollectionPageSchema', 'collection-page'],
-      ['SoftwareAppSchema', 'software-app'],
-    ],
-  },
-  {
-    label: 'Businesses',
-    items: [
-      ['LocalBusinessSchema', 'local-business'],
-      ['OrganizationSchema', 'organization'],
-      ['EventSchema', 'event'],
-      ['JobPostingSchema', 'job-posting'],
-    ],
-  },
-  {
-    label: 'Site structure',
-    items: [
-      ['WebSiteSchema', 'website'],
-      ['WebPageSchema', 'webpage'],
-      ['ProfilePageSchema', 'profile-page'],
-      ['BreadcrumbSchema', 'breadcrumbs'],
-      ['AutoBreadcrumbSchema', 'breadcrumbs'],
-    ],
-  },
+// What a complete site gets: site-wide data once, then one component per kind of page.
+const siteWide = [
+  ['WebSiteSchema', 'website', 'WebSite', 'The site name and alternate name Google shows above results, language and publisher.'],
+  ['OrganizationSchema', 'organization', 'Organization', 'Who is behind the site: legal name, logo, contact points, profiles on other platforms.'],
+  ['LocalBusinessSchema', 'local-business', 'LocalBusiness', 'Address, phone, opening hours, service area and rating of a business with a location.'],
+  ['AutoBreadcrumbSchema', 'breadcrumbs', 'BreadcrumbList', 'Where a page sits in the site, shown as a trail instead of the bare URL.'],
 ];
+const pageTypes = [
+  ['Blog post, news', 'ArticleSchema', 'article', 'Headline, author, dates, image'],
+  ['Product page', 'ProductSchema', 'product', 'Price, stock, rating, shipping, returns'],
+  ['Category, list', 'CollectionPageSchema', 'collection-page', 'The items a page lists'],
+  ['Event', 'EventSchema', 'event', 'Date, venue or stream, tickets'],
+  ['Job ad', 'JobPostingSchema', 'job-posting', 'Salary, location, remote, deadline'],
+  ['Recipe', 'RecipeSchema', 'recipe', 'Times, ingredients, steps, rating'],
+  ['Video', 'VideoSchema', 'video', 'Thumbnail, duration, upload date'],
+  ['FAQ', 'FAQSchema', 'faq', 'Questions and answers'],
+  ['App, software', 'SoftwareAppSchema', 'software-app', 'Platform, price, rating'],
+  ['Author, team member', 'ProfilePageSchema', 'profile-page', 'The person, their role and expertise'],
+  ['About, contact, any page', 'WebPageSchema', 'webpage', 'Page type, breadcrumb, dates'],
+  ['Anything else', 'Schema', 'schema', 'Any schema.org type, as given'],
+];
+
+const configCode = `// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import structuredData from '@casoon/astro-structured-data';
+
+export default defineConfig({
+  site: 'https://example.com',
+  integrations: [structuredData({ generateMeta: true, siteName: 'Example Blog' })],
+});`;
+
+const layoutCode = `---
+// src/layouts/Base.astro – once, on every page
+import { WebSiteSchema, OrganizationSchema, AutoBreadcrumbSchema }
+  from '@casoon/astro-structured-data/components';
+---
+<WebSiteSchema name="Example Blog" />
+<OrganizationSchema logoUrl="/logo.png" sameAs={['https://github.com/example']} />
+<AutoBreadcrumbSchema />`;
+
 ---
 
 <Base>
   <Hero
-    title="Rich results, checked before you ship."
-    lead="Put a component on the page and pass the data it already has. astro-structured-data writes the schema.org JSON-LD and meta tags that search engines read, and stops the build when the data would not be valid."
+    title="Structured data for your whole Astro site."
+    lead="Google, Bing and AI assistants read schema.org data to understand what a page is: an article and its author, a product and its price, a business and its opening hours. This integration equips every page of an Astro site with it, one component per kind of page, and checks the data in the build."
   >
     <Install
       commands={[
@@ -178,21 +181,84 @@ const groups = [
     </picture>
   </Hero>
 
-  <StatBand
+  <Features
+    heading="What structured data is for"
     items={[
-      { value: String(componentCount), label: 'Astro components, one per schema type plus generic and graph' },
-      { value: String(zodCount), label: 'Zod schemas for content collections and forms' },
-      { value: astroMajors.join(' · '), label: 'Astro major versions supported' },
-      { value: '0 kB', label: 'client JavaScript added to your pages' },
+      {
+        title: 'Rich results in Google',
+        body: 'Prices, stock, ratings, event dates, recipe times, job details and breadcrumbs appear in search results only when the page describes them as schema.org data. Without it, the page is a plain blue link.',
+      },
+      {
+        title: 'Who is behind the site',
+        body: 'The site name, the organisation or business, its logo, address, opening hours and profiles. Search engines use this to connect every page to one publisher and to show the right name and details.',
+      },
+      {
+        title: 'Facts machines do not have to guess',
+        body: 'AI search features and assistants pull answers out of pages. JSON-LD gives them author, date, price, address or salary as data, matching what the page shows, instead of leaving them to read it from the layout.',
+      },
     ]}
   />
 
-  <section class="section" aria-labelledby="results-heading">
-    <p class="cp-label">What it is for</p>
-    <h2 id="results-heading">From the data on your page to a richer search result</h2>
+  <section class="section" aria-labelledby="coverage-heading">
+    <p class="cp-label">What your site gets</p>
+    <h2 id="coverage-heading">Every page covered, from the home page to the job ad</h2>
     <p class="intro">
-      Dates, prices, ratings and venues only show up in search when the page describes them as
-      schema.org data. The components turn your props into exactly that.
+      A complete setup has two layers. Site-wide data goes into the base layout once. Each kind of
+      page then gets the component that describes it, fed with the data the page already has:
+      frontmatter, a content collection, a CMS.
+    </p>
+
+    <div class="layer">
+      <h3>Once, for the whole site</h3>
+      <ul class="sitewide">
+        {
+          siteWide.map(([name, slug, type, body]) => (
+            <li>
+              <a href={url(`docs/components/${slug}/`)}>
+                <code>&lt;{name}&gt;</code>
+                <span class="type">{type}</span>
+              </a>
+              <p>{body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div class="layer">
+      <h3>On each page, by what it is</h3>
+      <ul class="pagetypes">
+        {
+          pageTypes.map(([kind, name, slug, body]) => (
+            <li>
+              <span class="kind">{kind}</span>
+              <a href={url(`docs/components/${slug}/`)}><code>&lt;{name}&gt;</code></a>
+              <span class="what">{body}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <Split
+    title="Set up the site once, then each page"
+    lead="Put the site-wide components into the base layout, and the page component into the layout of that kind of page. With `generateMeta`, canonical, Open Graph and Twitter tags come from the same data."
+    links={[
+      { label: 'Setups for blogs, shops, businesses, events and job boards', href: url('docs/guides/site-setups/') },
+      { label: 'Quickstart', href: url('docs/getting-started/quickstart/') },
+    ]}
+  >
+    <CodeBlock code={layoutCode} lang="astro" title="src/layouts/Base.astro" label="Site" />
+    <CodeBlock code={pageCode} lang="astro" title="src/layouts/Post.astro" label="Page" />
+  </Split>
+
+  <section class="section" aria-labelledby="results-heading">
+    <p class="cp-label">In search</p>
+    <h2 id="results-heading">The same page, as a richer search result</h2>
+    <p class="intro">
+      Three pages from the examples, with the data their components write. This is what a search
+      engine can show when it understands the page instead of only its text.
     </p>
     <ul class="previews">
       {
@@ -230,6 +296,15 @@ const groups = [
       Whether and how a rich result appears is decided by the search engine.
     </p>
   </section>
+
+  <StatBand
+    items={[
+      { value: String(componentCount), label: 'Astro components, one per schema type plus generic and graph' },
+      { value: String(zodCount), label: 'Zod schemas for content collections and forms' },
+      { value: astroMajors.join(' · '), label: 'Astro major versions supported' },
+      { value: '0 kB', label: 'client JavaScript added to your pages' },
+    ]}
+  />
 
   <SectionIntro
     title="Checked in the build, not weeks later in Search Console."
@@ -289,32 +364,6 @@ const groups = [
     </div>
   </section>
 
-  <section class="section" aria-labelledby="types-heading">
-    <p class="cp-label">Components</p>
-    <h2 id="types-heading">One component for each kind of page</h2>
-    <p class="intro">
-      Blogs, shops, local businesses, events, job boards: each component knows which fields its
-      rich result needs.
-      The generic <a href={url('docs/components/schema/')}><code>&lt;Schema&gt;</code></a> covers any other schema.org type.
-    </p>
-    <div class="groups">
-      {
-        groups.map((g) => (
-          <div class="group">
-            <h3>{g.label}</h3>
-            <ul>
-              {g.items.map(([name, slug]) => (
-                <li>
-                  <a href={url(`docs/components/${slug}/`)}>{name}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))
-      }
-    </div>
-  </section>
-
   <Tradeoffs
     title="What it does not do"
     lead="The package makes the markup correct and complete. Some things stay outside of it."
@@ -334,7 +383,7 @@ const groups = [
       'Run <code>astro build</code>: wrong data stops the build, missing recommended fields are listed.',
     ]}
   >
-    <CodeBlock code={pageCode} lang="astro" title="src/layouts/Post.astro" label="Page" />
+    <CodeBlock code={configCode} lang="js" title="astro.config.mjs" label="Config" />
   </Quickstart>
 
   {latestRelease && <ReleaseHighlights release={latestRelease} />}
@@ -493,40 +542,93 @@ const groups = [
     font-size: 14.5px;
   }
 
-  /* Component groups */
-  .groups {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
-    gap: 28px 32px;
+  /* Coverage: site-wide layer and page types */
+  .layer + .layer {
+    margin-top: 40px;
   }
-  .group h3 {
-    margin: 0 0 12px;
+  .layer h3 {
+    margin: 0 0 16px;
     padding-top: 16px;
     border-top: 1px solid var(--border);
     color: var(--heading);
     font-size: 15px;
     font-weight: 600;
   }
-  .group ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .sitewide {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    gap: 16px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  .group a {
-    display: inline-block;
-    padding: 5px 10px;
-    border: 1px solid var(--border-strong);
-    border-radius: 999px;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 12.5px;
+  .sitewide li {
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+  .sitewide a {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
     text-decoration: none;
   }
-  .group a:hover {
-    border-color: var(--accent);
+  .sitewide code,
+  .pagetypes code {
     color: var(--accent);
+    background: none;
+    padding: 0;
+    font-size: 13px;
   }
+  .sitewide .type {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .sitewide p {
+    margin: 8px 0 0;
+    font-size: 14.5px;
+  }
+  .pagetypes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+    gap: 0 32px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pagetypes li {
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+    gap: 2px 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14.5px;
+  }
+  .pagetypes .kind {
+    grid-row: span 2;
+    color: var(--heading);
+    font-weight: 500;
+  }
+  .pagetypes a {
+    text-decoration: none;
+  }
+  .pagetypes a:hover code {
+    text-decoration: underline;
+  }
+  .pagetypes .what {
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  @media (max-width: 480px) {
+    .pagetypes li {
+      grid-template-columns: 1fr;
+    }
+    .pagetypes .kind {
+      grid-row: auto;
+    }
+  }
+
 </style>
