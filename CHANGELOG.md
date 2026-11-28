@@ -6,6 +6,36 @@ reconstructed from the commit history.
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-11-28
+
+### Added
+
+- **OrganizationSchema:** `alternateName`, `legalName`, `description`, `foundingDate`, `vatID`,
+  `taxID`, `knowsAbout`, `areaServed` and `contactPoint`.
+- **WebSiteSchema:** `alternateName` (Google site names), `description`, `inLanguage` and
+  `publisher`.
+- **WebPageSchema:** `schemaType` for subtypes such as `AboutPage`, `ContactPage` and
+  `ItemPage`, and a `breadcrumb` reference.
+- **ArticleSchema:** several images in `imageUrl`, structured `authors` (with `url`, `id`,
+  `jobTitle`, `sameAs`) and `speakable`.
+- **LocalBusinessSchema:** `openingHoursSpecification`.
+- **ProfilePageSchema:** `dateCreated`, `dateModified`, `url`, `alternateName`, `identifier`,
+  `jobTitle`, `worksFor`, `knowsAbout` and `mainEntityType`.
+- **Dev Toolbar:** warns when a `BreadcrumbList` has fewer than two items.
+
+### Changed
+
+- **JSON-LD:** root-relative paths such as `/img.jpg` in URL fields are resolved against
+  `siteUrl`, so the output always contains absolute URLs.
+- **WebSiteSchema:** `searchQueryInput` is marked as deprecated.
+- **Pages:** the start page leads with what structured data is for and with full-site coverage.
+- **Docs:** the compatibility table covers 2.7.x.
+
+### Fixed
+
+- **ProfilePageSchema:** `publishingPrinciples` sits on the `ProfilePage` instead of the
+  `Person`, where schema.org does not define it.
+
 ## [2.7.0] - 2026-11-27
 
 ### Added
