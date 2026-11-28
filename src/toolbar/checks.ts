@@ -87,6 +87,9 @@ export function collectWarnings(data: any, isGraphMember: boolean): string[] {
     if (!data.itemListElement || !Array.isArray(data.itemListElement) || data.itemListElement.length === 0) {
       warnings.push("BreadcrumbList must have 'itemListElement' containing ListItems");
     } else {
+      if (data.itemListElement.length < 2) {
+        warnings.push("BreadcrumbList should contain at least 2 items for Google Rich Results");
+      }
       data.itemListElement.forEach((item: any, i: number) => {
         if (!item.position) warnings.push(`Breadcrumb item #${i + 1} is missing 'position'`);
         if (!item.name) warnings.push(`Breadcrumb item #${i + 1} is missing 'name'`);

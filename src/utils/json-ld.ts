@@ -8,6 +8,49 @@ const NON_SCHEMA_KEYS = new Set(['changefreq', 'priority', 'robots', 'noindex', 
 // `<`, `>`, `&` plus U+2028/U+2029 (line/paragraph separators).
 const UNSAFE_CHARS_RE = new RegExp(`[<>&${String.fromCharCode(0x2028, 0x2029)}]`, 'g');
 
+// Schema.org properties whose string values are URLs that Google requires to be absolute.
+const ABSOLUTE_URL_KEYS = new Set([
+  'url',
+  'image',
+  'logo',
+  'thumbnailUrl',
+  'contentUrl',
+  'embedUrl',
+  'item',
+  'publishingPrinciples',
+]);
+
+function resolveRootRelative(value: string, siteUrl: string): string {
+  if (!value.startsWith('/') || value.startsWith('//')) return value;
+  try {
+    return new URL(value, siteUrl).href;
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * Resolves root-relative paths (`/img.jpg`, `/blog/`) in schema.org URL fields against `siteUrl`
+ * so JSON-LD always emits fully-qualified URLs as required by Google Search Central.
+ */
+export function resolveSchemaUrls<T>(value: T, siteUrl?: string, inUrlField = false): T {
+  if (!siteUrl || value === null || value === undefined) return value;
+  if (typeof value === 'string') {
+    return (inUrlField ? resolveRootRelative(value, siteUrl) : value) as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => resolveSchemaUrls(entry, siteUrl, inUrlField)) as T;
+  }
+  if (typeof value === 'object') {
+    const out: Record<string, any> = {};
+    for (const [key, val] of Object.entries(value as Record<string, any>)) {
+      out[key] = resolveSchemaUrls(val, siteUrl, ABSOLUTE_URL_KEYS.has(key));
+    }
+    return out as T;
+  }
+  return value;
+}
+
 export function stripNonSchemaKeys(item: Record<string, any>): Record<string, any> {
   return Object.fromEntries(Object.entries(item).filter(([key]) => !NON_SCHEMA_KEYS.has(key)));
 }

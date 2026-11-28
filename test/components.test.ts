@@ -207,7 +207,7 @@ describe('no fabricated or dropped data', () => {
   test('Article uses defaultArticlePublisher', async () => {
     config.current.defaultArticlePublisher = { name: 'Pub', logo: { url: '/logo.png' } };
     const { scripts } = await render(C.ArticleSchema, article);
-    expect(scripts[0].data.publisher).toEqual({ '@type': 'Organization', name: 'Pub', logo: { '@type': 'ImageObject', url: '/logo.png' } });
+    expect(scripts[0].data.publisher).toEqual({ '@type': 'Organization', name: 'Pub', logo: { '@type': 'ImageObject', url: 'https://example.com/logo.png' } });
   });
 
   test('publisher @id: explicit props, and the default id only for the default publisher', async () => {
@@ -273,7 +273,7 @@ describe('no fabricated or dropped data', () => {
     })).scripts[0].data;
     expect(series.hasPart).toEqual([
       { '@type': 'BlogPosting', '@id': '#part-1', position: 1 },
-      { '@type': 'WebPage', url: '/blog/astro-seo/part-2/', headline: 'Part 2' },
+      { '@type': 'WebPage', url: 'https://example.com/blog/astro-seo/part-2/', headline: 'Part 2' },
     ]);
     expect((await render(C.ArticleSchema, article)).scripts[0].data).not.toHaveProperty('@id');
   });
@@ -328,7 +328,7 @@ describe('no fabricated or dropped data', () => {
     })).scripts[0].data;
     expect(data.isVariantOf).toEqual({ '@type': 'ProductGroup', '@id': '/shirt/#group' });
     expect(data.hasVariant).toEqual([{ '@type': 'Product', '@id': '/shirt/blue/#product' }]);
-    expect(data.isRelatedTo).toEqual({ '@type': 'Product', url: '/hat/' });
+    expect(data.isRelatedTo).toEqual({ '@type': 'Product', url: 'https://example.com/hat/' });
     expect(data.isAccessoryOrSparePartFor).toHaveLength(2);
     await expect(render(C.ProductSchema, { ...product, isVariantOf: { name: 'Shirt' } })).rejects.toThrow(/"id" or "url"/);
   });
@@ -409,7 +409,7 @@ describe('no fabricated or dropped data', () => {
       '@type': 'OfferCatalog',
       name: 'Leistungen',
       itemListElement: [
-        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Krankengymnastik', url: '/leistungen/kg/' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Krankengymnastik', url: 'https://example.com/leistungen/kg/' } },
         { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Gutschein', description: 'Für alle Leistungen' } },
       ],
     });
@@ -422,6 +422,63 @@ describe('no fabricated or dropped data', () => {
     const overridden = (await render(C.LocalBusinessSchema, { type: 'AutoRepair', ratingValue: 4.8, reviewCount: 20 })).scripts[0].data;
     expect(overridden['@type']).toBe('AutoRepair');
     expect(overridden.aggregateRating.reviewCount).toBe(20);
+  });
+
+  test('ProfilePage places publishingPrinciples on ProfilePage (not Person) and supports new fields', async () => {
+    const data = (await render(C.ProfilePageSchema, {
+      name: 'Ada Lovelace',
+      url: '/team/ada/',
+      jobTitle: 'Engineer',
+      worksFor: 'ACME',
+      knowsAbout: ['Astro', 'SEO'],
+      dateCreated: '2025-01-01',
+      dateModified: '2026-01-01',
+      publishingPrinciples: '/editorial-policy/',
+    })).scripts[0].data;
+    expect(data.publishingPrinciples).toBe('https://example.com/editorial-policy/');
+    expect(data.mainEntity).not.toHaveProperty('publishingPrinciples');
+    expect(data.mainEntity.url).toBe('https://example.com/team/ada/');
+    expect(data.dateCreated).toBe('2025-01-01');
+    expect(data.dateModified).toBe('2026-01-01');
+  });
+
+  test('WebSite supports alternateName, description, inLanguage, publisher; LocalBusiness supports openingHoursSpecification', async () => {
+    const ws = (await render(C.WebSiteSchema, {
+      name: 'Example Site',
+      alternateName: 'Ex',
+      description: 'Desc',
+      inLanguage: 'de-DE',
+      publisher: { id: 'https://example.com/#org' },
+    })).scripts[0].data;
+    expect(ws.alternateName).toBe('Ex');
+    expect(ws.publisher).toEqual({ '@type': 'Organization', '@id': 'https://example.com/#org' });
+
+    const lb = (await render(C.LocalBusinessSchema, {
+      name: 'Shop',
+      openingHoursSpecification: [{ dayOfWeek: ['Monday', 'Tuesday'], opens: '09:00', closes: '18:00' }],
+    })).scripts[0].data;
+    expect(lb.openingHoursSpecification).toEqual([
+      { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday'], opens: '09:00', closes: '18:00' },
+    ]);
+  });
+
+  test('Article supports structured multi-authors, multiple imageUrls, and speakable', async () => {
+    const { authorName: _, ...baseArticle } = article;
+    const data = (await render(C.ArticleSchema, {
+      ...baseArticle,
+      authors: [
+        { name: 'Ada', url: '/team/ada/', jobTitle: 'Lead' },
+        { name: 'Bob', sameAs: ['https://example.org/bob'] },
+      ],
+      imageUrl: ['/img-16x9.jpg', '/img-1x1.jpg'],
+      speakable: ['h1', '.summary'],
+    })).scripts[0].data;
+    expect(data.author).toEqual([
+      { '@type': 'Person', name: 'Ada', url: 'https://example.com/team/ada/', jobTitle: 'Lead' },
+      { '@type': 'Person', name: 'Bob', sameAs: ['https://example.org/bob'] },
+    ]);
+    expect(data.image).toEqual(['https://example.com/img-16x9.jpg', 'https://example.com/img-1x1.jpg']);
+    expect(data.speakable).toEqual({ '@type': 'SpeakableSpecification', cssSelector: ['h1', '.summary'] });
   });
 
   test('Article rejects a publisher id without a publisher name', async () => {

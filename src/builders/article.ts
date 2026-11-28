@@ -25,6 +25,7 @@ export function buildArticle(props: ArticleData, { url, page, config }: ArticleC
     datePublished,
     dateModified,
     authorName,
+    authors,
     authorType = 'Person',
     authorUrl,
     authorId,
@@ -43,6 +44,7 @@ export function buildArticle(props: ArticleData, { url, page, config }: ArticleC
     wordCount,
     readingTimeMinutes,
     isAccessibleForFree = true,
+    speakable,
     isPartOfHeadline,
     isPartOfUrl,
     isPartOf,
@@ -70,6 +72,19 @@ export function buildArticle(props: ArticleData, { url, page, config }: ArticleC
     ...(authorUrl ? { url: authorUrl } : {}),
   });
 
+  const resolvedAuthor = authors
+    ? authors.map((a) => ({
+        '@type': a.type ?? 'Person',
+        name: a.name,
+        ...(a.id ? { '@id': a.id } : {}),
+        ...(a.url ? { url: a.url } : {}),
+        ...(a.jobTitle ? { jobTitle: a.jobTitle } : {}),
+        ...(a.sameAs ? { sameAs: a.sameAs } : {}),
+      }))
+    : Array.isArray(authorName)
+      ? authorName.map(buildAuthor)
+      : buildAuthor(authorName!);
+
   const articleSchema: Record<string, any> = {
     '@type': schemaType,
     ...(id ? { '@id': id } : {}),
@@ -81,11 +96,16 @@ export function buildArticle(props: ArticleData, { url, page, config }: ArticleC
       '@type': 'WebPage',
       '@id': url,
     },
-    author: Array.isArray(authorName)
-      ? authorName.map(buildAuthor)
-      : buildAuthor(authorName),
+    author: resolvedAuthor,
     isAccessibleForFree,
   };
+
+  if (speakable) {
+    articleSchema.speakable = {
+      '@type': 'SpeakableSpecification',
+      cssSelector: speakable,
+    };
+  }
 
   if (resolvedPublisherName) {
     articleSchema.publisher = {
@@ -99,14 +119,18 @@ export function buildArticle(props: ArticleData, { url, page, config }: ArticleC
   }
 
   if (imageUrl) {
-    articleSchema.image = {
-      '@type': 'ImageObject',
-      url: imageUrl,
-      ...(imageWidth ? { width: imageWidth } : {}),
-      ...(imageHeight ? { height: imageHeight } : {}),
-      ...(imageFormat ? { encodingFormat: imageFormat } : {}),
-      ...(imageCaption ? { caption: imageCaption } : {}),
-    };
+    if (Array.isArray(imageUrl)) {
+      articleSchema.image = imageUrl;
+    } else {
+      articleSchema.image = {
+        '@type': 'ImageObject',
+        url: imageUrl,
+        ...(imageWidth ? { width: imageWidth } : {}),
+        ...(imageHeight ? { height: imageHeight } : {}),
+        ...(imageFormat ? { encodingFormat: imageFormat } : {}),
+        ...(imageCaption ? { caption: imageCaption } : {}),
+      };
+    }
   }
 
   if (inLanguage) articleSchema.inLanguage = inLanguage;

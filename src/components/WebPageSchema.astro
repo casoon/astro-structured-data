@@ -13,6 +13,7 @@ const page = Astro.url.pathname;
 const {
   changefreq,
   priority,
+  schemaType = 'WebPage',
   title,
   description,
   url,
@@ -27,6 +28,7 @@ const {
   imageCaption,
   author,
   publisher,
+  breadcrumb,
   robots,
   alternates,
   isPartOf,
@@ -37,7 +39,7 @@ const globalConfig = getGlobalConfig();
 
 const resolvedUrl = url ?? pageUrl(page, globalConfig.siteUrl);
 const webpageSchema: Record<string, any> = {
-  '@type': 'WebPage',
+  '@type': schemaType,
   // The node ArticleSchema's mainEntityOfPage refers to; with an explicit `url` the middleware
   // points that reference here too (resolvePageId).
   '@id': resolvedUrl,
@@ -50,6 +52,7 @@ if (description) webpageSchema.description = description;
 if (inLanguage) webpageSchema.inLanguage = inLanguage;
 if (datePublished) webpageSchema.datePublished = datePublished;
 if (dateModified || datePublished) webpageSchema.dateModified = dateModified ?? datePublished;
+if (breadcrumb) webpageSchema.breadcrumb = buildReference(breadcrumb, 'BreadcrumbList');
 // robots/alternates drive meta tags only; they are stripped from the JSON-LD output.
 if (robots) webpageSchema.robots = robots;
 if (alternates) webpageSchema.alternates = alternates;

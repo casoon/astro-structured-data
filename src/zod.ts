@@ -283,17 +283,27 @@ const partReferences = z.array(
 ).min(1).optional();
 
 // 1. Article
+const structuredAuthor = z.strictObject({
+  name: text,
+  type: authorType.optional(),
+  url: link.optional(),
+  id: text.optional(),
+  jobTitle: text.optional(),
+  sameAs: z.array(httpUrl).min(1).optional(),
+});
+
 export const articleZodSchema = z.object({
   id: text.optional(),
   title: text,
   description: text,
   datePublished: dateOrStringSchema,
   dateModified: recommended(dateOrStringSchema.optional(), 'dateModified'),
-  authorName: oneOrMore(text),
+  authorName: oneOrMore(text).optional(),
+  authors: z.array(structuredAuthor).min(1).optional(),
   authorType: authorType.optional(),
   authorUrl: link.optional(),
   authorId: text.optional(),
-  imageUrl: recommended(link.optional(), 'image'),
+  imageUrl: recommended(oneOrMore(link).optional(), 'image'),
   imageWidth: positiveInt.optional(),
   imageHeight: positiveInt.optional(),
   imageFormat: imageMimeType.optional(),
@@ -308,6 +318,7 @@ export const articleZodSchema = z.object({
   wordCount: positiveInt.optional(),
   readingTimeMinutes: positiveInt.optional(),
   isAccessibleForFree: z.boolean().optional(),
+  speakable: z.array(text).min(1).optional(),
   isPartOfHeadline: text.optional(),
   isPartOfUrl: link.optional(),
   isPartOf: references,
@@ -316,6 +327,10 @@ export const articleZodSchema = z.object({
   about: references,
   mentions: references,
 }).superRefine((data, ctx) => {
+  if (data.authorName === undefined && data.authors === undefined) {
+    ctx.addIssue({ code: 'custom', path: ['authorName'], message: 'Either "authorName" or "authors" is required' });
+  }
+  atMostOne(data, ctx, ['authorName', 'authors']);
   requireWith(data, ctx, 'imageUrl', IMAGE_DETAIL_FIELDS);
   requireTogether(data, ctx, ['isPartOfHeadline', 'isPartOfUrl']);
   atMostOne(data, ctx, ['isPartOf', 'isPartOfUrl']);
@@ -325,7 +340,7 @@ export const articleZodSchema = z.object({
   if (Array.isArray(data.authorName)) {
     for (const field of ['authorUrl', 'authorId'] as const) {
       if (data[field] !== undefined) {
-        ctx.addIssue({ code: 'custom', path: [field], message: 'Not supported with multiple authors' });
+        ctx.addIssue({ code: 'custom', path: [field], message: 'Not supported with multiple authors (use "authors" array instead)' });
       }
     }
   }
@@ -401,6 +416,12 @@ export const productZodSchema = z.object({
   requireTogether(data, ctx, ['ratingValue', 'reviewCount']);
 });
 
+const openingHoursSpecificationEntry = z.strictObject({
+  dayOfWeek: oneOrMore(z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])),
+  opens: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM (24h)'),
+  closes: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM (24h)'),
+});
+
 // 4. Local Business (all fields optional — site-wide defaults can fill them in; the
 // component requires a name after merging).
 export const localBusinessZodSchema = z.object({
@@ -419,6 +440,7 @@ export const localBusinessZodSchema = z.object({
     longitude: z.number().min(-180).max(180),
   }).optional(), 'geo'),
   openingHours: recommended(z.array(openingHoursSpec).min(1).optional(), 'openingHours'),
+  openingHoursSpecification: producesRecommended(z.array(openingHoursSpecificationEntry).min(1).optional(), 'openingHours'),
   sameAs: recommended(z.array(httpUrl).min(1).optional(), 'sameAs'),
   areaServed: oneOrMore(servedArea).optional(),
   founder: references,
@@ -494,11 +516,28 @@ export const eventZodSchema = z.object({
 });
 
 // 6. Organization (name falls back to `defaultArticlePublisher.name`)
+const contactPointSchema = z.strictObject({
+  contactType: text,
+  telephone: text.optional(),
+  email: z.email().optional(),
+  availableLanguage: oneOrMore(text).optional(),
+  areaServed: oneOrMore(text).optional(),
+});
+
 export const organizationZodSchema = z.object({
   name: text.optional(),
+  alternateName: oneOrMore(text).optional(),
+  legalName: text.optional(),
+  description: text.optional(),
   id: text.optional(),
   url: httpUrl.optional(),
   logoUrl: link.optional(),
+  foundingDate: dateOrStringSchema.optional(),
+  vatID: text.optional(),
+  taxID: text.optional(),
+  knowsAbout: oneOrMore(text).optional(),
+  areaServed: oneOrMore(servedArea).optional(),
+  contactPoint: oneOrMore(contactPointSchema).optional(),
   sameAs: recommended(z.array(httpUrl).min(1).optional(), 'sameAs'),
   telephone: recommended(text.optional(), 'telephone'),
   email: recommended(z.email().optional(), 'email'),
@@ -509,6 +548,7 @@ export const organizationZodSchema = z.object({
 
 // 7. WebPage
 export const webPageZodSchema = z.object({
+  schemaType: z.enum(['WebPage', 'AboutPage', 'ContactPage', 'ItemPage', 'SearchResultsPage', 'FAQPage', 'ProfilePage', 'CollectionPage']).optional(),
   title: text,
   description: recommended(text.optional(), 'description'),
   url: httpUrl.optional(),
@@ -533,6 +573,7 @@ export const webPageZodSchema = z.object({
     logo: link.optional(),
     id: text.optional(),
   }).optional(),
+  breadcrumb: reference.optional(),
   robots: z.string().regex(
     /^[a-z-]+(:[\w-]+)?(\s*,\s*[a-z-]+(:[\w-]+)?)*$/i,
     'Must be a comma-separated list of robots directives like "noindex, nofollow"'
@@ -551,8 +592,13 @@ export const webPageZodSchema = z.object({
 // 8. WebSite
 export const webSiteZodSchema = z.object({
   name: text,
+  alternateName: oneOrMore(text).optional(),
+  description: text.optional(),
+  inLanguage: languageTag.optional(),
+  publisher: reference.optional(),
   url: httpUrl.optional(),
   id: text.optional(),
+  /** @deprecated Google retired Sitelinks Searchbox in November 2024. Kept optional for backwards compatibility. */
   searchQueryInput: z.string().regex(/^[A-Za-z0-9_-]+$/, 'Must be a query parameter name like "q"').optional(),
 });
 
@@ -560,6 +606,15 @@ export const webSiteZodSchema = z.object({
 export const profilePageZodSchema = z.object({
   name: text,
   id: text.optional(),
+  mainEntityType: z.enum(['Person', 'Organization']).optional(),
+  url: link.optional(),
+  alternateName: text.optional(),
+  identifier: text.optional(),
+  jobTitle: text.optional(),
+  worksFor: z.union([text, reference]).optional(),
+  knowsAbout: oneOrMore(text).optional(),
+  dateCreated: dateOrStringSchema.optional(),
+  dateModified: dateOrStringSchema.optional(),
   description: recommended(text.optional(), 'mainEntity.description'),
   imageUrl: recommended(link.optional(), 'mainEntity.image'),
   sameAs: recommended(z.array(httpUrl).min(1).optional(), 'mainEntity.sameAs'),

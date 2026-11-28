@@ -14,9 +14,18 @@ const {
   changefreq,
   priority,
   name,
+  alternateName,
+  legalName,
+  description,
   id,
   url,
   logoUrl,
+  foundingDate,
+  vatID,
+  taxID,
+  knowsAbout,
+  areaServed,
+  contactPoint,
   sameAs,
   telephone,
   email,
@@ -37,6 +46,9 @@ const resolvedId = id ?? (name ? undefined : globalConfig.defaultArticlePublishe
 const orgSchema = {
   '@type': 'Organization',
   name: resolvedName,
+  ...(alternateName && { alternateName }),
+  ...(legalName && { legalName }),
+  ...(description && { description }),
   ...(resolvedId && { '@id': resolvedId }),
   url: url ?? globalConfig.siteUrl,
   ...(resolvedLogo && {
@@ -45,6 +57,10 @@ const orgSchema = {
       url: resolvedLogo,
     },
   }),
+  ...(foundingDate && { foundingDate }),
+  ...(vatID && { vatID }),
+  ...(taxID && { taxID }),
+  ...(knowsAbout && { knowsAbout }),
   ...(sameAs && { sameAs }),
   ...(telephone && { telephone }),
   ...(email && { email }),
@@ -59,7 +75,24 @@ const orgSchema = {
     }
   })
 } satisfies Organization;
+type ServedArea = string | { type?: string; name: string; id?: string; url?: string };
+const buildServedArea = (area: ServedArea) => typeof area === 'string' ? area : {
+  '@type': area.type ?? 'Place',
+  ...(area.id && { '@id': area.id }),
+  name: area.name,
+  ...(area.url && { url: area.url }),
+};
+const buildContactPoint = (cp: any) => ({
+  '@type': 'ContactPoint',
+  contactType: cp.contactType,
+  ...(cp.telephone && { telephone: cp.telephone }),
+  ...(cp.email && { email: cp.email }),
+  ...(cp.availableLanguage && { availableLanguage: cp.availableLanguage }),
+  ...(cp.areaServed && { areaServed: cp.areaServed }),
+});
 Object.assign(orgSchema, {
+  ...(areaServed && { areaServed: Array.isArray(areaServed) ? areaServed.map(buildServedArea) : buildServedArea(areaServed) }),
+  ...(contactPoint && { contactPoint: Array.isArray(contactPoint) ? contactPoint.map(buildContactPoint) : buildContactPoint(contactPoint) }),
   ...(parentOrganization && { parentOrganization: buildReference(parentOrganization, 'Organization') }),
   ...(subOrganization && { subOrganization: buildReferences(subOrganization, 'Organization') }),
 });

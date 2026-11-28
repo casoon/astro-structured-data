@@ -3,6 +3,7 @@ import type { ProfilePage } from 'schema-dts';
 import Schema from './Schema.astro';
 import { profilePageZodSchema, type ProfilePageProps } from '../zod';
 import { parseProps } from '../utils/validate';
+import { buildReference } from '../utils/reference';
 
 type Props = ProfilePageProps;
 
@@ -11,23 +12,43 @@ const {
   priority,
   name,
   id,
+  mainEntityType = 'Person',
+  url,
+  alternateName,
+  identifier,
+  jobTitle,
+  worksFor,
+  knowsAbout,
+  dateCreated,
+  dateModified,
   description,
   imageUrl,
   sameAs,
   publishingPrinciples,
 } = parseProps('ProfilePageSchema', profilePageZodSchema, Astro.props, Astro.url.pathname);
 
-const profileSchema: ProfilePage = {
+const mainEntity: Record<string, any> = {
+  '@type': mainEntityType,
+  ...(id && { '@id': id }),
+  name,
+  ...(url && { url }),
+  ...(alternateName && { alternateName }),
+  ...(identifier && { identifier }),
+  ...(jobTitle && { jobTitle }),
+  ...(worksFor && { worksFor: typeof worksFor === 'string' ? { '@type': 'Organization', name: worksFor } : buildReference(worksFor, 'Organization') }),
+  ...(knowsAbout && { knowsAbout }),
+  ...(imageUrl && { image: imageUrl }),
+  ...(description && { description }),
+  ...(sameAs && { sameAs }),
+};
+
+// `publishingPrinciples` is a CreativeWork / Organization property, not a Person property.
+const profileSchema: Record<string, any> = {
   '@type': 'ProfilePage',
-  mainEntity: {
-    '@type': 'Person',
-    ...(id && { '@id': id }),
-    name,
-    ...(imageUrl && { image: imageUrl }),
-    ...(description && { description }),
-    ...(sameAs && { sameAs }),
-    ...(publishingPrinciples && { publishingPrinciples })
-  }
+  ...(dateCreated && { dateCreated }),
+  ...(dateModified && { dateModified }),
+  ...(publishingPrinciples && { publishingPrinciples }),
+  mainEntity,
 };
 ---
-<Schema item={profileSchema} changefreq={changefreq} priority={priority} />
+<Schema item={profileSchema as ProfilePage} changefreq={changefreq} priority={priority} />

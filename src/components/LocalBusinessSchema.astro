@@ -27,6 +27,7 @@ const priceRange = props.priceRange ?? defaults.priceRange;
 const address = props.address ?? defaults.address;
 const geo = props.geo ?? defaults.geo;
 const openingHours = props.openingHours ?? defaults.openingHours;
+const openingHoursSpecification = props.openingHoursSpecification ?? defaults.openingHoursSpecification;
 const sameAs = props.sameAs ?? defaults.sameAs;
 const areaServed = props.areaServed ?? defaults.areaServed;
 // Rating value and count come as a pair, from the props or from the defaults.
@@ -68,6 +69,14 @@ const localBusinessSchema = {
     }
   }),
   ...(openingHours && { openingHours }),
+  ...(openingHoursSpecification && {
+    openingHoursSpecification: openingHoursSpecification.map((spec: any) => ({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: spec.dayOfWeek,
+      opens: spec.opens,
+      closes: spec.closes,
+    })),
+  }),
   ...(sameAs && { sameAs }),
 } satisfies LocalBusiness;
 type ServedArea = string | { type?: string; name: string; id?: string; url?: string };

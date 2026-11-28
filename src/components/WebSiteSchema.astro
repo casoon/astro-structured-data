@@ -5,17 +5,22 @@ import Schema from './Schema.astro';
 import { getGlobalConfig } from 'virtual:astro-structured-data/config';
 import { webSiteZodSchema, type WebSiteProps } from '../zod';
 import { parseProps } from '../utils/validate';
+import { buildReference } from '../utils/reference';
 
 type Props = WebSiteProps;
 
-const { changefreq, priority, name, url, id, searchQueryInput } = parseProps('WebSiteSchema', webSiteZodSchema, Astro.props, Astro.url.pathname);
+const { changefreq, priority, name, alternateName, description, inLanguage, publisher, url, id, searchQueryInput } = parseProps('WebSiteSchema', webSiteZodSchema, Astro.props, Astro.url.pathname);
 const siteUrl: string = url ?? getGlobalConfig().siteUrl;
 
-const websiteSchema: WebSite = {
+const websiteSchema: Record<string, any> = {
   '@type': 'WebSite',
   ...(id && { '@id': id }),
   name,
+  ...(alternateName && { alternateName }),
+  ...(description && { description }),
+  ...(inLanguage && { inLanguage }),
   url: siteUrl,
+  ...(publisher && { publisher: buildReference(publisher, 'Organization') }),
   ...(searchQueryInput && {
     potentialAction: {
       '@type': 'SearchAction',
@@ -28,4 +33,4 @@ const websiteSchema: WebSite = {
   })
 };
 ---
-<Schema item={websiteSchema} changefreq={changefreq} priority={priority} />
+<Schema item={websiteSchema as WebSite} changefreq={changefreq} priority={priority} />
